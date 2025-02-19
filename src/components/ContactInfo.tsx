@@ -1,10 +1,52 @@
-
-import { MapPin, Phone, Mail, Clock } from 'lucide-react';
- export const ContactInfo = () => {
-   return (
-     <>
-     <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+import { MapPin, Phone, Mail, Clock } from "lucide-react";
+export const ContactInfo = () => {
+  return (
+    <>
+      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
         <div className="grid md:grid-cols-2">
+          {/* Contact Information */}
+          <div className="p-8 bg-gray-50">
+            {/* <h3 className="text-2xl font-bold text-gray-900 mb-6">Visitanos</h3> */}
+            <div className="space-y-4">
+              <div className="flex items-start space-x-3">
+                <MapPin className="w-5 h-5 mt-1" />
+                <div>
+                  <p className="font-semibold text-gray-900">Dirección</p>
+                  <p className="text-gray-600">Santiago de Liniers 670</p>
+                  <p className="text-gray-600">Godoy Cruz, Mendoza</p>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-3">
+                <Clock className="w-5 h-5 mt-1" />
+                <div>
+                  <p className="font-semibold text-gray-900">
+                    Horario de atención
+                  </p>
+                  <p className="text-gray-600">
+                    Lunes a Viernes: 10:00 - 19:00
+                  </p>
+                  <p className="text-gray-600">Sábados: 10:00 - 14:00</p>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-3">
+                <Phone className="w-5 h-5 mt-1" />
+                <div>
+                  <p className="font-semibold text-gray-900">Teléfono</p>
+                  <p className="text-gray-600">+54 9 261 598 7988</p>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-3">
+                <Mail className="w-5 h-5 mt-1" />
+                <div>
+                  <p className="font-semibold text-gray-900">Email</p>
+                  <p className="text-gray-600">fp@mdz3d.ar</p>
+                </div>
+              </div>
+            </div>
+          </div>
           {/* Map Section */}
           <div className="h-[300px] md:h-[400px]">
             <iframe
@@ -15,49 +57,8 @@ import { MapPin, Phone, Mail, Clock } from 'lucide-react';
               title="Ubicación de la tienda"
             ></iframe>
           </div>
-
-          {/* Contact Information */}
-          <div className="p-8 bg-gray-50">
-            <h3 className="text-2xl font-bold text-gray-900 mb-6">Visitanos</h3>
-            <div className="space-y-4">
-              <div className="flex items-start space-x-3">
-                <MapPin className="w-5 h-5 text-blue-600 mt-1" />
-                <div>
-                  <p className="font-semibold text-gray-900">Dirección</p>
-                  <p className="text-gray-600">Santiago de Liniers 670</p>
-                  <p className="text-gray-600">Godoy Cruz, Mendoza</p>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-3">
-                <Clock className="w-5 h-5 text-blue-600 mt-1" />
-                <div>
-                  <p className="font-semibold text-gray-900">Horario de atención</p>
-                  <p className="text-gray-600">Lunes a Viernes: 10:00 - 19:00</p>
-                  <p className="text-gray-600">Sábados: 10:00 - 14:00</p>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-3">
-                <Phone className="w-5 h-5 text-blue-600 mt-1" />
-                <div>
-                  <p className="font-semibold text-gray-900">Teléfono</p>
-                  <p className="text-gray-600">+54 9 261 598 7988</p>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-3">
-                <Mail className="w-5 h-5 text-blue-600 mt-1" />
-                <div>
-                  <p className="font-semibold text-gray-900">Email</p>
-                  <p className="text-gray-600">fp@3mdz3d.ar</p>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
-     </>
-   )
- }
- 
+    </>
+  );
+};

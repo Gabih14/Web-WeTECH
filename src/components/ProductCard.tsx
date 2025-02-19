@@ -27,16 +27,15 @@ export function ProductCard({ product }: ProductCardProps) {
   }, []);
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-visible hover:shadow-lg transition-shadow">
+    <div className="bg-white rounded-lg shadow-md overflow-visible hover:shadow-lg transition-shadow flex flex-col">
       <img
         src={product.image}
         alt={product.name}
         className="w-full h-32 sm:h-48 object-cover"
       />
-      <div className="p-3 sm:p-4">
+      <div className="p-3 sm:p-4 flex flex-col flex-grow">
         <h3 className="text-base sm:text-lg font-semibold mb-1 sm:mb-2 line-clamp-2">{product.name}</h3>
         {/* <p className="text-gray-600 text-xs sm:text-sm mb-2 sm:mb-4 line-clamp-2">{product.description}</p> */}
-
 
         {product.colors && (
           <div className="mb-3">
@@ -100,17 +99,15 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
         )}
 
-        <div className="mb-3">
-          <span className="text-2xl sm:text-3xl font-bold text-blue-600">${product.price}</span>
+        <div className="mt-auto">
+          <div className="mb-3">
+            <span className="text-2xl sm:text-3xl font-bold text-blue-600">${product.price}</span>
+          </div>
+          <button className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors">
+            Añadir al carrito
+          </button>
         </div>
-        <button className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors">
-          Añadir al carrito
-        </button>
-
       </div>
     </div>
-
-
-
   );
 }

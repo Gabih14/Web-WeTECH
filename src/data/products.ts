@@ -3,6 +3,8 @@ import Amarillo from '../assets/GST-AMARILLO-700x700.png';
 import AmarilloFluor from '../assets/GST-AMARILLO-FLUOR-700x700.png';
 import Blanco from '../assets/Grilo_pla_blanco-1.jpeg';
 import Piel from '../assets/Grilon_pla_piel.jpeg'; 
+import impresora3D from '../assets/CR6 S.png';
+import repuesto from '../assets/racor 6mm plastico web2_Impresora 3D Creality CR-10 SMART Mendoza v2.jpg';
 export const products: Product[] = [
   {
     id: '1',
@@ -43,7 +45,7 @@ export const products: Product[] = [
     name: 'Ender 3 V2 - Kit Completo',
     description: 'Impresora 3D FDM con curso de uso y armado incluido. Perfecta para principiantes.',
     price: 279.99,
-    image: 'https://images.unsplash.com/photo-1615947914112-73cd3529b0cf',
+    image: impresora3D,
     category: 'impresoras',
     subcategory: 'filamento'
   },
@@ -52,7 +54,7 @@ export const products: Product[] = [
     name: 'Elegoo Mars 3 Pro',
     description: 'Impresora 3D de resina con alta precisión. Incluye curso de uso.',
     price: 349.99,
-    image: 'https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6',
+    image: impresora3D,
     category: 'impresoras',
     subcategory: 'resina'
   },
@@ -61,7 +63,7 @@ export const products: Product[] = [
     name: 'Hotend E3D V6',
     description: 'Hotend de alta calidad para impresoras FDM',
     price: 59.99,
-    image: 'https://images.unsplash.com/photo-1631749352438-7d576312185d',
+    image: repuesto,
     category: 'repuestos'
   },
   {
