@@ -5,6 +5,7 @@ import Blanco from '../assets/Grilo_pla_blanco-1.jpeg';
 import Piel from '../assets/Grilon_pla_piel.jpeg'; 
 import impresora3D from '../assets/CR6 S.png';
 import repuesto from '../assets/racor 6mm plastico web2_Impresora 3D Creality CR-10 SMART Mendoza v2.jpg';
+
 export const products: Product[] = [
   {
     id: '1',
@@ -16,12 +17,12 @@ export const products: Product[] = [
     subcategory: 'pla',
     weights: [1, 2.5, 4],
     colors: [
-      { name: 'Blanco', hex: '#FFFFFF' },
-      { name: 'Negro', hex: '#000000' },
-      { name: 'Rojo', hex: '#FF0000' },
-      { name: 'Azul', hex: '#0000FF' },
-      { name: 'Verde', hex: '#00FF00' },
-      { name: 'Amarillo', hex: '#FFFF00' }
+      { name: 'Blanco', hex: '#FFFFFF', stock: { '1': 10, '2.5': 5, '4': 2 } },
+      { name: 'Negro', hex: '#000000', stock: { '1': 8, '2.5': 4, '4': 1 } },
+      { name: 'Rojo', hex: '#FF0000', stock: { '1': 12, '2.5': 6, '4': 3 } },
+      { name: 'Azul', hex: '#0000FF', stock: { '1': 7, '2.5': 3, '4': 1 } },
+      { name: 'Verde', hex: '#00FF00', stock: { '1': 9, '2.5': 4, '4': 2 } },
+      { name: 'Amarillo', hex: '#FFFF00', stock: { '1': 11, '2.5': 5, '4': 2 } }
     ]
   },
   {
@@ -34,10 +35,10 @@ export const products: Product[] = [
     subcategory: 'tecnicos',
     weights: [1],
     colors: [
-      { name: 'Translúcido', hex: '#FFFFFF' },
-      { name: 'Negro', hex: '#000000' },
-      { name: 'Azul', hex: '#0000FF' },
-      { name: 'Rojo', hex: '#FF0000' }
+      { name: 'Translúcido', hex: '#FFFFFF', stock: { '1': 10 } },
+      { name: 'Negro', hex: '#000000', stock: { '1': 8 } },
+      { name: 'Azul', hex: '#0000FF', stock: { '1': 7 } },
+      { name: 'Rojo', hex: '#FF0000', stock: { '1': 6 } }
     ]
   },
   {
@@ -76,10 +77,10 @@ export const products: Product[] = [
     subcategory: 'tecnicos',
     weights: [0.250, 0.500, 1],
     colors: [
-      { name: 'Translúcido', hex: '#FFFFFF' },
-      { name: 'Negro', hex: '#000000' },
-      { name: 'Azul', hex: '#0000FF' },
-      { name: 'Rojo', hex: '#FF0000' }
+      { name: 'Translúcido', hex: '#FFFFFF', stock: { '0.250': 10, '0.500': 5, '1': 2 } },
+      { name: 'Negro', hex: '#000000', stock: { '0.250': 8, '0.500': 4, '1': 1 } },
+      { name: 'Azul', hex: '#0000FF', stock: { '0.250': 7, '0.500': 3, '1': 1 } },
+      { name: 'Rojo', hex: '#FF0000', stock: { '0.250': 6, '0.500': 3, '1': 1 } }
     ]
   },
   {
@@ -92,10 +93,10 @@ export const products: Product[] = [
     subcategory: 'pla',
     weights: [2],
     colors: [
-      { name: 'Translúcido', hex: '#FFFFFF' },
-      { name: 'Negro', hex: '#000000' },
-      { name: 'Azul', hex: '#0000FF' },
-      { name: 'Rojo', hex: '#FF0000' }
+      { name: 'Translúcido', hex: '#FFFFFF', stock: { '2': 10 } },
+      { name: 'Negro', hex: '#000000', stock: { '2': 8 } },
+      { name: 'Azul', hex: '#0000FF', stock: { '2': 7 } },
+      { name: 'Rojo', hex: '#FF0000', stock: { '2': 6 } }
     ]
   }
 ];

@@ -10,13 +10,7 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const { addToCart } = useCart();
 
-  // Get stock from localStorage
-  const stockData = localStorage.getItem('productStock');
-  const stock = stockData ? JSON.parse(stockData)[product.id] || 0 : 0;
-
   const [currentPrice, setCurrentPrice] = useState(product.price);
-  const canAddToCart = stock >= 1;
-
   const [isColorMenuOpen, setIsColorMenuOpen] = useState(false);
   const [selectedColor, setSelectedColor] = useState<string | null>(
     product.colors?.[0]?.name || null
@@ -48,6 +42,13 @@ export function ProductCard({ product }: ProductCardProps) {
     }
   };
 
+  const getStock = (color: string, weight: number) => {
+    const colorData = product.colors?.find(c => c.name === color);
+    return colorData ? colorData.stock[weight.toString()] || 0 : 0;
+  };
+
+  const canAddToCart = selectedColor && selectedWeight !== null && getStock(selectedColor, selectedWeight) > 0;
+
   return (
     <div className="bg-white rounded-lg shadow-md overflow-visible hover:shadow-lg transition-shadow flex flex-col">
       <img
@@ -76,6 +77,11 @@ export function ProductCard({ product }: ProductCardProps) {
                     />
                   )}
                   {selectedColor || 'Seleccionar color'}
+                  {selectedColor && (
+                    <span className="text-xs text-gray-500">
+                      (stock {getStock(selectedColor, selectedWeight || product.weights?.[0] || 0)})
+                    </span>
+                  )}
                 </span>
                 <ChevronDown className="w-4 h-4" />
               </button>
@@ -95,7 +101,7 @@ export function ProductCard({ product }: ProductCardProps) {
                         className="w-4 h-4 rounded-full border border-gray-300"
                         style={{ backgroundColor: color.hex }}
                       />
-                      {color.name}
+                      {color.name} <span className="text-xs text-gray-500">(stock {getStock(color.name, selectedWeight || product.weights?.[0] || 0)})</span>
                     </button>
                   ))}
                 </div>
@@ -122,7 +128,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
         <div className="mt-auto">
           <div className="mb-3">
-            <span className="text-2xl sm:text-3xl font-bold text-blue-600">${currentPrice.toFixed(2)}</span>
+            <span className="text-2xl sm:text-3xl font-bold">${currentPrice.toFixed(2)}</span>
           </div>
           <button
             onClick={handleAddToCart}

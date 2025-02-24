@@ -1,4 +1,3 @@
-import React from 'react';
 import { Category } from '../types';
 import { ChevronDown } from 'lucide-react';
 

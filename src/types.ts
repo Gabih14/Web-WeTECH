@@ -10,6 +10,7 @@ export interface Product {
   colors?: {
     name: string;
     hex: string;
+    stock: { [weight: string]: number };
   }[];
 }
 
