@@ -77,11 +77,6 @@ export function ProductCard({ product }: ProductCardProps) {
                     />
                   )}
                   {selectedColor || 'Seleccionar color'}
-                  {selectedColor && (
-                    <span className="text-xs text-gray-500">
-                      (stock {getStock(selectedColor, selectedWeight || product.weights?.[0] || 0)})
-                    </span>
-                  )}
                 </span>
                 <ChevronDown className="w-4 h-4" />
               </button>
