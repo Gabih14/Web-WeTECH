@@ -1,23 +1,28 @@
-import React, { useState } from 'react';
-import { Filter, X } from 'lucide-react';
-import { useSearchParams } from 'react-router-dom';
-import { products } from '../data/products';
-import { categories } from '../data/categories';
-import { ProductCard } from '../components/ProductCard';
-import { CategoryFilter } from '../components/CategoryFilter';
+import { useState } from "react";
+import { Filter, X } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import { products } from "../data/products";
+import { categories } from "../data/categories";
+import { ProductCard } from "../components/ProductCard";
+import { CategoryFilter } from "../components/CategoryFilter";
 
 export function ProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(
-    searchParams.get('category')
+    searchParams.get("category")
   );
-  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
+    null
+  );
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
   const filteredProducts = products.filter((product) => {
     if (!selectedCategory) return true;
     if (!selectedSubcategory) return product.category === selectedCategory;
-    return product.category === selectedCategory && product.subcategory === selectedSubcategory;
+    return (
+      product.category === selectedCategory &&
+      product.subcategory === selectedSubcategory
+    );
   });
 
   const toggleMobileFilter = () => {
@@ -53,8 +58,9 @@ export function ProductsPage() {
           <div className="mb-6 flex justify-between items-center">
             <h2 className="text-2xl font-bold text-gray-900">
               {selectedCategory
-                ? categories.find(c => c.id === selectedCategory)?.name || 'Productos'
-                : 'Todos los Productos'}
+                ? categories.find((c) => c.id === selectedCategory)?.name ||
+                  "Productos"
+                : "Todos los Productos"}
             </h2>
             <button
               onClick={toggleMobileFilter}
@@ -76,13 +82,16 @@ export function ProductsPage() {
 
       {/* Mobile Filter Overlay */}
       {isMobileFilterOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden" onClick={toggleMobileFilter} />
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
+          onClick={toggleMobileFilter}
+        />
       )}
 
       {/* Mobile Filter Sidebar */}
       <div
         className={`fixed top-0 right-0 h-full w-80 bg-white shadow-xl transform transition-transform duration-300 ease-in-out z-40 lg:hidden ${
-          isMobileFilterOpen ? 'translate-x-0' : 'translate-x-full'
+          isMobileFilterOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
         <div className="p-4">

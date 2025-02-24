@@ -1,12 +1,22 @@
 import { useState, useRef, useEffect } from 'react';
 import { Product } from '../types';
 import { ChevronDown } from 'lucide-react';
+import { useCart } from '../context/CartContext';
 
 interface ProductCardProps {
   product: Product;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const { addToCart } = useCart();
+
+  // Get stock from localStorage
+  const stockData = localStorage.getItem('productStock');
+  const stock = stockData ? JSON.parse(stockData)[product.id] || 0 : 0;
+
+  const [currentPrice, setCurrentPrice] = useState(product.price);
+  const canAddToCart = stock >= 1;
+
   const [isColorMenuOpen, setIsColorMenuOpen] = useState(false);
   const [selectedColor, setSelectedColor] = useState<string | null>(
     product.colors?.[0]?.name || null
@@ -25,6 +35,18 @@ export function ProductCard({ product }: ProductCardProps) {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (selectedWeight !== null) {
+      setCurrentPrice(product.price * selectedWeight);
+    }
+  }, [selectedWeight, product.price]);
+
+  const handleAddToCart = () => {
+    if (selectedColor && selectedWeight !== null) {
+      addToCart(product, selectedColor, selectedWeight);
+    }
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-visible hover:shadow-lg transition-shadow flex flex-col">
@@ -84,7 +106,6 @@ export function ProductCard({ product }: ProductCardProps) {
 
         {product.weights && (
           <div className="mb-3">
-            {/* <span className="text-sm font-semibold">Presentación:</span> */}
             <div className="flex flex-wrap gap-2 mt-1">
               {product.weights.map((weight) => (
                 <button
@@ -101,10 +122,18 @@ export function ProductCard({ product }: ProductCardProps) {
 
         <div className="mt-auto">
           <div className="mb-3">
-            <span className="text-2xl sm:text-3xl font-bold text-blue-600">${product.price}</span>
+            <span className="text-2xl sm:text-3xl font-bold text-blue-600">${currentPrice.toFixed(2)}</span>
           </div>
-          <button className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors">
-            Añadir al carrito
+          <button
+            onClick={handleAddToCart}
+            disabled={!canAddToCart}
+            className={`px-4 py-2 rounded-md text-white
+              ${canAddToCart
+                ? 'bg-indigo-600 hover:bg-indigo-700' 
+                : 'bg-gray-400 cursor-not-allowed'
+              } transition-colors`}
+          >
+            {canAddToCart ? 'Agregar' : 'Sin stock'}
           </button>
         </div>
       </div>

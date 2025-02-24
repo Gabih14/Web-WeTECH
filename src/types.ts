@@ -18,3 +18,18 @@ export type Category = {
   id: string;
   subcategories?: { name: string; id: string }[];
 };
+
+export interface CartItem {
+  product: Product;
+  color: string;
+  weight: number;
+  quantity: number;
+}
+
+export interface CartContextType {
+  items: CartItem[];
+  addToCart: (product: Product, color: string, weight: number) => void;
+  removeFromCart: (productId: string, color: string, weight: number) => void;
+  updateQuantity: (productId: string, quantity: number, color: string, weight: number) => void;
+  total: number;
+}
