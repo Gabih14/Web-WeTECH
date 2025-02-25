@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Product } from '../types';
 import { ChevronDown } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { Link } from 'react-router-dom';
 
 interface ProductCardProps {
   product: Product;
@@ -18,6 +19,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const [selectedWeight, setSelectedWeight] = useState<number | null>(
     product.weights?.[0] || null
   );
+  const [quantity, setQuantity] = useState(1);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -38,7 +40,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
   const handleAddToCart = () => {
     if (selectedColor && selectedWeight !== null) {
-      addToCart(product, selectedColor, selectedWeight);
+      addToCart(product, selectedColor, selectedWeight, quantity);
     }
   };
 
@@ -51,14 +53,17 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-visible hover:shadow-lg transition-shadow flex flex-col">
+      <Link to={`/product/${product.id}`}>
       <img
         src={product.image}
         alt={product.name}
         className="w-full h-32 sm:h-48 object-cover"
       />
+      </Link>
       <div className="p-3 sm:p-4 flex flex-col flex-grow">
+        <Link to={`/product/${product.id}`}>
         <h3 className="text-base sm:text-lg font-semibold mb-1 sm:mb-2 line-clamp-2">{product.name}</h3>
-        {/* <p className="text-gray-600 text-xs sm:text-sm mb-2 sm:mb-4 line-clamp-2">{product.description}</p> */}
+        </Link>
 
         {product.colors && (
           <div className="mb-3">

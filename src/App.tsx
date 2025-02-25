@@ -1,9 +1,10 @@
-import { Routes, Route, Link } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import { HomePage } from "./pages/HomePage";
 import { ProductsPage } from "./pages/ProductsPage";
 import Navbar from "./components/Navbar";
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
+import { ProductPage } from "./pages/ProductPage";
 
 function App() {
   return (
@@ -11,10 +12,10 @@ function App() {
       <AuthProvider>
         <CartProvider>
           <Navbar />
-
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/products" element={<ProductsPage />} />
+            <Route path="/product/:id" element={<ProductPage/>}/>
           </Routes>
         </CartProvider>
       </AuthProvider>

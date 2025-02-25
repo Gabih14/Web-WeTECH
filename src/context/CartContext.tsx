@@ -1,12 +1,19 @@
-import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
 import { Product, CartItem, CartContextType } from '../types';
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
+  const [items, setItems] = useState<CartItem[]>(() => {
+    const savedItems = localStorage.getItem('cartItems');
+    return savedItems ? JSON.parse(savedItems) : [];
+  });
 
-  const addToCart = useCallback((product: Product, color: string, weight: number) => {
+  useEffect(() => {
+    localStorage.setItem('cartItems', JSON.stringify(items));
+  }, [items]);
+
+  const addToCart = useCallback((product: Product, color: string, weight: number, quantity: number) => {
     setItems(currentItems => {
       const existingItem = currentItems.find(item => 
         item.product.id === product.id && 
@@ -18,7 +25,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           item.product.id === product.id && item.color === color && item.weight === weight
             ? { 
                 ...item, 
-                quantity: item.quantity + 1
+                quantity: item.quantity + quantity
               }
             : item
         );
@@ -27,7 +34,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         product, 
         color, 
         weight, 
-        quantity: 1
+        quantity
       }];
     });
   }, []);
