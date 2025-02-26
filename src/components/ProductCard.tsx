@@ -9,7 +9,7 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const { addToCart } = useCart();
+  const { addToCart, items } = useCart();
 
   const [currentPrice, setCurrentPrice] = useState(product.price);
   const [isColorMenuOpen, setIsColorMenuOpen] = useState(false);
@@ -39,8 +39,10 @@ export function ProductCard({ product }: ProductCardProps) {
   }, [selectedWeight, product.price]);
 
   const handleAddToCart = () => {
-    if (selectedColor && selectedWeight !== null) {
+    if (selectedColor && selectedWeight !== null && quantity + cartQuantity <= availableStock) {
       addToCart(product, selectedColor, selectedWeight, quantity);
+    } else if (!product.colors && !product.weights && quantity + cartQuantity <= (product.stock ?? 0)) {
+      addToCart(product, '', 0, quantity);
     }
   };
 
@@ -49,20 +51,27 @@ export function ProductCard({ product }: ProductCardProps) {
     return colorData ? colorData.stock[weight.toString()] || 0 : 0;
   };
 
-  const canAddToCart = selectedColor && selectedWeight !== null && getStock(selectedColor, selectedWeight) > 0;
+  const getCartQuantity = (productId: string, color: string, weight: number) => {
+    const cartItem = items.find(item => item.product.id === productId && item.color === color && item.weight === weight);
+    return cartItem ? cartItem.quantity : 0;
+  };
+
+  const canAddToCart = selectedColor && selectedWeight !== null ? getStock(selectedColor, selectedWeight) > 0 : (product.stock ?? 0) > 0;
+  const availableStock = selectedColor && selectedWeight !== null ? getStock(selectedColor, selectedWeight) : product.stock || 0;
+  const cartQuantity = selectedColor && selectedWeight !== null ? getCartQuantity(product.id, selectedColor, selectedWeight) : getCartQuantity(product.id, '', 0);
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-visible hover:shadow-lg transition-shadow flex flex-col">
       <Link to={`/product/${product.id}`}>
-      <img
-        src={product.image}
-        alt={product.name}
-        className="w-full h-32 sm:h-48 object-cover"
-      />
+        <img
+          src={product.image}
+          alt={product.name}
+          className="w-full h-32 sm:h-48 object-cover"
+        />
       </Link>
       <div className="p-3 sm:p-4 flex flex-col flex-grow">
         <Link to={`/product/${product.id}`}>
-        <h3 className="text-base sm:text-lg font-semibold mb-1 sm:mb-2 line-clamp-2">{product.name}</h3>
+          <h3 className="text-base sm:text-lg font-semibold mb-1 sm:mb-2 line-clamp-2">{product.name}</h3>
         </Link>
 
         {product.colors && (
@@ -130,17 +139,35 @@ export function ProductCard({ product }: ProductCardProps) {
           <div className="mb-3">
             <span className="text-2xl sm:text-3xl font-bold">${currentPrice.toFixed(2)}</span>
           </div>
-          <button
-            onClick={handleAddToCart}
-            disabled={!canAddToCart}
-            className={`px-4 py-2 rounded-md text-white
-              ${canAddToCart
-                ? 'bg-indigo-600 hover:bg-indigo-700' 
-                : 'bg-gray-400 cursor-not-allowed'
-              } transition-colors`}
-          >
-            {canAddToCart ? 'Agregar' : 'Sin stock'}
-          </button>
+          <div className="flex flex-wrap items-center gap-4">
+            <button
+              onClick={handleAddToCart}
+              disabled={!canAddToCart || quantity + cartQuantity > availableStock}
+              className={`px-4 py-2 rounded-md text-white
+                ${canAddToCart && quantity + cartQuantity <= availableStock
+                  ? 'bg-indigo-600 hover:bg-indigo-700' 
+                  : 'bg-gray-400 cursor-not-allowed'
+                } transition-colors`}
+            >
+              {canAddToCart && quantity + cartQuantity <= availableStock ? 'Agregar' : 'Sin stock'}
+            </button>
+            {/* QUANTITY */}
+            {canAddToCart && (
+              <div className="flex items-center gap-2">
+                {[1, 5, 10, 50].map(qty => (
+                  <button
+                    key={qty}
+                    className={`px-2 py-1.5 text-sm border rounded-md ${quantity === qty ? 'bg-blue-600 text-white' : 'bg-white text-black'}`}
+                    onClick={() => setQuantity(qty)}
+                    disabled={qty + cartQuantity > availableStock}
+                  >
+                    {qty}
+                  </button>
+                ))}
+              </div>
+            )}
+            {/* QUANTITY */}
+          </div>
         </div>
       </div>
     </div>

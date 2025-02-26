@@ -6,14 +6,20 @@ import { useCart } from "../context/CartContext";
 import Isologo from "../assets/Isologo Fondo Negro SVG.svg";
 
 export function ProductPage() {
+  /* Busca la ruta por id */
   const { id } = useParams<{ id: string }>();
   const product = products.find((p) => p.id === id);
 
+  /* Si el producto no existe mostrar mensaje de error */
   if (!product) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
         <Link to="/" className="flex items-center mb-4">
-          <img src={Isologo} alt="Logo WeTECH" className="mx-auto h-16 md:h-48" />
+          <img
+            src={Isologo}
+            alt="Logo WeTECH"
+            className="mx-auto h-16 md:h-48"
+          />
         </Link>
         <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl mb-4 text-center">
           PRODUCTO NO ENCONTRADO
@@ -27,9 +33,9 @@ export function ProductPage() {
     );
   }
 
-  const { addToCart } = useCart();
+  const { addToCart, items } = useCart();
 
-  const [currentPrice, setCurrentPrice] = useState(product.price);
+  const [currentPrice, setCurrentPrice] = useState(product.price); // Precio actual dependiendo de los cambios como peso
   const [isColorMenuOpen, setIsColorMenuOpen] = useState(false);
   const [selectedColor, setSelectedColor] = useState<string | null>(
     product.colors?.[0]?.name || null
@@ -38,8 +44,9 @@ export function ProductPage() {
     product.weights?.[0] || null
   );
   const [quantity, setQuantity] = useState(1);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null); // Referencia para detectar clicks fuera del menú de colores
 
+  // Detecta clicks fuera del menú de colores para cerrarlo
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -53,27 +60,59 @@ export function ProductPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Actualiza el precio actual dependiendo del peso seleccionado
   useEffect(() => {
     if (selectedWeight !== null) {
       setCurrentPrice(product.price * selectedWeight);
     }
   }, [selectedWeight, product.price]);
 
+  // Agrega el producto al carrito
   const handleAddToCart = () => {
-    if (selectedColor && selectedWeight !== null) {
+    if (
+      selectedColor &&
+      selectedWeight !== null &&
+      quantity + cartQuantity <= availableStock
+    ) {
       addToCart(product, selectedColor, selectedWeight, quantity);
+    } else if (!product.colors && !product.weights && quantity + cartQuantity <= (product.stock ?? 0)) {
+      addToCart(product, '', 0, quantity);
     }
   };
 
   const getStock = (color: string, weight: number) => {
     const colorData = product.colors?.find((c) => c.name === color);
-    return colorData ? colorData.stock[weight.toString()] || 0 : 0;
+    return colorData ? colorData.stock[weight.toString()] || 0 : product.stock ?? 0;
+  };
+
+  const getCartQuantity = (
+    productId: string,
+    color: string,
+    weight: number
+  ) => {
+    const cartItem = items.find(
+      (item) =>
+        item.product.id === productId &&
+        item.color === color &&
+        item.weight === weight
+    );
+    return cartItem ? cartItem.quantity : 0;
   };
 
   const canAddToCart =
-    selectedColor &&
-    selectedWeight !== null &&
-    getStock(selectedColor, selectedWeight) > 0;
+    selectedColor && selectedWeight !== null
+      ? getStock(selectedColor, selectedWeight) > 0
+      : (product.stock ?? 0) > 0;
+
+  const availableStock =
+    selectedColor && selectedWeight !== null
+      ? getStock(selectedColor, selectedWeight)
+      : product.stock ?? 0;
+
+  const cartQuantity =
+    selectedColor && selectedWeight !== null
+      ? getCartQuantity(product.id, selectedColor, selectedWeight)
+      : getCartQuantity(product.id, '', 0);
 
   const plusMinuceButton =
     "flex h-8 w-8 cursor-pointer items-center justify-center border duration-100 hover:bg-neutral-100 focus:ring-2 focus:ring-gray-500 active:ring-2 active:ring-gray-500";
@@ -106,13 +145,14 @@ export function ProductPage() {
             <span className="text-red-600">Expired</span>
           )}
         </p> */}
-        <p className="mt-4 text-4xl font-bold text-violet-900">
-          ${currentPrice.toFixed(2)}{" "}
+        {/* PRODUCT PRICE */}
+        <p className="mt-4 text-4xl font-bold ">
+          ${currentPrice.toFixed(2)} {/* PRODUCT PRICE */}
           {/* <span className="text-xs text-gray-400 line-through">
             ${productDetailItem.previousPrice}
           </span> */}
         </p>
-        <p className="pt-5 text-sm leading-5 text-gray-500">
+        <p className="pt-5 text-sm leading-5 text-gray-500 mb-5">
           {product.description}
         </p>
         {product.weights && (
@@ -190,12 +230,14 @@ export function ProductPage() {
           </div>
         )}
         {/* COLORS */}
+        {/* QUANTITY */}
         <div className="mt-6">
           <p className="pb-2 text-xs text-gray-500">Quantity</p>
           <div className="flex">
             <button
               className={`${plusMinuceButton}`}
               onClick={() => setQuantity(Math.max(1, quantity - 1))}
+              disabled={quantity <= 1}
             >
               −
             </button>
@@ -205,24 +247,29 @@ export function ProductPage() {
             <button
               className={`${plusMinuceButton}`}
               onClick={() => setQuantity(quantity + 1)}
+              disabled={quantity + cartQuantity >= availableStock}
             >
               +
             </button>
           </div>
         </div>
+        {/* QUANTITY */}
+
         <div className="mt-7 flex flex-row items-center gap-6">
           <button
             onClick={handleAddToCart}
-            disabled={!canAddToCart}
-            className={`flex h-12 w-1/3 items-center justify-center rounded-md text-white
+            disabled={!canAddToCart || quantity + cartQuantity > availableStock}
+            className={`flex h-12 w-1/3 items-center justify-center rounded-md text-white w-[150px] 
               ${
-                canAddToCart
+                canAddToCart && quantity + cartQuantity <= availableStock
                   ? "bg-indigo-600 hover:bg-indigo-700"
                   : "bg-gray-400 cursor-not-allowed"
               } transition-colors`}
           >
             <ShoppingCart className="mx-2" />
-            {canAddToCart ? "Agregar" : "Sin stock"}
+            {canAddToCart && quantity + cartQuantity <= availableStock
+              ? "Agregar"
+              : "Sin stock"}
           </button>
           {/* <button className="flex h-12 w-1/3 items-center justify-center bg-amber-400 duration-100 hover:bg-yellow-300">
             <Heart className="mx-2" />

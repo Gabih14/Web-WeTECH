@@ -48,7 +48,8 @@ export const products: Product[] = [
     price: 279.99,
     image: impresora3D,
     category: 'impresoras',
-    subcategory: 'filamento'
+    subcategory: 'filamento',
+    stock: 5 
   },
   {
     id: '4',
@@ -57,7 +58,8 @@ export const products: Product[] = [
     price: 349.99,
     image: impresora3D,
     category: 'impresoras',
-    subcategory: 'resina'
+    subcategory: 'resina',
+    stock: 3 // Añadir stock para impresoras
   },
   {
     id: '5',
@@ -65,7 +67,8 @@ export const products: Product[] = [
     description: 'Hotend de alta calidad para impresoras FDM',
     price: 59.99,
     image: repuesto,
-    category: 'repuestos'
+    category: 'repuestos',
+    stock: 20 // Añadir stock para repuestos
   },
   {
     id: '6',

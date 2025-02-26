@@ -12,6 +12,7 @@ export interface Product {
     hex: string;
     stock: { [weight: string]: number };
   }[];
+  stock?: number; // Añadir esta línea para incluir el stock general
 }
 
 export type Category = {
