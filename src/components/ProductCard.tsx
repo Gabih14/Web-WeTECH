@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect } from 'react';
-import { Product } from '../types';
-import { ChevronDown } from 'lucide-react';
-import { useCart } from '../context/CartContext';
-import { Link } from 'react-router-dom';
+import { useState, useRef, useEffect } from "react";
+import { Product } from "../types";
+import { ChevronDown } from "lucide-react";
+import { useCart } from "../context/CartContext";
+import { Link } from "react-router-dom";
 
 interface ProductCardProps {
   product: Product;
@@ -24,12 +24,15 @@ export function ProductCard({ product }: ProductCardProps) {
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsColorMenuOpen(false);
       }
     }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   useEffect(() => {
@@ -39,26 +42,52 @@ export function ProductCard({ product }: ProductCardProps) {
   }, [selectedWeight, product.price]);
 
   const handleAddToCart = () => {
-    if (selectedColor && selectedWeight !== null && quantity + cartQuantity <= availableStock) {
+    if (
+      selectedColor &&
+      selectedWeight !== null &&
+      quantity + cartQuantity <= availableStock
+    ) {
       addToCart(product, selectedColor, selectedWeight, quantity);
-    } else if (!product.colors && !product.weights && quantity + cartQuantity <= (product.stock ?? 0)) {
-      addToCart(product, '', 0, quantity);
+    } else if (
+      !product.colors &&
+      !product.weights &&
+      quantity + cartQuantity <= (product.stock ?? 0)
+    ) {
+      addToCart(product, "", 0, quantity);
     }
   };
 
   const getStock = (color: string, weight: number) => {
-    const colorData = product.colors?.find(c => c.name === color);
+    const colorData = product.colors?.find((c) => c.name === color);
     return colorData ? colorData.stock[weight.toString()] || 0 : 0;
   };
 
-  const getCartQuantity = (productId: string, color: string, weight: number) => {
-    const cartItem = items.find(item => item.product.id === productId && item.color === color && item.weight === weight);
+  const getCartQuantity = (
+    productId: string,
+    color: string,
+    weight: number
+  ) => {
+    const cartItem = items.find(
+      (item) =>
+        item.product.id === productId &&
+        item.color === color &&
+        item.weight === weight
+    );
     return cartItem ? cartItem.quantity : 0;
   };
 
-  const canAddToCart = selectedColor && selectedWeight !== null ? getStock(selectedColor, selectedWeight) > 0 : (product.stock ?? 0) > 0;
-  const availableStock = selectedColor && selectedWeight !== null ? getStock(selectedColor, selectedWeight) : product.stock || 0;
-  const cartQuantity = selectedColor && selectedWeight !== null ? getCartQuantity(product.id, selectedColor, selectedWeight) : getCartQuantity(product.id, '', 0);
+  const canAddToCart =
+    selectedColor && selectedWeight !== null
+      ? getStock(selectedColor, selectedWeight) > 0
+      : (product.stock ?? 0) > 0;
+  const availableStock =
+    selectedColor && selectedWeight !== null
+      ? getStock(selectedColor, selectedWeight)
+      : product.stock || 0;
+  const cartQuantity =
+    selectedColor && selectedWeight !== null
+      ? getCartQuantity(product.id, selectedColor, selectedWeight)
+      : getCartQuantity(product.id, "", 0);
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-visible hover:shadow-lg transition-shadow flex flex-col">
@@ -71,7 +100,9 @@ export function ProductCard({ product }: ProductCardProps) {
       </Link>
       <div className="p-3 sm:p-4 flex flex-col flex-grow">
         <Link to={`/product/${product.id}`}>
-          <h3 className="text-base sm:text-lg font-semibold mb-1 sm:mb-2 line-clamp-2">{product.name}</h3>
+          <h3 className="text-base sm:text-lg font-semibold mb-1 sm:mb-2 line-clamp-2">
+            {product.name}
+          </h3>
         </Link>
 
         {product.colors && (
@@ -86,11 +117,13 @@ export function ProductCard({ product }: ProductCardProps) {
                     <span
                       className="w-4 h-4 rounded-full border border-gray-300"
                       style={{
-                        backgroundColor: product.colors.find(c => c.name === selectedColor)?.hex
+                        backgroundColor: product.colors.find(
+                          (c) => c.name === selectedColor
+                        )?.hex,
                       }}
                     />
                   )}
-                  {selectedColor || 'Seleccionar color'}
+                  {selectedColor || "Seleccionar color"}
                 </span>
                 <ChevronDown className="w-4 h-4" />
               </button>
@@ -110,7 +143,15 @@ export function ProductCard({ product }: ProductCardProps) {
                         className="w-4 h-4 rounded-full border border-gray-300"
                         style={{ backgroundColor: color.hex }}
                       />
-                      {color.name} <span className="text-xs text-gray-500">(stock {getStock(color.name, selectedWeight || product.weights?.[0] || 0)})</span>
+                      {color.name}{" "}
+                      <span className="text-xs text-gray-500">
+                        (stock{" "}
+                        {getStock(
+                          color.name,
+                          selectedWeight || product.weights?.[0] || 0
+                        )}
+                        )
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -126,7 +167,11 @@ export function ProductCard({ product }: ProductCardProps) {
                 <button
                   key={weight}
                   onClick={() => setSelectedWeight(weight)}
-                  className={`px-2 py-1.5 text-sm border rounded-md ${selectedWeight === weight ? 'bg-blue-600 text-white' : 'bg-white text-black'} sm:px-3 sm:py-2 sm:text-base`}
+                  className={`px-2 py-1.5 text-sm border rounded-md ${
+                    selectedWeight === weight
+                      ? "bg-blue-600 text-white"
+                      : "bg-white text-black"
+                  } sm:px-3 sm:py-2 sm:text-base`}
                 >
                   {weight}kg
                 </button>
@@ -136,28 +181,57 @@ export function ProductCard({ product }: ProductCardProps) {
         )}
 
         <div className="mt-auto">
-          <div className="mb-3">
-            <span className="text-2xl sm:text-3xl font-bold">${currentPrice.toFixed(2)}</span>
+          <div className="flex items-center gap-2">
+            {product.promotionalPrice ? (
+              <>
+                
+                <div className="mb-3">
+                  <span className="text-2xl sm:text-3xl font-bold">
+                    ${product.promotionalPrice.toFixed(2)}
+                  </span>
+                </div>
+                <div className="mb-3">
+                  <span className="text-lg sm:text-xl text-gray-300 font-bold line-through">
+                    ${currentPrice.toFixed(2)}
+                  </span>
+                </div>
+              </>
+            ) : (
+              <div className="mb-3">
+                <span className="text-2xl sm:text-3xl font-bold">
+                  ${currentPrice.toFixed(2)}
+                </span>
+              </div>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-4">
             <button
               onClick={handleAddToCart}
-              disabled={!canAddToCart || quantity + cartQuantity > availableStock}
+              disabled={
+                !canAddToCart || quantity + cartQuantity > availableStock
+              }
               className={`px-4 py-2 rounded-md text-white
-                ${canAddToCart && quantity + cartQuantity <= availableStock
-                  ? 'bg-indigo-600 hover:bg-indigo-700' 
-                  : 'bg-gray-400 cursor-not-allowed'
+                ${
+                  canAddToCart && quantity + cartQuantity <= availableStock
+                    ? "bg-indigo-600 hover:bg-indigo-700"
+                    : "bg-gray-400 cursor-not-allowed"
                 } transition-colors`}
             >
-              {canAddToCart && quantity + cartQuantity <= availableStock ? 'Agregar' : 'Sin stock'}
+              {canAddToCart && quantity + cartQuantity <= availableStock
+                ? "Agregar"
+                : "Sin stock"}
             </button>
             {/* QUANTITY */}
-            {canAddToCart && (
+            {canAddToCart && product.colors && product.weights && (
               <div className="flex items-center gap-2">
-                {[1, 5, 10, 50].map(qty => (
+                {[1, 5, 10, 50].map((qty) => (
                   <button
                     key={qty}
-                    className={`px-2 py-1.5 text-sm border rounded-md ${quantity === qty ? 'bg-blue-600 text-white' : 'bg-white text-black'}`}
+                    className={`px-2 py-1.5 text-sm border rounded-md ${
+                      quantity === qty
+                        ? "bg-blue-600 text-white"
+                        : "bg-white text-black"
+                    }`}
                     onClick={() => setQuantity(qty)}
                     disabled={qty + cartQuantity > availableStock}
                   >

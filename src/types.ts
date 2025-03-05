@@ -3,6 +3,7 @@ export interface Product {
   name: string;
   description: string;
   price: number;
+  promotionalPrice?: number; // Añadir esta línea para incluir el precio promocional
   image: string;
   category: string;
   subcategory?: string;

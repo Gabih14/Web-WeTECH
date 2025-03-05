@@ -12,6 +12,7 @@ export const products: Product[] = [
     name: 'PLA Premium Filamento 1kg',
     description: 'Filamento PLA de alta calidad, 1.75mm, precisión dimensional +/- 0.02mm',
     price: 24.99,
+    promotionalPrice: 19.99, // Añadir precio promocional
     image: Amarillo,
     category: 'filamentos',
     subcategory: 'pla',
@@ -91,6 +92,7 @@ export const products: Product[] = [
     name: 'GRILON3 PLA Boutique 1kg',
     description: 'Filamento PETG resistente al calor y químicos, ideal para piezas funcionales',
     price: 29.99,
+    promotionalPrice: 24.99, // Añadir precio promocional
     image: Piel,
     category: 'filamentos',
     subcategory: 'pla',
