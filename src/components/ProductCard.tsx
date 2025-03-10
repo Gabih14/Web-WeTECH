@@ -169,7 +169,7 @@ export function ProductCard({ product }: ProductCardProps) {
                   onClick={() => setSelectedWeight(weight)}
                   className={`px-2 py-1.5 text-sm border rounded-md ${
                     selectedWeight === weight
-                      ? "bg-blue-600 text-white"
+                      ? "bg-black text-white"
                       : "bg-white text-black"
                   } sm:px-3 sm:py-2 sm:text-base`}
                 >
@@ -210,10 +210,10 @@ export function ProductCard({ product }: ProductCardProps) {
               disabled={
                 !canAddToCart || quantity + cartQuantity > availableStock
               }
-              className={`px-4 py-2 rounded-md text-white
+              className={`px-4 py-2 rounded-md text-black
                 ${
                   canAddToCart && quantity + cartQuantity <= availableStock
-                    ? "bg-indigo-600 hover:bg-indigo-700"
+                    ? "bg-yellow-400 hover:bg-yellow-700"
                     : "bg-gray-400 cursor-not-allowed"
                 } transition-colors`}
             >
@@ -229,7 +229,7 @@ export function ProductCard({ product }: ProductCardProps) {
                     key={qty}
                     className={`px-2 py-1.5 text-sm border rounded-md ${
                       quantity === qty
-                        ? "bg-blue-600 text-white"
+                        ? "bg-black text-white"
                         : "bg-white text-black"
                     }`}
                     onClick={() => setQuantity(qty)}

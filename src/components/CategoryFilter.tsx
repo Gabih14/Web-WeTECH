@@ -25,7 +25,7 @@ export function CategoryFilter({
             <button
               onClick={() => onCategoryChange(category.id)}
               className={`w-full text-left flex items-center justify-between p-2 rounded ${
-                selectedCategory === category.id ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100'
+                selectedCategory === category.id ? 'bg-yellow-100 text-black' : 'hover:bg-gray-100'
               }`}
             >
               <span>{category.name}</span>
