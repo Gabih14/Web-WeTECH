@@ -39,7 +39,7 @@ export function CategoryFilter({
                     key={sub.id}
                     onClick={() => onSubcategoryChange(sub.id)}
                     className={`w-full text-left p-2 rounded ${
-                      selectedSubcategory === sub.id ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-50'
+                      selectedSubcategory === sub.id ? 'bg-yellow-50 text-yellow-600' : 'hover:bg-gray-50'
                     }`}
                   >
                     {sub.name}

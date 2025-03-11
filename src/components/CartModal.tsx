@@ -27,7 +27,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
         <div className="relative bg-white w-full max-w-md mx-auto rounded-lg shadow-lg p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center">
-              <ShoppingCart className="h-6 w-6 text-indigo-600" />
+              <ShoppingCart className="h-6 w-6 text-black" />
               <h2 className="ml-2 text-xl font-bold text-gray-900">Carrito</h2>
             </div>
             <button
