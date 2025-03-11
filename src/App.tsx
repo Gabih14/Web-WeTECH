@@ -10,7 +10,7 @@ import { Footer } from "./components/Footer";
 
 function App() {
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="grid grid-rows-[auto_1fr_auto] min-h-screen bg-gray-100">
       <AuthProvider>
         <CartProvider>
           <Navbar />
