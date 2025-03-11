@@ -11,13 +11,18 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const { addToCart, items } = useCart();
 
-  const [currentPrice, setCurrentPrice] = useState(product.price);
+  const [currentPrice, setCurrentPrice] = useState<number | undefined>(
+    product.price
+  );
+  const [currentPromotionalPrice, setCurrentPromotionalPrice] = useState<
+    number | undefined
+  >(product.promotionalPrice);
   const [isColorMenuOpen, setIsColorMenuOpen] = useState(false);
   const [selectedColor, setSelectedColor] = useState<string | null>(
     product.colors?.[0]?.name || null
   );
   const [selectedWeight, setSelectedWeight] = useState<number | null>(
-    product.weights?.[0] || null
+    product.weights?.[0]?.weight || null
   );
   const [quantity, setQuantity] = useState(1);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -36,10 +41,27 @@ export function ProductCard({ product }: ProductCardProps) {
   }, []);
 
   useEffect(() => {
-    if (selectedWeight !== null) {
-      setCurrentPrice(product.price * selectedWeight);
+    if (selectedWeight !== null && product.weights) {
+      const weightData = product.weights.find(
+        (w) => w.weight === selectedWeight
+      );
+      if (weightData) {
+        setCurrentPrice(weightData.price * quantity);
+        setCurrentPromotionalPrice(
+          weightData.promotionalPrice
+            ? weightData.promotionalPrice * quantity
+            : undefined
+        );
+      }
+    } else {
+      setCurrentPrice(product.price ? product.price * quantity : undefined);
+      setCurrentPromotionalPrice(
+        product.promotionalPrice
+          ? product.promotionalPrice * quantity
+          : undefined
+      );
     }
-  }, [selectedWeight, product.price]);
+  }, [selectedWeight, quantity, product]);
 
   const handleAddToCart = () => {
     if (
@@ -148,7 +170,7 @@ export function ProductCard({ product }: ProductCardProps) {
                         (stock{" "}
                         {getStock(
                           color.name,
-                          selectedWeight || product.weights?.[0] || 0
+                          selectedWeight || product.weights?.[0]?.weight || 0
                         )}
                         )
                       </span>
@@ -165,15 +187,15 @@ export function ProductCard({ product }: ProductCardProps) {
             <div className="flex flex-wrap gap-2 mt-1">
               {product.weights.map((weight) => (
                 <button
-                  key={weight}
-                  onClick={() => setSelectedWeight(weight)}
+                  key={weight.weight}
+                  onClick={() => setSelectedWeight(weight.weight)}
                   className={`px-2 py-1.5 text-sm border rounded-md ${
-                    selectedWeight === weight
+                    selectedWeight === weight.weight
                       ? "bg-black text-white"
                       : "bg-white text-black"
                   } sm:px-3 sm:py-2 sm:text-base`}
                 >
-                  {weight}kg
+                  {weight.weight}kg
                 </button>
               ))}
             </div>
@@ -182,23 +204,23 @@ export function ProductCard({ product }: ProductCardProps) {
 
         <div className="mt-auto">
           <div className="flex items-center gap-1">
-            {product.promotionalPrice ? (
+            {currentPromotionalPrice ? (
               <>
                 <div className="mb-3">
                   <span className="text-base sm:text-2xl font-bold">
-                    ${product.promotionalPrice.toFixed(2)}
+                    ${currentPromotionalPrice.toFixed(2)}
                   </span>
                 </div>
                 <div className="mb-3">
                   <span className="text-xs sm:text-lg text-gray-300 font-bold line-through">
-                    ${currentPrice.toFixed(2)}
+                    ${currentPrice?.toFixed(2)}
                   </span>
                 </div>
               </>
             ) : (
               <div className="mb-3">
                 <span className="text-base sm:text-2xl font-bold">
-                  ${currentPrice.toFixed(2)}
+                  ${currentPrice?.toFixed(2)}
                 </span>
               </div>
             )}
@@ -229,6 +251,8 @@ export function ProductCard({ product }: ProductCardProps) {
                     className={`px-2 py-1.5 text-xs sm:text-sm border rounded-md ${
                       quantity === qty
                         ? "bg-black text-white"
+                        : qty + cartQuantity > availableStock
+                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                         : "bg-white text-black"
                     }`}
                     onClick={() => setQuantity(qty)}

@@ -11,12 +11,14 @@ export const products: Product[] = [
     id: '1',
     name: 'PLA Premium Filamento 1kg',
     description: 'Filamento PLA de alta calidad, 1.75mm, precisión dimensional +/- 0.02mm',
-    price: 24.99,
-    promotionalPrice: 19.99, // Añadir precio promocional
     image: Amarillo,
     category: 'filamentos',
     subcategory: 'pla',
-    weights: [1, 2.5, 4],
+    weights: [
+      { weight: 1, price: 24.99, promotionalPrice: 19.99 },
+      { weight: 2.5, price: 49.99, promotionalPrice: 39.99 },
+      { weight: 4, price: 74.99, promotionalPrice: 59.99 }
+    ],
     colors: [
       { name: 'Blanco', hex: '#FFFFFF', stock: { '1': 10, '2.5': 5, '4': 2 } },
       { name: 'Negro', hex: '#000000', stock: { '1': 8, '2.5': 4, '4': 1 } },
@@ -30,11 +32,12 @@ export const products: Product[] = [
     id: '2',
     name: 'PETG Filamento Técnico 1kg',
     description: 'Filamento PETG resistente al calor y químicos, ideal para piezas funcionales',
-    price: 29.99,
     image: AmarilloFluor,
     category: 'filamentos',
     subcategory: 'tecnicos',
-    weights: [1],
+    weights: [
+      { weight: 1, price: 29.99 }
+    ],
     colors: [
       { name: 'Translúcido', hex: '#FFFFFF', stock: { '1': 10 } },
       { name: 'Negro', hex: '#000000', stock: { '1': 8 } },
@@ -75,28 +78,31 @@ export const products: Product[] = [
     id: '6',
     name: 'PETG Filamento Técnico 1kg',
     description: 'Filamento PETG resistente al calor y químicos, ideal para piezas funcionales',
-    price: 29.99,
     image: Blanco,
     category: 'filamentos',
     subcategory: 'tecnicos',
-    weights: [0.250, 0.500, 1],
+    weights: [
+      { weight: 0.25, price: 9.99 },
+      { weight: 0.5, price: 14.99 },
+      { weight: 1, price: 29.99 }
+    ],
     colors: [
-      { name: 'Translúcido', hex: '#FFFFFF', stock: { '0.250': 10, '0.500': 5, '1': 2 } },
-      { name: 'Negro', hex: '#000000', stock: { '0.250': 8, '0.500': 4, '1': 1 } },
-      { name: 'Azul', hex: '#0000FF', stock: { '0.250': 7, '0.500': 3, '1': 1 } },
-      { name: 'Rojo', hex: '#FF0000', stock: { '0.250': 6, '0.500': 3, '1': 1 } }
+      { name: 'Translúcido', hex: '#FFFFFF', stock: { '0.25': 10, '0.5': 5, '1': 2 } },
+      { name: 'Negro', hex: '#000000', stock: { '0.25': 8, '0.5': 4, '1': 1 } },
+      { name: 'Azul', hex: '#0000FF', stock: { '0.25': 7, '0.5': 3, '1': 1 } },
+      { name: 'Rojo', hex: '#FF0000', stock: { '0.25': 6, '0.5': 3, '1': 1 } }
     ]
   },
   {
     id: '7',
     name: 'GRILON3 PLA Boutique 1kg',
     description: 'Filamento PETG resistente al calor y químicos, ideal para piezas funcionales',
-    price: 29.99,
-    promotionalPrice: 24.99, // Añadir precio promocional
     image: Piel,
     category: 'filamentos',
     subcategory: 'pla',
-    weights: [2],
+    weights: [
+      { weight: 2, price: 29.99, promotionalPrice: 24.99 }
+    ],
     colors: [
       { name: 'Translúcido', hex: '#FFFFFF', stock: { '2': 10 } },
       { name: 'Negro', hex: '#000000', stock: { '2': 8 } },

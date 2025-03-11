@@ -41,7 +41,7 @@ export function ProductsPage() {
 
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex gap-8">
+      <div className="flex gap-8 min-h-screen">
         {/* Desktop Sidebar */}
         <div className="hidden lg:block w-64 flex-shrink-0">
           <CategoryFilter

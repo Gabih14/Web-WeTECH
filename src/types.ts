@@ -2,18 +2,22 @@ export interface Product {
   id: string;
   name: string;
   description: string;
-  price: number;
-  promotionalPrice?: number; // Añadir esta línea para incluir el precio promocional
   image: string;
   category: string;
   subcategory?: string;
-  weights?: number[];
+  weights?: {
+    weight: number;
+    price: number;
+    promotionalPrice?: number;
+  }[];
+  price?: number;
+  promotionalPrice?: number;
   colors?: {
     name: string;
     hex: string;
     stock: { [weight: string]: number };
   }[];
-  stock?: number; // Añadir esta línea para incluir el stock general
+  stock?: number;
 }
 
 export type Category = {

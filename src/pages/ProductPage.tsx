@@ -25,7 +25,7 @@ export function ProductPage() {
           PRODUCTO NO ENCONTRADO
         </h1>
         <Link to="/">
-          <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 mt-4 rounded-md">
+          <button className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 mt-4 rounded-md">
             Volver al inicio
           </button>
         </Link>
@@ -35,18 +35,22 @@ export function ProductPage() {
 
   const { addToCart, items } = useCart();
 
-  const [currentPrice, setCurrentPrice] = useState(product.price); // Precio actual dependiendo de los cambios como peso
+  const [currentPrice, setCurrentPrice] = useState<number | undefined>(
+    product.price
+  );
+  const [currentPromotionalPrice, setCurrentPromotionalPrice] = useState<
+    number | undefined
+  >(product.promotionalPrice);
   const [isColorMenuOpen, setIsColorMenuOpen] = useState(false);
   const [selectedColor, setSelectedColor] = useState<string | null>(
     product.colors?.[0]?.name || null
   );
   const [selectedWeight, setSelectedWeight] = useState<number | null>(
-    product.weights?.[0] || null
+    product.weights?.[0]?.weight || null
   );
   const [quantity, setQuantity] = useState(1);
-  const dropdownRef = useRef<HTMLDivElement>(null); // Referencia para detectar clicks fuera del menú de colores
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Detecta clicks fuera del menú de colores para cerrarlo
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -60,14 +64,29 @@ export function ProductPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Actualiza el precio actual dependiendo del peso seleccionado
   useEffect(() => {
-    if (selectedWeight !== null) {
-      setCurrentPrice(product.price * selectedWeight);
+    if (selectedWeight !== null && product.weights) {
+      const weightData = product.weights.find(
+        (w) => w.weight === selectedWeight
+      );
+      if (weightData) {
+        setCurrentPrice(weightData.price * quantity);
+        setCurrentPromotionalPrice(
+          weightData.promotionalPrice
+            ? weightData.promotionalPrice * quantity
+            : undefined
+        );
+      }
+    } else {
+      setCurrentPrice(product.price ? product.price * quantity : undefined);
+      setCurrentPromotionalPrice(
+        product.promotionalPrice
+          ? product.promotionalPrice * quantity
+          : undefined
+      );
     }
-  }, [selectedWeight, product.price]);
+  }, [selectedWeight, quantity, product]);
 
-  // Agrega el producto al carrito
   const handleAddToCart = () => {
     if (
       selectedColor &&
@@ -75,14 +94,18 @@ export function ProductPage() {
       quantity + cartQuantity <= availableStock
     ) {
       addToCart(product, selectedColor, selectedWeight, quantity);
-    } else if (!product.colors && !product.weights && quantity + cartQuantity <= (product.stock ?? 0)) {
-      addToCart(product, '', 0, quantity);
+    } else if (
+      !product.colors &&
+      !product.weights &&
+      quantity + cartQuantity <= (product.stock ?? 0)
+    ) {
+      addToCart(product, "", 0, quantity);
     }
   };
 
   const getStock = (color: string, weight: number) => {
     const colorData = product.colors?.find((c) => c.name === color);
-    return colorData ? colorData.stock[weight.toString()] || 0 : product.stock ?? 0;
+    return colorData ? colorData.stock[weight.toString()] || 0 : 0;
   };
 
   const getCartQuantity = (
@@ -103,16 +126,14 @@ export function ProductPage() {
     selectedColor && selectedWeight !== null
       ? getStock(selectedColor, selectedWeight) > 0
       : (product.stock ?? 0) > 0;
-
   const availableStock =
     selectedColor && selectedWeight !== null
       ? getStock(selectedColor, selectedWeight)
-      : product.stock ?? 0;
-
+      : product.stock || 0;
   const cartQuantity =
     selectedColor && selectedWeight !== null
       ? getCartQuantity(product.id, selectedColor, selectedWeight)
-      : getCartQuantity(product.id, '', 0);
+      : getCartQuantity(product.id, "", 0);
 
   const plusMinuceButton =
     "flex h-8 w-8 cursor-pointer items-center justify-center border duration-100 hover:bg-neutral-100 focus:ring-2 focus:ring-gray-500 active:ring-2 active:ring-gray-500";
@@ -147,10 +168,20 @@ export function ProductPage() {
         </p> */}
         {/* PRODUCT PRICE */}
         <p className="mt-4 text-4xl font-bold ">
-          ${currentPrice.toFixed(2)} {/* PRODUCT PRICE */}
-          {/* <span className="text-xs text-gray-400 line-through">
-            ${productDetailItem.previousPrice}
-          </span> */}
+          {currentPromotionalPrice ? (
+            <>
+              <span className="text-base sm:text-2xl font-bold">
+                ${currentPromotionalPrice.toFixed(2)}
+              </span>
+              <span className="text-xs sm:text-lg text-gray-300 font-bold line-through">
+                ${currentPrice?.toFixed(2)}
+              </span>
+            </>
+          ) : (
+            <span className="text-base sm:text-2xl font-bold">
+              ${currentPrice?.toFixed(2)}
+            </span>
+          )}
         </p>
         <p className="pt-5 text-sm leading-5 text-gray-500 mb-5">
           {product.description}
@@ -160,15 +191,15 @@ export function ProductPage() {
             <div className="flex flex-wrap gap-2 mt-1">
               {product.weights.map((weight) => (
                 <button
-                  key={weight}
-                  onClick={() => setSelectedWeight(weight)}
+                  key={weight.weight}
+                  onClick={() => setSelectedWeight(weight.weight)}
                   className={`px-2 py-1.5 text-sm border rounded-md ${
-                    selectedWeight === weight
-                      ? "bg-blue-600 text-white"
+                    selectedWeight === weight.weight
+                      ? "bg-black text-white"
                       : "bg-white text-black"
                   } sm:px-3 sm:py-2 sm:text-base`}
                 >
-                  {weight}kg
+                  {weight.weight}kg
                 </button>
               ))}
             </div>
@@ -218,7 +249,7 @@ export function ProductPage() {
                         (stock{" "}
                         {getStock(
                           color.name,
-                          selectedWeight || product.weights?.[0] || 0
+                          selectedWeight || product.weights?.[0]?.weight || 0
                         )}
                         )
                       </span>
@@ -262,7 +293,7 @@ export function ProductPage() {
             className={`flex h-12 w-1/3 items-center justify-center rounded-md text-white w-[150px] 
               ${
                 canAddToCart && quantity + cartQuantity <= availableStock
-                  ? "bg-indigo-600 hover:bg-indigo-700"
+                  ? "bg-yellow-600 hover:bg-yellow-700"
                   : "bg-gray-400 cursor-not-allowed"
               } transition-colors`}
           >

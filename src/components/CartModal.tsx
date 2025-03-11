@@ -55,7 +55,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                         />
                         <div className="flex-1">
                           <h3 className="font-medium text-gray-900">{item.product.name}</h3>
-                          <p className="text-indigo-600 mt-1">
+                          <p className="text-black mt-1">
                             ${item.product.price} c/u
                           </p>
                           {item.color && item.weight > 0 && (
@@ -98,12 +98,12 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
               <div className="border-t pt-4">
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-lg font-medium">Total:</span>
-                  <span className="text-xl font-bold text-indigo-600">
+                  <span className="text-xl font-bold text-black">
                     ${total.toFixed(2)}
                   </span>
                 </div>
                 <button
-                  className="w-full bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors"
+                  className="w-full bg-yellow-600 text-white py-2 px-4 rounded-lg hover:bg-yellow-700 transition-colors"
                   onClick={() => {
                     alert('¡Gracias por tu compra!');
                     onClose();
