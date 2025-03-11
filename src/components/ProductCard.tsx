@@ -98,7 +98,7 @@ export function ProductCard({ product }: ProductCardProps) {
           className="w-full h-32 sm:h-48 object-cover"
         />
       </Link>
-      <div className="p-3 sm:p-4 flex flex-col flex-grow">
+      <div className="p-1 sm:p-4 flex flex-col flex-grow">
         <Link to={`/product/${product.id}`}>
           <h3 className="text-base sm:text-lg font-semibold mb-1 sm:mb-2 line-clamp-2">
             {product.name}
@@ -181,30 +181,29 @@ export function ProductCard({ product }: ProductCardProps) {
         )}
 
         <div className="mt-auto">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             {product.promotionalPrice ? (
               <>
-                
                 <div className="mb-3">
-                  <span className="text-2xl sm:text-3xl font-bold">
+                  <span className="text-base sm:text-2xl font-bold">
                     ${product.promotionalPrice.toFixed(2)}
                   </span>
                 </div>
                 <div className="mb-3">
-                  <span className="text-lg sm:text-xl text-gray-300 font-bold line-through">
+                  <span className="text-xs sm:text-lg text-gray-300 font-bold line-through">
                     ${currentPrice.toFixed(2)}
                   </span>
                 </div>
               </>
             ) : (
               <div className="mb-3">
-                <span className="text-2xl sm:text-3xl font-bold">
+                <span className="text-base sm:text-2xl font-bold">
                   ${currentPrice.toFixed(2)}
                 </span>
               </div>
             )}
           </div>
-          <div className="flex flex-wrap items-center gap-4">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
             <button
               onClick={handleAddToCart}
               disabled={
@@ -223,11 +222,11 @@ export function ProductCard({ product }: ProductCardProps) {
             </button>
             {/* QUANTITY */}
             {canAddToCart && product.colors && product.weights && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 sm:gap-2 pt-2">
                 {[1, 5, 10, 50].map((qty) => (
                   <button
                     key={qty}
-                    className={`px-2 py-1.5 text-sm border rounded-md ${
+                    className={`px-2 py-1.5 text-xs sm:text-sm border rounded-md ${
                       quantity === qty
                         ? "bg-black text-white"
                         : "bg-white text-black"

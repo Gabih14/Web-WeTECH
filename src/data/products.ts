@@ -56,7 +56,7 @@ export const products: Product[] = [
     id: '4',
     name: 'Elegoo Mars 3 Pro',
     description: 'Impresora 3D de resina con alta precisión. Incluye curso de uso.',
-    price: 349.99,
+    price: 1300500,
     image: impresora3D,
     category: 'impresoras',
     subcategory: 'resina',
