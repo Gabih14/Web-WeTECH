@@ -154,8 +154,7 @@ export function ProductPage() {
       ? getCartQuantity(product.id, selectedColor, selectedWeight)
       : getCartQuantity(product.id, "", 0);
 
-  const plusMinuceButton =
-    "flex h-8 w-8 cursor-pointer items-center justify-center border duration-100 hover:bg-neutral-100 focus:ring-2 focus:ring-gray-500 active:ring-2 active:ring-gray-500";
+  
 
   return (
     <section className="container flex-grow mx-auto max-w-[1200px] border-b py-5 lg:grid lg:grid-cols-2 lg:py-10">
@@ -187,21 +186,30 @@ export function ProductPage() {
         </p> */}
         {/* PRODUCT PRICE */}
         <p className="mt-4 text-4xl font-bold">
-          {currentPromotionalPrice ? (
-            <>
-              <span className="text-base sm:text-2xl font-bold">
-                ${currentPromotionalPrice.toFixed(2)}
-              </span>
-              <span className="text-xs sm:text-lg text-gray-300 font-bold line-through px-2">
-                ${currentPrice?.toFixed(2)}
-              </span>
-            </>
-          ) : (
-            <span className="text-base sm:text-2xl font-bold">
-              ${currentPrice?.toFixed(2)}
-            </span>
-          )}
-        </p>
+  {currentPromotionalPrice ? (
+    <>
+      <span className="text-base sm:text-2xl font-bold">
+        ${currentPromotionalPrice.toLocaleString("es-ES", {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        })}
+      </span>
+      <span className="text-xs sm:text-lg text-gray-300 font-bold line-through px-2">
+        ${currentPrice?.toLocaleString("es-ES", {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        })}
+      </span>
+    </>
+  ) : (
+    <span className="text-base sm:text-2xl font-bold">
+      ${currentPrice?.toLocaleString("es-ES", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      })}
+    </span>
+  )}
+</p>
         <p className="pt-5 text-sm leading-5 text-gray-500 mb-5">
           {product.description}
         </p>

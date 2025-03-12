@@ -227,19 +227,31 @@ export function ProductCard({ product }: ProductCardProps) {
               <>
                 <div className="mb-3">
                   <span className="text-base sm:text-2xl font-bold">
-                    ${currentPromotionalPrice.toFixed(2)}
+                    $
+                    {currentPromotionalPrice.toLocaleString("es-ES", {
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0,
+                    })}
                   </span>
                 </div>
                 <div className="mb-3">
                   <span className="text-xs sm:text-lg text-gray-300 font-bold line-through">
-                    ${currentPrice?.toFixed(2)}
+                    $
+                    {currentPrice?.toLocaleString("es-ES", {
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0,
+                    })}
                   </span>
                 </div>
               </>
             ) : (
               <div className="mb-3">
                 <span className="text-base sm:text-2xl font-bold">
-                  ${currentPrice?.toFixed(2)}
+                  $
+                  {currentPrice?.toLocaleString("es-ES", {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0,
+                  })}
                 </span>
               </div>
             )}

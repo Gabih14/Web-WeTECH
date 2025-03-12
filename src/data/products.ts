@@ -34,13 +34,13 @@ export const products: Product[] = [
   },
   {
     id: '2',
-    name: 'PETG Filamento Técnico 1kg',
+    name: '3N3 PETG',
     description: 'Filamento PETG resistente al calor y químicos, ideal para piezas funcionales',
     image: AmarilloFluor,
     category: 'filamentos',
     subcategory: 'tecnicos',
     weights: [
-      { weight: 1, price: 29.99, promotionalPrice:20}
+      { weight: 1, price: 16117, promotionalPrice:13699}
     ],
     colors: [
       { name: 'Translúcido', hex: '#FFFFFF', stock: { '1': 10 } },
@@ -80,21 +80,21 @@ export const products: Product[] = [
   },
   {
     id: '6',
-    name: 'PETG Filamento Técnico 1kg',
+    name: 'Grilon3 PETG',
     description: 'Filamento PETG resistente al calor y químicos, ideal para piezas funcionales',
     image: Blanco,
     category: 'filamentos',
     subcategory: 'tecnicos',
     weights: [
-      { weight: 0.25, price: 9.99 },
-      { weight: 0.5, price: 14.99 },
-      { weight: 1, price: 29.99 }
+      { weight: 1, price: 19764, promotionalPrice: 16799 },
+      { weight: 4, price: 63058, promotionalPrice: 53599 },
+  
     ],
     colors: [
-      { name: 'Translúcido', hex: '#FFFFFF', stock: { '0.25': 10, '0.5': 5, '1': 2 } },
-      { name: 'Negro', hex: '#000000', stock: { '0.25': 8, '0.5': 4, '1': 1 } },
-      { name: 'Azul', hex: '#0000FF', stock: { '0.25': 7, '0.5': 3, '1': 1 } },
-      { name: 'Rojo', hex: '#FF0000', stock: { '0.25': 6, '0.5': 3, '1': 1 } }
+      { name: 'Translúcido', hex: '#FFFFFF', stock: {  '4': 5, '1': 40 } },
+      { name: 'Negro', hex: '#000000', stock: { '4': 4, '1': 1 } },
+      { name: 'Azul', hex: '#0000FF', stock: { '4': 3, '1': 1 } },
+      { name: 'Rojo', hex: '#FF0000', stock: { '4': 3, '1': 1 } }
     ]
   },
   {
