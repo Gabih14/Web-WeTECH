@@ -70,20 +70,39 @@ export function ProductPage() {
         (w) => w.weight === selectedWeight
       );
       if (weightData) {
-        setCurrentPrice(weightData.price * quantity);
-        setCurrentPromotionalPrice(
-          weightData.promotionalPrice
-            ? weightData.promotionalPrice * quantity
-            : undefined
-        );
+        setCurrentPrice(weightData.price);
+        setCurrentPromotionalPrice(weightData.promotionalPrice);
       }
     } else {
-      setCurrentPrice(product.price ? product.price * quantity : undefined);
-      setCurrentPromotionalPrice(
-        product.promotionalPrice
-          ? product.promotionalPrice * quantity
-          : undefined
+      setCurrentPrice(product.price);
+      setCurrentPromotionalPrice(product.promotionalPrice);
+    }
+  }, [selectedWeight, product]);
+  useEffect(() => {
+    if (selectedWeight !== null && product.weights) {
+      const weightData = product.weights.find(
+        (w) => w.weight === selectedWeight
       );
+      if (weightData) {
+        let price = weightData.price;
+        if (product.discountQuantity && product.discountQuantity[quantity]) {
+          price = price - price * product.discountQuantity[quantity];
+          setCurrentPrice(weightData.price);
+          setCurrentPromotionalPrice(price);
+        } else {
+          setCurrentPrice(weightData.price);
+          setCurrentPromotionalPrice(weightData.promotionalPrice);
+        }
+      }
+    } else {
+      if (product.price) {
+        let price = product.price;
+        if (product.discountQuantity && product.discountQuantity[quantity]) {
+          price = price - price * product.discountQuantity[quantity];
+        }
+        setCurrentPrice(price);
+        setCurrentPromotionalPrice(product.promotionalPrice);
+      }
     }
   }, [selectedWeight, quantity, product]);
 
@@ -167,13 +186,13 @@ export function ProductPage() {
           )}
         </p> */}
         {/* PRODUCT PRICE */}
-        <p className="mt-4 text-4xl font-bold ">
+        <p className="mt-4 text-4xl font-bold">
           {currentPromotionalPrice ? (
             <>
               <span className="text-base sm:text-2xl font-bold">
                 ${currentPromotionalPrice.toFixed(2)}
               </span>
-              <span className="text-xs sm:text-lg text-gray-300 font-bold line-through">
+              <span className="text-xs sm:text-lg text-gray-300 font-bold line-through px-2">
                 ${currentPrice?.toFixed(2)}
               </span>
             </>
@@ -262,29 +281,27 @@ export function ProductPage() {
         )}
         {/* COLORS */}
         {/* QUANTITY */}
-        <div className="mt-6">
-          <p className="pb-2 text-xs text-gray-500">Quantity</p>
-          <div className="flex">
-            <button
-              className={`${plusMinuceButton}`}
-              onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              disabled={quantity <= 1}
-            >
-              −
-            </button>
-            <div className="flex h-8 w-8 cursor-text items-center justify-center border-t border-b active:ring-gray-500">
-              {quantity}
-            </div>
-            <button
-              className={`${plusMinuceButton}`}
-              onClick={() => setQuantity(quantity + 1)}
-              disabled={quantity + cartQuantity >= availableStock}
-            >
-              +
-            </button>
-          </div>
-        </div>
-        {/* QUANTITY */}
+        {canAddToCart && product.colors && product.weights && (
+              <div className="flex items-center gap-1 sm:gap-2 pt-2">
+                {[1, 5, 10, 50].map((qty) => (
+                  <button
+                    key={qty}
+                    className={`px-2 py-1.5 text-xs sm:text-sm border rounded-md ${
+                      quantity === qty
+                        ? "bg-black text-white"
+                        : qty + cartQuantity > availableStock
+                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                        : "bg-white text-black"
+                    }`}
+                    onClick={() => setQuantity(qty)}
+                    disabled={qty + cartQuantity > availableStock}
+                  >
+                    {qty}
+                  </button>
+                ))}
+              </div>
+            )}
+            {/* QUANTITY */}
 
         <div className="mt-7 flex flex-row items-center gap-6">
           <button
