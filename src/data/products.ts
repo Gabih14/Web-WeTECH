@@ -9,23 +9,27 @@ import repuesto from '../assets/racor 6mm plastico web2_Impresora 3D Creality CR
 export const products: Product[] = [
   {
     id: '1',
-    name: 'PLA Premium Filamento 1kg',
+    name: '3N3 PLA standart',
     description: 'Filamento PLA de alta calidad, 1.75mm, precisión dimensional +/- 0.02mm',
     image: Amarillo,
     category: 'filamentos',
     subcategory: 'pla',
     weights: [
-      { weight: 1, price: 24.99, promotionalPrice: 19.99 },
-      { weight: 2.5, price: 49.99, promotionalPrice: 39.99 },
-      { weight: 4, price: 74.99, promotionalPrice: 59.99 }
+      { weight: 0.5, price: 10234, promotionalPrice: 8699 },
+      { weight: 1, price: 18470, promotionalPrice: 15699 }
     ],
+    discountQuantity: {
+      5: 0.17,
+      10: 0.20,
+      50: 0.22
+    },
     colors: [
-      { name: 'Blanco', hex: '#FFFFFF', stock: { '1': 10, '2.5': 5, '4': 2 } },
-      { name: 'Negro', hex: '#000000', stock: { '1': 8, '2.5': 4, '4': 1 } },
-      { name: 'Rojo', hex: '#FF0000', stock: { '1': 12, '2.5': 6, '4': 3 } },
-      { name: 'Azul', hex: '#0000FF', stock: { '1': 7, '2.5': 3, '4': 1 } },
-      { name: 'Verde', hex: '#00FF00', stock: { '1': 9, '2.5': 4, '4': 2 } },
-      { name: 'Amarillo', hex: '#FFFF00', stock: { '1': 11, '2.5': 5, '4': 2 } }
+      { name: 'Blanco', hex: '#FFFFFF', stock: { '1': 100, '0.5': 5} },
+      { name: 'Negro', hex: '#000000', stock: { '1': 8, '0.5': 4} },
+      { name: 'Rojo', hex: '#FF0000', stock: { '1': 12, '0.5': 6} },
+      { name: 'Azul', hex: '#0000FF', stock: { '1': 7, '0.5': 3} },
+      { name: 'Verde', hex: '#00FF00', stock: { '1': 9, '0.5': 4} },
+      { name: 'Amarillo', hex: '#FFFF00', stock: { '1': 11, '0.5': 5} }
     ]
   },
   {
@@ -36,7 +40,7 @@ export const products: Product[] = [
     category: 'filamentos',
     subcategory: 'tecnicos',
     weights: [
-      { weight: 1, price: 29.99 }
+      { weight: 1, price: 29.99, promotionalPrice:20}
     ],
     colors: [
       { name: 'Translúcido', hex: '#FFFFFF', stock: { '1': 10 } },
@@ -95,19 +99,24 @@ export const products: Product[] = [
   },
   {
     id: '7',
-    name: 'GRILON3 PLA Boutique 1kg',
+    name: 'GRILON3 PLA Premium',
     description: 'Filamento PETG resistente al calor y químicos, ideal para piezas funcionales',
     image: Piel,
     category: 'filamentos',
     subcategory: 'pla',
     weights: [
-      { weight: 2, price: 29.99, promotionalPrice: 24.99 }
+      { weight: 1, price: 18822.35, promotionalPrice: 15998.99 }
     ],
+    discountQuantity: {
+      5: 0.17,
+      10: 0.20,
+      50: 0.22
+    },
     colors: [
-      { name: 'Translúcido', hex: '#FFFFFF', stock: { '2': 10 } },
-      { name: 'Negro', hex: '#000000', stock: { '2': 8 } },
-      { name: 'Azul', hex: '#0000FF', stock: { '2': 7 } },
-      { name: 'Rojo', hex: '#FF0000', stock: { '2': 6 } }
+      { name: 'Translúcido', hex: '#FFFFFF', stock: { '1': 10 } },
+      { name: 'Negro', hex: '#000000', stock: { '1': 8 } },
+      { name: 'Azul', hex: '#0000FF', stock: { '1': 7 } },
+      { name: 'Rojo', hex: '#FF0000', stock: { '1': 6 } }
     ]
   }
 ];

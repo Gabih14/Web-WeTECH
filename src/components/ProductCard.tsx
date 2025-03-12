@@ -46,20 +46,39 @@ export function ProductCard({ product }: ProductCardProps) {
         (w) => w.weight === selectedWeight
       );
       if (weightData) {
-        setCurrentPrice(weightData.price * quantity);
-        setCurrentPromotionalPrice(
-          weightData.promotionalPrice
-            ? weightData.promotionalPrice * quantity
-            : undefined
-        );
+        setCurrentPrice(weightData.price);
+        setCurrentPromotionalPrice(weightData.promotionalPrice);
       }
     } else {
-      setCurrentPrice(product.price ? product.price * quantity : undefined);
-      setCurrentPromotionalPrice(
-        product.promotionalPrice
-          ? product.promotionalPrice * quantity
-          : undefined
+      setCurrentPrice(product.price);
+      setCurrentPromotionalPrice(product.promotionalPrice);
+    }
+  }, [selectedWeight, product]);
+  useEffect(() => {
+    if (selectedWeight !== null && product.weights) {
+      const weightData = product.weights.find(
+        (w) => w.weight === selectedWeight
       );
+      if (weightData) {
+        let price = weightData.price;
+        if (product.discountQuantity && product.discountQuantity[quantity]) {
+          price = price - price * product.discountQuantity[quantity];
+          setCurrentPrice(weightData.price);
+          setCurrentPromotionalPrice(price);
+        } else {
+          setCurrentPrice(weightData.price);
+          setCurrentPromotionalPrice(weightData.promotionalPrice);
+        }
+      }
+    } else {
+      if (product.price) {
+        let price = product.price;
+        if (product.discountQuantity && product.discountQuantity[quantity]) {
+          price = price - price * product.discountQuantity[quantity];
+        }
+        setCurrentPrice(price);
+        setCurrentPromotionalPrice(product.promotionalPrice);
+      }
     }
   }, [selectedWeight, quantity, product]);
 

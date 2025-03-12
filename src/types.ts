@@ -11,6 +11,7 @@ export interface Product {
     promotionalPrice?: number;
   }[];
   price?: number;
+  discountQuantity?: {[quantity: number]: number};
   promotionalPrice?: number;
   colors?: {
     name: string;

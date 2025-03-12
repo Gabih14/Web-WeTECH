@@ -59,9 +59,38 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
+  const calculateItemPrice = (item: CartItem) => {
+    const weightData = item.product.weights?.find(w => w.weight === item.weight);
+    let itemPrice = weightData ? weightData.price : item.product.price;
+    let promotionalPrice = weightData ? weightData.promotionalPrice : item.product.promotionalPrice;
+
+    if (item.product.discountQuantity) {
+      const discountThresholds = Object.keys(item.product.discountQuantity)
+        .map(Number)
+        .sort((a, b) => a - b);
+
+      const applicableDiscount = discountThresholds.reduce((acc, threshold) => {
+        return item.quantity >= threshold ? item.product.discountQuantity![threshold] : acc;
+      }, 0);
+
+      if (applicableDiscount > 0) {
+        if (itemPrice !== undefined) {
+          itemPrice = itemPrice - itemPrice * applicableDiscount;
+        }
+      } else if (promotionalPrice) {
+        itemPrice = promotionalPrice;
+      }
+    } else if (promotionalPrice) {
+      itemPrice = promotionalPrice;
+    }
+
+    return itemPrice;
+  };
+
   const total = useMemo(() => {
     return items.reduce((sum, item) => {
-      const itemTotal = item.product.weights ? item.product.price * item.weight * item.quantity : item.product.price * item.quantity;
+      const itemPrice = calculateItemPrice(item);
+      const itemTotal = itemPrice ? itemPrice * item.quantity : 0;
       return sum + itemTotal;
     }, 0);
   }, [items]);
