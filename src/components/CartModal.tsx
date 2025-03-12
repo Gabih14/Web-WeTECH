@@ -1,6 +1,6 @@
-import { X, Minus, Plus, ShoppingCart } from 'lucide-react';
-import { useCart } from '../context/CartContext';
-import { Product } from '../types';
+import { X, Minus, Plus, ShoppingCart } from "lucide-react";
+import { useCart } from "../context/CartContext";
+import { Product } from "../types";
 
 interface CartModalProps {
   isOpen: boolean;
@@ -13,25 +13,36 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
 
   if (!isOpen) return null;
 
-  const getStock = (product: Product, color: string, weight: number): number => {
+  const getStock = (
+    product: Product,
+    color: string,
+    weight: number
+  ): number => {
     if (product.colors && product.weights) {
-      const colorData = product.colors.find(c => c.name === color);
+      const colorData = product.colors.find((c) => c.name === color);
       return colorData ? colorData.stock[weight.toString()] || 0 : 0;
     }
     return product.stock ?? 0;
   };
 
   const getPrice = (product: Product, weight: number): number | undefined => {
-    const weightData = product.weights?.find(w => w.weight === weight);
+    const weightData = product.weights?.find((w) => w.weight === weight);
     return weightData ? weightData.price : product.price;
   };
 
-  const getPromotionalPrice = (product: Product, weight: number): number | undefined => {
-    const weightData = product.weights?.find(w => w.weight === weight);
+  const getPromotionalPrice = (
+    product: Product,
+    weight: number
+  ): number | undefined => {
+    const weightData = product.weights?.find((w) => w.weight === weight);
     return weightData ? weightData.promotionalPrice : product.promotionalPrice;
   };
 
-  const calculateDiscountedPrice = (product: Product, weight: number, quantity: number): number | undefined => {
+  const calculateDiscountedPrice = (
+    product: Product,
+    weight: number,
+    quantity: number
+  ): number | undefined => {
     const price = getPrice(product, weight);
     const promotionalPrice = getPromotionalPrice(product, weight);
 
@@ -41,7 +52,9 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
         .sort((a, b) => a - b);
 
       const applicableDiscount = discountThresholds.reduce((acc, threshold) => {
-        return quantity >= threshold ? product.discountQuantity![threshold] : acc;
+        return quantity >= threshold
+          ? product.discountQuantity![threshold]
+          : acc;
       }, 0);
 
       if (applicableDiscount > 0) {
@@ -85,16 +98,29 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
           </div>
 
           {items.length === 0 ? (
-            <p className="text-gray-500 text-center py-4">El carrito está vacío</p>
+            <p className="text-gray-500 text-center py-4">
+              El carrito está vacío
+            </p>
           ) : (
             <>
               <div className="space-y-4 mb-4 max-h-[60vh] overflow-y-auto">
                 {items.map((item) => {
-                  const availableStock = getStock(item.product, item.color, item.weight);
+                  const availableStock = getStock(
+                    item.product,
+                    item.color,
+                    item.weight
+                  );
                   const price = getPrice(item.product, item.weight);
-                  const discountedPrice = calculateDiscountedPrice(item.product, item.weight, item.quantity);
+                  const discountedPrice = calculateDiscountedPrice(
+                    item.product,
+                    item.weight,
+                    item.quantity
+                  );
                   return (
-                    <div key={`${item.product.id}-${item.color}-${item.weight}`} className="flex flex-col p-4 bg-gray-50 rounded-lg">
+                    <div
+                      key={`${item.product.id}-${item.color}-${item.weight}`}
+                      className="flex flex-col p-4 bg-gray-50 rounded-lg"
+                    >
                       <div className="flex items-center space-x-4">
                         <img
                           src={item.product.image}
@@ -102,20 +128,34 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                           className="w-16 h-16 object-cover rounded"
                         />
                         <div className="flex-1">
-                          <h3 className="font-medium text-gray-900">{item.product.name}</h3>
+                          <h3 className="font-medium text-gray-900">
+                            {item.product.name}
+                          </h3>
                           <p className="text-black mt-1">
                             {discountedPrice ? (
                               <>
                                 <span className="text-base sm:text-lg font-bold">
-                                  ${discountedPrice.toFixed(2)}
+                                  $
+                                  {discountedPrice.toLocaleString("es-ES", {
+                                    minimumFractionDigits: 0,
+                                    maximumFractionDigits: 0,
+                                  })}
                                 </span>
                                 <span className="text-xs sm:text-sm text-gray-300 font-bold line-through">
-                                  ${price?.toFixed(2)}
+                                  $
+                                  {price?.toLocaleString("es-ES", {
+                                    minimumFractionDigits: 0,
+                                    maximumFractionDigits: 0,
+                                  })}
                                 </span>
                               </>
                             ) : (
                               <span className="text-base sm:text-lg font-bold">
-                                ${price?.toFixed(2)}
+                                $
+                                {price?.toLocaleString("es-ES", {
+                                  minimumFractionDigits: 0,
+                                  maximumFractionDigits: 0,
+                                })}
                               </span>
                             )}
                           </p>
@@ -126,11 +166,18 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                           )}
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center justify-between mt-3">
                         <div className="flex items-center space-x-2">
                           <button
-                            onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.color, item.weight)}
+                            onClick={() =>
+                              updateQuantity(
+                                item.product.id,
+                                item.quantity - 1,
+                                item.color,
+                                item.weight
+                              )
+                            }
                             className={`p-1 hover:bg-gray-200 rounded-full ${
                               item.quantity <= 1 ? "text-gray-300" : ""
                             }`}
@@ -138,11 +185,22 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                           >
                             <Minus className="h-4 w-4" />
                           </button>
-                          <span className="w-8 text-center">{item.quantity}</span>
+                          <span className="w-8 text-center">
+                            {item.quantity}
+                          </span>
                           <button
-                            onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.color, item.weight)}
+                            onClick={() =>
+                              updateQuantity(
+                                item.product.id,
+                                item.quantity + 1,
+                                item.color,
+                                item.weight
+                              )
+                            }
                             className={`p-1 hover:bg-gray-200 rounded-full ${
-                              item.quantity >= availableStock ? "text-gray-300" : ""
+                              item.quantity >= availableStock
+                                ? "text-gray-300"
+                                : ""
                             }`}
                             disabled={item.quantity >= availableStock}
                           >
@@ -150,7 +208,13 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                           </button>
                         </div>
                         <button
-                          onClick={() => removeFromCart(item.product.id, item.color, item.weight)}
+                          onClick={() =>
+                            removeFromCart(
+                              item.product.id,
+                              item.color,
+                              item.weight
+                            )
+                          }
                           className="p-1 hover:bg-red-100 rounded-full text-red-500"
                         >
                           <X className="h-4 w-4" />
@@ -165,18 +229,26 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                   <span className="text-lg font-medium">Total:</span>
                   <div className="text-right">
                     <span className="text-xl font-bold text-black">
-                      ${total.toFixed(2)}
+                      $
+                      {total.toLocaleString("es-ES", {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      })}
                     </span>
                     <br />
                     <span className="text-sm text-gray-300 line-through">
-                      ${originalTotal.toFixed(2)}
+                      $
+                      {originalTotal.toLocaleString("es-ES", {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      })}
                     </span>
                   </div>
                 </div>
                 <button
                   className="w-full bg-yellow-600 text-white py-2 px-4 rounded-lg hover:bg-yellow-700 transition-colors"
                   onClick={() => {
-                    alert('¡Gracias por tu compra!');
+                    alert("¡Gracias por tu compra!");
                     onClose();
                   }}
                 >
