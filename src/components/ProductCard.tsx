@@ -221,41 +221,43 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
         )}
 
-        <div className="mt-auto">
-          <div className="flex items-center gap-1">
-            {currentPromotionalPrice ? (
-              <>
-                <div className="mb-3">
-                  <span className="text-base sm:text-2xl font-bold">
-                    $
-                    {currentPromotionalPrice.toLocaleString("es-ES", {
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0,
-                    })}
-                  </span>
-                </div>
-                <div className="mb-3">
-                  <span className="text-xs sm:text-lg text-gray-300 font-bold line-through">
-                    $
-                    {currentPrice?.toLocaleString("es-ES", {
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0,
-                    })}
-                  </span>
-                </div>
-              </>
-            ) : (
-              <div className="mb-3">
-                <span className="text-base sm:text-2xl font-bold">
-                  $
-                  {currentPrice?.toLocaleString("es-ES", {
-                    minimumFractionDigits: 0,
-                    maximumFractionDigits: 0,
-                  })}
-                </span>
-              </div>
-            )}
-          </div>
+<div className="mt-auto">
+  <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+    {currentPromotionalPrice ? (
+      <>
+        <div className="mb-1 sm:mb-3">
+          <span className="text-base sm:text-2xl font-bold">
+            $
+            {currentPromotionalPrice.toLocaleString("es-ES", {
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0,
+            })}
+          </span>
+        </div>
+        <div className="mb-1 sm:mb-3">
+          {/* Precio tachado */}
+          <span className="text-base sm:text-2xl text-gray-300 font-bold line-through">
+            $
+            {currentPrice?.toLocaleString("es-ES", {
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0,
+            })}
+          </span>
+        </div>
+      </>
+    ) : (
+      <div className="mb-3">
+        <span className="text-base sm:text-2xl font-bold">
+          $
+          {currentPrice?.toLocaleString("es-ES", {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+          })}
+        </span>
+      </div>
+    )}
+  </div>
+</div>
           <div className="flex flex-wrap items-center gap-2 sm:gap-4">
             <button
               onClick={handleAddToCart}
@@ -298,6 +300,6 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
         </div>
       </div>
-    </div>
+    
   );
 }
