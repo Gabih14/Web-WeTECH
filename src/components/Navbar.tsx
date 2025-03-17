@@ -46,19 +46,21 @@ export default function Navbar() {
             <Link to="/" className="flex items-center pr-2">
               <img src={Isologo} alt="Logo WeTECH" className="h-20 w-auto" />
             </Link>
+            <div className="flex items-center"><FaMapMarkerAlt className="pr-1" />
             <div className="relative flex items-center space-x-2">
-              <FaMapMarkerAlt className="absolute left-3 text-white" />
+              {/* <FaMapMarkerAlt className="absolute left-3 text-white" /> */}
               <select
                 value={selectedProvince}
                 onChange={handleProvinceChange}
-                className="p-2 pl-6 border rounded-md bg-black text-white w-32 max-w-xs"
+                className="p-2 pl-3 border rounded-md bg-black text-white w-32 max-w-xs"/* pl-6 con el ícono */
               >
                 <option value="Mendoza">Mendoza</option>
                 <option value="Buenos Aires">Buenos Aires</option>
                 <option value="Córdoba">Córdoba</option>
                 <option value="Santa Fe">Santa Fe</option>
               </select>
-            </div>
+            </div></div>
+            
             {/* Barra de busqueda para computadoras */}
             <form
               onSubmit={handleSearch}
