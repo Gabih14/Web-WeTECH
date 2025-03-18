@@ -1,4 +1,5 @@
 import { MapPin, Phone, Mail, Clock } from "lucide-react";
+
 export const ContactInfo = () => {
   return (
     <>
@@ -6,7 +7,6 @@ export const ContactInfo = () => {
         <div className="grid md:grid-cols-2">
           {/* Contact Information */}
           <div className="p-8 bg-gray-50">
-            {/* <h3 className="text-2xl font-bold text-gray-900 mb-6">Visitanos</h3> */}
             <div className="space-y-4">
               <div className="flex items-start space-x-3">
                 <MapPin className="w-5 h-5 mt-1" />
@@ -47,8 +47,9 @@ export const ContactInfo = () => {
               </div>
             </div>
           </div>
+
           {/* Map Section */}
-          <div className="h-[300px] md:h-[400px]">
+          <div className="h-[300px] md:h-[400px] relative">
             <iframe
               src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3349.775013218909!2d-68.8513437!3d-32.9041163!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x967e093c4c366269%3A0x6b020d0373986c7!2sMDZ%203D%20STORE%20-%20Venta%20Impresoras%203D%20y%20Filamentos%20en%20Mendoza!5e0!3m2!1ses-419!2sar!4v1739820370024!5m2!1ses-419!2sar"
               className="w-full h-full border-0"
@@ -56,6 +57,16 @@ export const ContactInfo = () => {
               referrerPolicy="no-referrer-when-downgrade"
               title="Ubicación de la tienda"
             ></iframe>
+            <div className="absolute bottom-4 left-0 right-0 flex justify-center">
+              <a
+                href="https://maps.app.goo.gl/NbjkqZgv72pkWcTR8"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition"
+              >
+                Ver en Google Maps
+              </a>
+            </div>
           </div>
         </div>
       </div>
