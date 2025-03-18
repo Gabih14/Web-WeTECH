@@ -145,14 +145,14 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                           <p className="text-black mt-1">
                             {discountedPrice ? (
                               <>
-                                <span className="text-base sm:text-lg font-bold">
+                                <span className="text-base sm:text-lg font-bold mr-2">
                                   $
                                   {discountedPrice.toLocaleString("es-ES", {
                                     minimumFractionDigits: 0,
                                     maximumFractionDigits: 0,
                                   })}
                                 </span>
-                                <span className="text-xs sm:text-sm text-gray-300 font-bold line-through">
+                                <span className="text-base sm:text-lg text-gray-300 font-bold line-through">
                                   $
                                   {price?.toLocaleString("es-ES", {
                                     minimumFractionDigits: 0,
