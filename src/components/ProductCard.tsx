@@ -222,11 +222,11 @@ export function ProductCard({ product }: ProductCardProps) {
         )}
 
 <div className="mt-auto">
-  <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+  <div className="flex flex-col sm:flex-row sm:items-center gap-0 sm:gap-2">
     {currentPromotionalPrice ? (
       <>
-        <div className="mb-1 sm:mb-3">
-          <span className="text-base sm:text-2xl font-bold">
+        <div className="mb-0 sm:mb-3">
+          <span className="text-lg sm:text-2xl font-bold">
             $
             {currentPromotionalPrice.toLocaleString("es-ES", {
               minimumFractionDigits: 0,
@@ -236,7 +236,7 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
         <div className="mb-1 sm:mb-3">
           {/* Precio tachado */}
-          <span className="text-base sm:text-2xl text-gray-300 font-bold line-through">
+          <span className="text-lg sm:text-2xl text-gray-400 font-bold line-through">
             $
             {currentPrice?.toLocaleString("es-ES", {
               minimumFractionDigits: 0,
@@ -247,7 +247,7 @@ export function ProductCard({ product }: ProductCardProps) {
       </>
     ) : (
       <div className="mb-3">
-        <span className="text-base sm:text-2xl font-bold">
+        <span className="text-lg sm:text-2xl font-bold">
           $
           {currentPrice?.toLocaleString("es-ES", {
             minimumFractionDigits: 0,
