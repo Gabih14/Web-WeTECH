@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, CreditCard,  MapPin } from "lucide-react";
+import { ArrowLeft, CreditCard, MapPin } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { Product } from "../types";
 
 export default function Checkout() {
   const navigate = useNavigate();
   const { items, total } = useCart();
-  
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -114,62 +114,64 @@ export default function Checkout() {
       <div className="lg:grid lg:grid-cols-2 lg:gap-x-12 xl:gap-x-16">
         <div>
           <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="bg-white p-6 rounded-lg shadow-md">
-  <h2 className="text-lg font-medium text-gray-900 mb-4">Información Personal</h2>
-  <div className="grid grid-cols-1 gap-4">
-    <div>
-      <label
-        htmlFor="name"
-        className="block text-sm font-medium text-gray-700"
-      >
-        Nombre completo
-      </label>
-      <input
-        type="text"
-        id="name"
-        name="name"
-        value={formData.name}
-        onChange={handleInputChange}
-        required
-        className="mt-1 block w-full rounded-md border-2 border-black shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-      />
-    </div>
-    <div>
-      <label
-        htmlFor="email"
-        className="block text-sm font-medium text-gray-700"
-      >
-        Email
-      </label>
-      <input
-        type="email"
-        id="email"
-        name="email"
-        value={formData.email}
-        onChange={handleInputChange}
-        required
-        className="mt-1 block w-full rounded-md border-2 border-black shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-      />
-    </div>
-    <div>
-      <label
-        htmlFor="phone"
-        className="block text-sm font-medium text-gray-700"
-      >
-        Teléfono
-      </label>
-      <input
-        type="tel"
-        id="phone"
-        name="phone"
-        value={formData.phone}
-        onChange={handleInputChange}
-        required
-        className="mt-1 block w-full rounded-md border-2 border-black shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-      />
-    </div>
-  </div>
-</div>
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h2 className="text-lg font-medium text-gray-900 mb-4">
+                Información Personal
+              </h2>
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label
+                    htmlFor="name"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Nombre completo
+                  </label>
+                  <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    required
+                    className="mt-1 block w-full rounded-md border-2 border-black shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="email"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    required
+                    className="mt-1 block w-full rounded-md border-2 border-black shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="phone"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Teléfono
+                  </label>
+                  <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    required
+                    className="mt-1 block w-full rounded-md border-2 border-black shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  />
+                </div>
+              </div>
+            </div>
 
             <div className="bg-white p-6 rounded-lg shadow-md">
               <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
@@ -300,7 +302,7 @@ export default function Checkout() {
 
             <button
               type="submit"
-              className="w-full t    py-3 px-4 rounded-md bg-yellow-400 hover:bg-yellow-700 transition-colors"
+              className="w-full t py-3 px-4 rounded-md bg-yellow-400 hover:bg-yellow-700 transition-colors"
             >
               Confirmar Compra (${total.toFixed(2)})
             </button>
@@ -308,115 +310,133 @@ export default function Checkout() {
         </div>
 
         <div className="mt-10 lg:mt-0">
-  <div className="bg-white p-6 rounded-lg shadow-md">
-    <h2 className="text-lg font-medium text-gray-900 mb-4">Resumen del Pedido</h2>
-    {items.length > 0 ? (
-      <div className="flow-root">
-        <ul className="divide-y divide-gray-200">
-          {items.map((item) => {
-            const price = getPrice(item.product, item.weight);
-            const discountedPrice = calculateDiscountedPrice(
-              item.product,
-              item.weight,
-              item.quantity
-            );
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h2 className="text-lg font-medium text-gray-900 mb-4">
+              Resumen del Pedido
+            </h2>
+            {items.length > 0 ? (
+              <div className="flow-root">
+                <ul className="divide-y divide-gray-200">
+                  {items.map((item) => {
+                    const price = getPrice(item.product, item.weight);
+                    const discountedPrice = calculateDiscountedPrice(
+                      item.product,
+                      item.weight,
+                      item.quantity
+                    );
 
-            return (
-              <li key={item.product.id} className="py-4 flex">
-                <div className="flex-shrink-0 w-24 h-24">
-                  <img
-                    src={item.product.image}
-                    alt={item.product.name}
-                    className="w-full h-full rounded-md object-center object-cover"
-                  />
-                </div>
-                <div className="ml-4 flex-1">
-                  <div className="flex justify-between">
-                    <h3 className="text-sm font-medium text-gray-900">
-                      {item.product.name}
-                    </h3>
-                    <p className="ml-4 text-sm font-medium text-gray-900">
-                      {discountedPrice ? (
-                        <>
-                          <span className="text-base sm:text-lg font-bold mr-2">
-                            $
-                            {(discountedPrice * item.quantity).toLocaleString("es-ES", {
-                              minimumFractionDigits: 0,
-                              maximumFractionDigits: 0,
-                            })}
-                          </span>
-                          <span className="text-sm sm:text-base text-gray-400 font-bold line-through">
-                            $
-                            {((price ?? 0) * item.quantity).toLocaleString("es-ES", {
-                              minimumFractionDigits: 0,
-                              maximumFractionDigits: 0,
-                            })}
-                          </span>
-                        </>
-                      ) : (
-                        <span className="text-base sm:text-lg font-bold">
-                          $
-                          {((price ?? 0) * item.quantity).toLocaleString("es-ES", {
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 0,
-                          })}
-                        </span>
-                      )}
-                    </p>
+                    return (
+                      <li key={item.product.id} className="py-4 flex">
+                        <div className="flex-shrink-0 w-24 h-24">
+                          <img
+                            src={item.product.image}
+                            alt={item.product.name}
+                            className="w-full h-full rounded-md object-center object-cover"
+                          />
+                        </div>
+                        <div className="ml-4 flex-1">
+                          <div className="flex justify-between">
+                            <h3 className="text-sm font-medium text-gray-900">
+                              {item.product.name}
+                            </h3>
+                            <p className="ml-4 text-sm font-medium text-gray-900">
+                              {discountedPrice ? (
+                                <>
+                                  <span className="text-base sm:text-lg font-bold mr-2">
+                                    $
+                                    {(
+                                      discountedPrice * item.quantity
+                                    ).toLocaleString("es-ES", {
+                                      minimumFractionDigits: 0,
+                                      maximumFractionDigits: 0,
+                                    })}
+                                  </span>
+                                  <span className="text-sm sm:text-base text-gray-400 font-bold line-through">
+                                    $
+                                    {(
+                                      (price ?? 0) * item.quantity
+                                    ).toLocaleString("es-ES", {
+                                      minimumFractionDigits: 0,
+                                      maximumFractionDigits: 0,
+                                    })}
+                                  </span>
+                                </>
+                              ) : (
+                                <span className="text-base sm:text-lg font-bold">
+                                  $
+                                  {(
+                                    (price ?? 0) * item.quantity
+                                  ).toLocaleString("es-ES", {
+                                    minimumFractionDigits: 0,
+                                    maximumFractionDigits: 0,
+                                  })}
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                          <p className="mt-1 text-sm text-gray-500">
+                            Cantidad: {item.quantity}
+                          </p>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+                <dl className="border-t border-gray-200 py-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <dt className="text-sm text-gray-600">Subtotal</dt>
+                    <dd className="text-sm font-medium text-gray-900">
+                      $
+                      {originalTotal.toLocaleString("es-ES", {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      })}
+                    </dd>
                   </div>
-                  <p className="mt-1 text-sm text-gray-500">Cantidad: {item.quantity}</p>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-        <dl className="border-t border-gray-200 py-4 space-y-2">
-          <div className="flex items-center justify-between">
-            <dt className="text-sm text-gray-600">Subtotal</dt>
-            <dd className="text-sm font-medium text-gray-900">$
-                    {originalTotal.toLocaleString("es-ES", {
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0,
-                    })}</dd>
+                  <div className="flex items-center justify-between">
+                    <dt className="text-sm text-gray-600">Envío</dt>
+                    <dd className="text-sm font-medium text-gray-900">
+                      Gratis
+                    </dd>
+                  </div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-lg font-medium">Descuento:</span>
+                    <span className="text-lg font-bold text-red-500">
+                      -$
+                      {discount.toLocaleString("es-ES", {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      })}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between border-t border-gray-200 pt-4">
+                    <dt className="text-base font-medium text-gray-900">
+                      Total
+                    </dt>
+                    <dd className="text-xl font-bold text-black">
+                      $
+                      {total.toLocaleString("es-ES", {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      })}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-600">No hay productos en tu carrito.</p>
+                <button
+                  onClick={() => navigate("/")}
+                  className="mt-4 inline-flex items-center text-indigo-600 hover:text-indigo-800"
+                >
+                  <ArrowLeft className="h-5 w-5 mr-2" />
+                  Volver a la tienda
+                </button>
+              </div>
+            )}
           </div>
-          <div className="flex items-center justify-between">
-            <dt className="text-sm text-gray-600">Envío</dt>
-            <dd className="text-sm font-medium text-gray-900">Gratis</dd>
-          </div>
-          <div className="flex justify-between items-center mb-2">
-                  <span className="text-lg font-medium">Descuento:</span>
-                  <span className="text-lg font-bold text-red-500">
-                    -$
-                    {discount.toLocaleString("es-ES", {
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0,
-                    })}
-                  </span>
-                </div>
-          <div className="flex items-center justify-between border-t border-gray-200 pt-4">
-            <dt className="text-base font-medium text-gray-900">Total</dt>
-            <dd className="text-xl font-bold text-black">$
-                    {total.toLocaleString("es-ES", {
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0,
-                    })}</dd>
-          </div>
-        </dl>
-      </div>
-    ) : (
-      <div className="text-center py-8">
-        <p className="text-gray-600">No hay productos en tu carrito.</p>
-        <button
-          onClick={() => navigate('/')}
-          className="mt-4 inline-flex items-center text-indigo-600 hover:text-indigo-800"
-        >
-          <ArrowLeft className="h-5 w-5 mr-2" />
-          Volver a la tienda
-        </button>
-      </div>
-    )}
-  </div>
-</div>
+        </div>
       </div>
     </div>
   );

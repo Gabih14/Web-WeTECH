@@ -17,9 +17,8 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
 
   const handleCheckout = () => {
     onClose();
-    navigate('/checkout');
+    navigate("/checkout");
   };
-
 
   const getStock = (
     product: Product,
@@ -45,8 +44,6 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
     const weightData = product.weights?.find((w) => w.weight === weight);
     return weightData ? weightData.promotionalPrice : product.promotionalPrice;
   };
-
-  
 
   const calculateDiscountedPrice = (
     product: Product,
@@ -278,7 +275,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                   </span>
                 </div>
                 <button
-                  className="w-full bg-yellow-600 text-white py-2 px-4 rounded-lg hover:bg-yellow-700 transition-colors"
+                  className="w-full py-2 px-4 rounded-lg bg-yellow-400 hover:bg-yellow-700 transition-colors"
                   onClick={handleCheckout}
                 >
                   Finalizar Compra

@@ -221,85 +221,82 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
         )}
 
-<div className="mt-auto">
-  <div className="flex flex-col sm:flex-row sm:items-center gap-0 sm:gap-2">
-    {currentPromotionalPrice ? (
-      <>
-        <div className="mb-0 sm:mb-3">
-          <span className="text-lg sm:text-2xl font-bold">
-            $
-            {currentPromotionalPrice.toLocaleString("es-ES", {
-              minimumFractionDigits: 0,
-              maximumFractionDigits: 0,
-            })}
-          </span>
+        <div className="mt-auto">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-0 sm:gap-2">
+            {currentPromotionalPrice ? (
+              <>
+                <div className="mb-0 sm:mb-3">
+                  <span className="text-lg sm:text-2xl font-bold">
+                    $
+                    {currentPromotionalPrice.toLocaleString("es-ES", {
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0,
+                    })}
+                  </span>
+                </div>
+                <div className="mb-1 sm:mb-3">
+                  {/* Precio tachado */}
+                  <span className="text-lg sm:text-2xl text-gray-400 font-bold line-through">
+                    $
+                    {currentPrice?.toLocaleString("es-ES", {
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0,
+                    })}
+                  </span>
+                </div>
+              </>
+            ) : (
+              <div className="mb-3">
+                <span className="text-lg sm:text-2xl font-bold">
+                  $
+                  {currentPrice?.toLocaleString("es-ES", {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0,
+                  })}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
-        <div className="mb-1 sm:mb-3">
-          {/* Precio tachado */}
-          <span className="text-lg sm:text-2xl text-gray-400 font-bold line-through">
-            $
-            {currentPrice?.toLocaleString("es-ES", {
-              minimumFractionDigits: 0,
-              maximumFractionDigits: 0,
-            })}
-          </span>
-        </div>
-      </>
-    ) : (
-      <div className="mb-3">
-        <span className="text-lg sm:text-2xl font-bold">
-          $
-          {currentPrice?.toLocaleString("es-ES", {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-          })}
-        </span>
-      </div>
-    )}
-  </div>
-</div>
-          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-            <button
-              onClick={handleAddToCart}
-              disabled={
-                !canAddToCart || quantity + cartQuantity > availableStock
-              }
-              className={`px-4 py-2 rounded-md text-black
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+          <button
+            onClick={handleAddToCart}
+            disabled={!canAddToCart || quantity + cartQuantity > availableStock}
+            className={`px-4 py-2 rounded-md text-black
                 ${
                   canAddToCart && quantity + cartQuantity <= availableStock
                     ? "bg-yellow-400 hover:bg-yellow-700"
                     : "bg-gray-400 cursor-not-allowed"
                 } transition-colors`}
-            >
-              {canAddToCart && quantity + cartQuantity <= availableStock
-                ? "Agregar"
-                : "Sin stock"}
-            </button>
-            {/* QUANTITY */}
-            {canAddToCart && product.colors && product.weights && (
-              <div className="flex items-center gap-1 sm:gap-2 pt-2">
-                {[1, 5, 10, 50].map((qty) => (
-                  <button
-                    key={qty}
-                    className={`px-2 py-1.5 text-xs sm:text-sm border rounded-md ${
-                      quantity === qty
-                        ? "bg-black text-white"
-                        : qty + cartQuantity > availableStock
-                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                        : "bg-white text-black"
-                    }`}
-                    onClick={() => setQuantity(qty)}
-                    disabled={qty + cartQuantity > availableStock}
-                  >
-                    {qty}
-                  </button>
-                ))}
-              </div>
-            )}
-            {/* QUANTITY */}
-          </div>
+          >
+            {canAddToCart && quantity + cartQuantity <= availableStock
+              ? "Agregar"
+              : "Sin stock"}
+          </button>
+          {/* QUANTITY */}
+          {canAddToCart && product.colors && product.weights && (
+            <div className="flex items-center gap-1 sm:gap-2 pt-2">
+              {[1, 5, 10, 50].map((qty) => (
+                <button
+                  key={qty}
+                  className={`px-2 py-1.5 text-xs sm:text-sm border rounded-md ${
+                    quantity === qty
+                      ? "bg-black text-white"
+                      : qty + cartQuantity > availableStock
+                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      : "bg-white text-black"
+                  }`}
+                  onClick={() => setQuantity(qty)}
+                  disabled={qty + cartQuantity > availableStock}
+                >
+                  {qty}
+                </button>
+              ))}
+            </div>
+          )}
+          {/* QUANTITY */}
         </div>
       </div>
-    
+    </div>
   );
 }
