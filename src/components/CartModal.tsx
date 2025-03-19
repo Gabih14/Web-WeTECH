@@ -1,6 +1,7 @@
 import { X, Minus, Plus, ShoppingCart } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { Product } from "../types";
+import { useNavigate } from "react-router-dom";
 
 interface CartModalProps {
   isOpen: boolean;
@@ -10,7 +11,15 @@ interface CartModalProps {
 export default function CartModal({ isOpen, onClose }: CartModalProps) {
   const { items, updateQuantity, removeFromCart, total } = useCart();
 
+  const navigate = useNavigate();
+
   if (!isOpen) return null;
+
+  const handleCheckout = () => {
+    onClose();
+    navigate('/checkout');
+  };
+
 
   const getStock = (
     product: Product,
@@ -36,6 +45,8 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
     const weightData = product.weights?.find((w) => w.weight === weight);
     return weightData ? weightData.promotionalPrice : product.promotionalPrice;
   };
+
+  
 
   const calculateDiscountedPrice = (
     product: Product,
@@ -268,10 +279,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                 </div>
                 <button
                   className="w-full bg-yellow-600 text-white py-2 px-4 rounded-lg hover:bg-yellow-700 transition-colors"
-                  onClick={() => {
-                    alert("¡Gracias por tu compra!");
-                    onClose();
-                  }}
+                  onClick={handleCheckout}
                 >
                   Finalizar Compra
                 </button>

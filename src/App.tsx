@@ -7,6 +7,7 @@ import { CartProvider } from "./context/CartContext";
 import { ProductPage } from "./pages/ProductPage";
 import SearchResultsPage from "./pages/SearchResultsPage";
 import { Footer } from "./components/Footer";
+import Checkout from "./components/Checkout";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
             <Route path="/search" element={<SearchResultsPage />} />
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/product/:id" element={<ProductPage/>}/>
+            <Route path="/checkout" element={<Checkout />} />
           </Routes>
           <Footer />
         </CartProvider>
