@@ -10,7 +10,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { addToCart, items } = useCart();
-
+console.log(product);
   const [currentPrice, setCurrentPrice] = useState<number | undefined>(
     product.price
   );
@@ -142,7 +142,7 @@ export function ProductCard({ product }: ProductCardProps) {
       <div className="p-1 sm:p-4 flex flex-col flex-grow">
         <Link to={`/product/${product.id}`}>
           <h3 className="text-base sm:text-lg font-semibold mb-1 sm:mb-2 line-clamp-2">
-            {product.name}
+            {product.id}
           </h3>
         </Link>
 

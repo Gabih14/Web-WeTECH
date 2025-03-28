@@ -2,7 +2,7 @@ export interface Product {
   id: string;
   name: string;
   description: string;
-  image: string;
+  image?: string; /* hay que sacarle la condicionalidad */
   category: string;
   subcategory?: string;
   weights?: {
@@ -19,7 +19,35 @@ export interface Product {
     stock: { [weight: string]: number };
   }[];
   stock?: number;
+  presentatio?: string;
+  currency?: string;
 }
+
+export interface StkItem {
+  id: string;
+  descripcion: string;
+  presentacion: string;
+  tipo: string;
+  grupo: string;
+  subgrupo: string;
+}
+
+export interface StkExistencia {
+  item: string;
+  deposito: string;
+  cantidad: string;
+  produccion: string;
+  comprometido: string;
+  ubicacion: string;
+}
+
+export interface StkPrecio {
+  lista: string;
+  item: string;
+  precioVta: string;
+  moneda: string;
+}
+
 
 export type Category = {
   name: string;

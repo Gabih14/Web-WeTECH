@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Filter, X } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
-import { products } from "../data/products";
-import { categories } from "../data/categories";
 import { ProductCard } from "../components/ProductCard";
+import { categories } from "../data/categories";
 import { CategoryFilter } from "../components/CategoryFilter";
+import { StkItem, StkExistencia, StkPrecio, Product } from "../types";
 
 export function ProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -15,13 +15,77 @@ export function ProductsPage() {
     null
   );
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]); // Estado para los productos
+  const [isLoading, setIsLoading] = useState(true); // Estado para el loading
+  const [error, setError] = useState<string | null>(null); // Estado para errores
 
-  const filteredProducts = products.filter((product) => {
+  // Obtener productos desde el endpoint
+  /* useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch("http://localhost:3000/stk-item");
+        if (!response.ok) {
+          throw new Error("Error al obtener los productos");
+        }
+        const data = await response.json();
+        setProducts(data);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []); */
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        setIsLoading(true);
+        const stkItems: StkItem[] = await fetch("http://localhost:3000/stk-item").then((res) => res.json());
+        const stkExistencias: StkExistencia[] = await fetch("http://localhost:3000/stk-existencia").then((res) => res.json());
+        const stkPrecios: StkPrecio[] = await fetch("http://localhost:3000/stk-precio").then((res) => res.json());
+        // Unimos la información en un solo objeto
+        const mergedProducts = stkItems.map((item) => {
+          const existencia = stkExistencias.find((e) => e.item === item.id) || { cantidad: "0" };
+          const precio = stkPrecios.find((p) => p.item === item.id) || { precioVta: "0", moneda: "USD" };
+
+          return {
+            id: item.id,
+            name: item.descripcion.split("|")[1]?.trim() || item.descripcion, // Extraer el color si existe
+            description: item.descripcion,
+            presentation: item.presentacion,
+            category: item.grupo,
+            subcategory: item.subgrupo,
+            stock: parseFloat(existencia.cantidad),
+            price: parseFloat(precio.precioVta),
+            currency: precio.moneda,
+          };
+        });
+        await setProducts(mergedProducts);
+/*         console.log("mergedProducts")
+        console.log(mergedProducts) */
+        console.log("products")
+        console.log(products)
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+
+    }
+
+    fetchData();
+  }, []);
+
+  const filteredProducts = products.filter((product: any) => {
     if (!selectedCategory) return true;
-    if (!selectedSubcategory) return product.category === selectedCategory;
+    if (!selectedSubcategory) return product.category === selectedCategory.toUpperCase();
     return (
-      product.category === selectedCategory &&
-      product.subcategory === selectedSubcategory
+      product.category === selectedCategory.toUpperCase() &&
+      product.subcategory === selectedSubcategory.toUpperCase()
     );
   });
 
@@ -45,7 +109,7 @@ export function ProductsPage() {
         {/* Desktop Sidebar */}
         <div className="hidden lg:block w-64 flex-shrink-0">
           <CategoryFilter
-            categories={categories}
+            categories={categories} // Puedes ajustar esto según tu lógica
             selectedCategory={selectedCategory}
             selectedSubcategory={selectedSubcategory}
             onCategoryChange={handleCategoryChange}
@@ -57,10 +121,7 @@ export function ProductsPage() {
         <div className="flex-1">
           <div className="mb-6 flex justify-between items-center">
             <h2 className="text-2xl font-bold text-gray-900">
-              {selectedCategory
-                ? categories.find((c) => c.id === selectedCategory)?.name ||
-                  "Productos"
-                : "Todos los Productos"}
+              {selectedCategory ? "Productos Filtrados" : "Todos los Productos"}
             </h2>
             <button
               onClick={toggleMobileFilter}
@@ -72,11 +133,19 @@ export function ProductsPage() {
             </button>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-6">
-            {filteredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          {isLoading ? (
+            <p>Cargando productos...</p>
+          ) : error ? (
+            <p className="text-red-500">{error}</p>
+          ) : filteredProducts.length === 0 ? (
+            <p className="text-gray-500">No hay productos disponibles.</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-6">
+              {filteredProducts.map((product: any) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -90,9 +159,8 @@ export function ProductsPage() {
 
       {/* Mobile Filter Sidebar */}
       <div
-        className={`fixed top-0 right-0 h-full w-80 bg-white shadow-xl transform transition-transform duration-300 ease-in-out z-40 lg:hidden ${
-          isMobileFilterOpen ? "translate-x-0" : "translate-x-full"
-        }`}
+        className={`fixed top-0 right-0 h-full w-80 bg-white shadow-xl transform transition-transform duration-300 ease-in-out z-40 lg:hidden ${isMobileFilterOpen ? "translate-x-0" : "translate-x-full"
+          }`}
       >
         <div className="p-4">
           <div className="flex justify-between items-center mb-4">
@@ -106,7 +174,7 @@ export function ProductsPage() {
             </button>
           </div>
           <CategoryFilter
-            categories={categories}
+            categories={[]} // Ajusta según tu lógica
             selectedCategory={selectedCategory}
             selectedSubcategory={selectedSubcategory}
             onCategoryChange={(category) => {

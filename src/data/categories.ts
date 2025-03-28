@@ -3,7 +3,7 @@ import { Category } from '../types';
 export const categories: Category[] = [
   {
     name: 'Filamentos',
-    id: 'filamentos',
+    id: 'FILAMENTOS',
     subcategories: [
       { name: 'PLA', id: 'pla' },
       { name: 'Técnicos', id: 'tecnicos' }
