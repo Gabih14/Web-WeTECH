@@ -41,3 +41,8 @@ export interface CartContextType {
   updateQuantity: (productId: string, quantity: number, color: string, weight: number) => void;
   total: number;
 }
+
+export interface ShippingCost {
+  distances: [InitialDistance:number, FinalDistance:number];
+  cost: number;
+}

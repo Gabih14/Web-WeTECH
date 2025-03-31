@@ -10,12 +10,14 @@ import { CheckoutPayment } from "./CheckoutPayment";
 export default function Checkout() {
   const navigate = useNavigate();
   const { items, total } = useCart();
+  const [shippingCost, setShippingCost] = useState(0);
 
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
     address: "",
+    distance: 0,
     city: "",
     postalCode: "",
     cardNumber: "",
@@ -118,7 +120,7 @@ export default function Checkout() {
         <div>
           <form onSubmit={handleSubmit} className="space-y-6">
             <CheckoutPersonal formData={formData} handleInputChange={handleInputChange} />
-            <CheckoutAdress formData={formData} handleInputChange={handleInputChange} />
+            <CheckoutAdress formData={formData} handleInputChange={handleInputChange} setShippingCost={setShippingCost}/>
             <CheckoutPayment formData={formData} handleInputChange={handleInputChange} />
 
             <button
@@ -217,7 +219,11 @@ export default function Checkout() {
                   <div className="flex items-center justify-between">
                     <dt className="text-sm text-gray-600">Envío</dt>
                     <dd className="text-sm font-medium text-gray-900">
-                      Gratis
+                      $
+                      {shippingCost.toLocaleString("es-ES", {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      })}
                     </dd>
                   </div>
                   <div className="flex justify-between items-center mb-2">
@@ -236,7 +242,7 @@ export default function Checkout() {
                     </dt>
                     <dd className="text-xl font-bold text-black">
                       $
-                      {total.toLocaleString("es-ES", {
+                      {(total + shippingCost).toLocaleString("es-ES", {
                         minimumFractionDigits: 0,
                         maximumFractionDigits: 0,
                       })}
