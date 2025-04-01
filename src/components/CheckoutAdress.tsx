@@ -1,16 +1,15 @@
 import { MapPin } from "lucide-react";
 import { shippingCosts } from "../data/shippingCost";
 
-// Define the Props type
 type Props = {
   formData: {
     address: string;
     city: string;
     postalCode: string;
-    distance: number; // Agregado para almacenar la distancia
+    distance: number;
   };
   handleInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  setShippingCost: (cost: number) => void; // Función para actualizar el costo de envío
+  setShippingCost: (cost: number) => void;
 };
 
 export const CheckoutAdress = ({
@@ -18,21 +17,48 @@ export const CheckoutAdress = ({
   handleInputChange,
   setShippingCost,
 }: Props) => {
+  const GOOGLE_API_KEY = "AIzaSyCDesHGPMQEk72w8X9sFRu1O1rzno9UopQ";
+
   // Función para calcular el costo de envío
   const calculateShippingCost = (distance: number) => {
     const costEntry = shippingCosts.find(
       (entry) =>
         distance >= entry.distances[0] && distance <= entry.distances[1]
     );
-    return costEntry ? costEntry.cost : 0; // Retorna 0 si no hay coincidencia
+    return costEntry ? costEntry.cost : 0;
   };
 
-  // Manejar el cambio en el input de distancia
-  const handleDistanceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const distance = parseFloat(e.target.value) || 0; // Convertir a número
-    handleInputChange(e); // Actualizar el estado general
-    const cost = calculateShippingCost(distance); // Calcular el costo
-    setShippingCost(cost); // Actualizar el costo de envío
+  // Función para obtener la distancia desde la API de Google
+  const fetchDistance = async () => {
+    const destination = `${formData.address},${formData.city}`;
+    const origin = "place_id:ChIJaWI2TDwJfpYRx4Y5N9AgsAY"; // ID del local
+    const url = `https://maps.googleapis.com/maps/api/distancematrix/json?destinations=${encodeURIComponent(
+      destination
+    )}&origins=${origin}&key=${GOOGLE_API_KEY}`;
+
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+      console.log("Respuesta de Google Maps:", data);
+
+      if (data.status === "OK") {
+        const distanceText = data.rows[0].elements[0].distance.text; // Ejemplo: "25 km"
+        const distanceValue = parseFloat(distanceText.replace(" km", "")); // Convertir a número
+
+        if (distanceValue > 24) {
+          alert("La distancia supera los 24 km. El envío no está permitido.");
+          setShippingCost(0); // No se permite el envío
+        } else {
+          const cost = calculateShippingCost(distanceValue);
+          setShippingCost(cost); // Actualizar el costo de envío
+        }
+      } else {
+        alert("No se pudo calcular la distancia. Verifica la dirección.");
+      }
+    } catch (error) {
+      console.error("Error al obtener la distancia:", error);
+      alert("Hubo un error al calcular la distancia. Inténtalo de nuevo.");
+    }
   };
 
   return (
@@ -96,29 +122,13 @@ export const CheckoutAdress = ({
           </div>
         </div>
         <div>
-          <label
-            htmlFor="distance"
-            className="block text-sm font-medium text-gray-700"
+          <button
+            type="button"
+            onClick={fetchDistance}
+            className="mt-4 inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
-            Distancia (km)
-          </label>
-          <input
-            type="number"
-            id="distance"
-            name="distance"
-            value={formData.distance}
-            onChange={handleDistanceChange}
-            required
-            className="mt-1 block w-full rounded-md border-2 border-black shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-          />
-        </div>
-        <div>
-          <p className="text-sm font-medium text-gray-700">
-            Costo de Envío:{" "}
-            <span className="font-bold text-gray-900">
-              ${calculateShippingCost(formData.distance).toFixed(2)}
-            </span>
-          </p>
+            Calcular Distancia
+          </button>
         </div>
       </div>
     </div>
