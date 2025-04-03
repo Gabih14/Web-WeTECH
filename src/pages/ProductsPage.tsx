@@ -65,10 +65,6 @@ export function ProductsPage() {
           };
         });
         await setProducts(mergedProducts);
-/*         console.log("mergedProducts")
-        console.log(mergedProducts) */
-        console.log("products")
-        console.log(products)
       } catch (err: any) {
         setError(err.message);
       } finally {

@@ -10,8 +10,8 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { addToCart, items } = useCart();
-console.log(product);
-  const [currentPrice, setCurrentPrice] = useState<number | undefined>(
+/* console.log(product);
+ */  const [currentPrice, setCurrentPrice] = useState<number | undefined>(
     product.price
   );
   const [currentPromotionalPrice, setCurrentPromotionalPrice] = useState<
