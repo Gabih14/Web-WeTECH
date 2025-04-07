@@ -5,7 +5,7 @@ import { useCart } from "../context/CartContext";
 import { Product } from "../types";
 import { CheckoutPersonal } from "./CheckoutPersonal";
 import { CheckoutAdress } from "./CheckoutAdress";
-import { CheckoutPayment } from "./CheckoutPayment";
+/* import { CheckoutPayment } from "./CheckoutPayment"; */
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -22,6 +22,9 @@ export default function Checkout() {
     cardExpiry: "",
     cardCVC: "",
   });
+
+const [isLoading, setIsLoading] = useState(false);
+
   const getPrice = (product: Product, weight: number): number | undefined => {
     const weightData = product.weights?.find((w) => w.weight === weight);
     return weightData ? weightData.price : product.price;
@@ -84,8 +87,10 @@ export default function Checkout() {
 
   /* PAYMENT REQUEST */
   const createPaymentRequest = async () => {
-    const token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IllNS3JYbGdJdTJiNlFoNzVWdVp0cyJ9.eyJodHRwczovL25hcmFuamEuY29tL2luZm8iOnsiY2xpZW50SWQiOiJyN2xBVVVaTk51UUZPWUxlM3Y5TEd5ZkxCYWdEaW5xMiIsImNsaWVudE5hbWUiOiJCMkJFeHRlcm5hbEdvbGRNdXNpYyJ9LCJpc3MiOiJodHRwczovL20ybS5zdGFnaW5nLm5hcmFuamF4LmNvbS8iLCJzdWIiOiJyN2xBVVVaTk51UUZPWUxlM3Y5TEd5ZkxCYWdEaW5xMkBjbGllbnRzIiwiYXVkIjoiaHR0cHM6Ly9uYXJhbmphLmNvbS9yYW50eS9tZXJjaGFudHMvYXBpIiwiaWF0IjoxNzQ0MDI3OTk1LCJleHAiOjE3NDQxMTQzOTUsInNjb3BlIjoid3JpdGUuZWNvbW1lcmNlIHdyaXRlLmludGVncmF0aW9uIHdyaXRlLnBheW1lbnRfcmVxdWVzdCIsImd0eSI6ImNsaWVudC1jcmVkZW50aWFscyIsImF6cCI6InI3bEFVVVpOTnVRRk9ZTGUzdjlMR3lmTEJhZ0RpbnEyIn0.KH1TX0PFuIjvWpcu_NyzSGcIVlGq8FO-ssrzafoTOl3pbZJvKgi3wehjygx7A2pWt-vnt0IZI_B94eslIq3Git-KpWdBFLKgjrg1GctH9MOKBVWArdCG3cDFn_IzCQurmiLAqEUgQLkTY21IspTqSfTOmy6yz_ZK3_oaSv-8hc3j9klnfapGyGLJhdYWwtQmSMDqN6tMDbCXBAlFku16SaBbrb684frZigHfi-TxlS02562wTL9gZn9GFUps80c3-47_hvOZTPK2YQLfp1lEeDuFaiAKSAZdBMNmvyLCMbYAibK8Q4ohJtRiyJVqs0a-ZJgWtJRt76PaJLV1udr7VQ"; // 🔐 reemplazar con tu token real
-  
+    /* obtener este token desde el backend */
+    const token =
+      "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IllNS3JYbGdJdTJiNlFoNzVWdVp0cyJ9.eyJodHRwczovL25hcmFuamEuY29tL2luZm8iOnsiY2xpZW50SWQiOiJyN2xBVVVaTk51UUZPWUxlM3Y5TEd5ZkxCYWdEaW5xMiIsImNsaWVudE5hbWUiOiJCMkJFeHRlcm5hbEdvbGRNdXNpYyJ9LCJpc3MiOiJodHRwczovL20ybS5zdGFnaW5nLm5hcmFuamF4LmNvbS8iLCJzdWIiOiJyN2xBVVVaTk51UUZPWUxlM3Y5TEd5ZkxCYWdEaW5xMkBjbGllbnRzIiwiYXVkIjoiaHR0cHM6Ly9uYXJhbmphLmNvbS9yYW50eS9tZXJjaGFudHMvYXBpIiwiaWF0IjoxNzQ0MDI3OTk1LCJleHAiOjE3NDQxMTQzOTUsInNjb3BlIjoid3JpdGUuZWNvbW1lcmNlIHdyaXRlLmludGVncmF0aW9uIHdyaXRlLnBheW1lbnRfcmVxdWVzdCIsImd0eSI6ImNsaWVudC1jcmVkZW50aWFscyIsImF6cCI6InI3bEFVVVpOTnVRRk9ZTGUzdjlMR3lmTEJhZ0RpbnEyIn0.KH1TX0PFuIjvWpcu_NyzSGcIVlGq8FO-ssrzafoTOl3pbZJvKgi3wehjygx7A2pWt-vnt0IZI_B94eslIq3Git-KpWdBFLKgjrg1GctH9MOKBVWArdCG3cDFn_IzCQurmiLAqEUgQLkTY21IspTqSfTOmy6yz_ZK3_oaSv-8hc3j9klnfapGyGLJhdYWwtQmSMDqN6tMDbCXBAlFku16SaBbrb684frZigHfi-TxlS02562wTL9gZn9GFUps80c3-47_hvOZTPK2YQLfp1lEeDuFaiAKSAZdBMNmvyLCMbYAibK8Q4ohJtRiyJVqs0a-ZJgWtJRt76PaJLV1udr7VQ"; // 🔐 reemplazar con tu token real
+
     // Armamos el body para el request
     const body = {
       platform: "platform-x",
@@ -103,11 +108,12 @@ export default function Checkout() {
               quantity: item.quantity,
               unit_price: {
                 currency: "ARS",
-                value: calculateDiscountedPrice(
-                  item.product,
-                  item.weight,
-                  item.quantity
-                )?.toFixed(2) || "0.00",
+                value:
+                  calculateDiscountedPrice(
+                    item.product,
+                    item.weight,
+                    item.quantity
+                  )?.toFixed(2) || "0.00",
               },
             })),
             amount: {
@@ -134,7 +140,7 @@ export default function Checkout() {
         },
       },
     };
-  
+
     try {
       const res = await fetch(
         "https://e3-api.ranty.io/ecommerce/payment_request/external",
@@ -147,7 +153,7 @@ export default function Checkout() {
           body: JSON.stringify(body),
         }
       );
-  
+
       const data = await res.json();
       if (data.success) {
         return data.data.checkout_url;
@@ -160,18 +166,25 @@ export default function Checkout() {
       return null;
     }
   };
-  /* END PAYMENT REQUEST */  
+  /* END PAYMENT REQUEST */
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-  
+    setIsLoading(true);
+  // Forzar redibujado
+  await new Promise((resolve) => setTimeout(resolve, 100));
     const checkoutUrl = await createPaymentRequest();
-  
+
     if (checkoutUrl) {
       window.location.href = checkoutUrl; // Redirecciona al checkout externo
+      /* setTimeout(() => {
+        window.location.href = checkoutUrl; // Redirecciona al checkout externo
+      }, 500); // Agrega un retraso de 500ms */
+    }else{
+      setIsLoading(false);
+      alert("Error al generar el pago");
     }
   };
-  
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -201,15 +214,44 @@ export default function Checkout() {
       <div className="lg:grid lg:grid-cols-2 lg:gap-x-12 xl:gap-x-16">
         <div>
           <form onSubmit={handleSubmit} className="space-y-6">
-            <CheckoutPersonal formData={formData} handleInputChange={handleInputChange} />
-            <CheckoutAdress formData={formData} handleInputChange={handleInputChange} />
-            <CheckoutPayment formData={formData} handleInputChange={handleInputChange} />
+            <CheckoutPersonal
+              formData={formData}
+              handleInputChange={handleInputChange}
+            />
+            <CheckoutAdress
+              formData={formData}
+              handleInputChange={handleInputChange}
+            />
+            {/*  
+            <CheckoutPayment
+              formData={formData}
+              handleInputChange={handleInputChange}
+            />*/}
+            
 
-            <button
+            {/* <button
               type="submit"
               className="w-full t py-3 px-4 rounded-md bg-yellow-400 hover:bg-yellow-700 transition-colors"
             >
               Confirmar Compra (${total.toFixed(2)})
+            </button> */}
+            <button
+              type="submit"
+              className={`w-full py-3 px-4 rounded-md ${
+                isLoading
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-yellow-400 hover:bg-yellow-700 transition-colors"
+              }`}
+              disabled={isLoading} // Deshabilitar el botón mientras se carga
+            >
+              {isLoading ? (
+                <div className="flex items-center justify-center">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span className="ml-2">Cargando...</span>
+                </div>
+              ) : (
+                `Confirmar Compra ($${total.toFixed(2)})`
+              )}
             </button>
           </form>
         </div>
