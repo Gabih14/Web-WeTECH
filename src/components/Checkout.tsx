@@ -82,12 +82,96 @@ export default function Checkout() {
     );
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Here you would typically process the payment and order
-    alert("¡Gracias por tu compra! Recibirás un email con los detalles.");
-    navigate("/");
+  /* PAYMENT REQUEST */
+  const createPaymentRequest = async () => {
+    const token = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IllNS3JYbGdJdTJiNlFoNzVWdVp0cyJ9.eyJodHRwczovL25hcmFuamEuY29tL2luZm8iOnsiY2xpZW50SWQiOiJyN2xBVVVaTk51UUZPWUxlM3Y5TEd5ZkxCYWdEaW5xMiIsImNsaWVudE5hbWUiOiJCMkJFeHRlcm5hbEdvbGRNdXNpYyJ9LCJpc3MiOiJodHRwczovL20ybS5zdGFnaW5nLm5hcmFuamF4LmNvbS8iLCJzdWIiOiJyN2xBVVVaTk51UUZPWUxlM3Y5TEd5ZkxCYWdEaW5xMkBjbGllbnRzIiwiYXVkIjoiaHR0cHM6Ly9uYXJhbmphLmNvbS9yYW50eS9tZXJjaGFudHMvYXBpIiwiaWF0IjoxNzQ0MDI3OTk1LCJleHAiOjE3NDQxMTQzOTUsInNjb3BlIjoid3JpdGUuZWNvbW1lcmNlIHdyaXRlLmludGVncmF0aW9uIHdyaXRlLnBheW1lbnRfcmVxdWVzdCIsImd0eSI6ImNsaWVudC1jcmVkZW50aWFscyIsImF6cCI6InI3bEFVVVpOTnVRRk9ZTGUzdjlMR3lmTEJhZ0RpbnEyIn0.KH1TX0PFuIjvWpcu_NyzSGcIVlGq8FO-ssrzafoTOl3pbZJvKgi3wehjygx7A2pWt-vnt0IZI_B94eslIq3Git-KpWdBFLKgjrg1GctH9MOKBVWArdCG3cDFn_IzCQurmiLAqEUgQLkTY21IspTqSfTOmy6yz_ZK3_oaSv-8hc3j9klnfapGyGLJhdYWwtQmSMDqN6tMDbCXBAlFku16SaBbrb684frZigHfi-TxlS02562wTL9gZn9GFUps80c3-47_hvOZTPK2YQLfp1lEeDuFaiAKSAZdBMNmvyLCMbYAibK8Q4ohJtRiyJVqs0a-ZJgWtJRt76PaJLV1udr7VQ"; // 🔐 reemplazar con tu token real
+  
+    // Armamos el body para el request
+    const body = {
+      platform: "platform-x",
+      store_id: "store1-platform-x",
+      callback_url: `https://platform_x.com.ar/../order/9546`,
+      order_id: "9546", // Podés generar un ID dinámico si querés
+      mobile: false,
+      payment_request: {
+        transactions: [
+          {
+            products: items.map((item) => ({
+              id: item.product.id.toString(),
+              name: item.product.name,
+              description: item.product.description || item.product.name,
+              quantity: item.quantity,
+              unit_price: {
+                currency: "ARS",
+                value: calculateDiscountedPrice(
+                  item.product,
+                  item.weight,
+                  item.quantity
+                )?.toFixed(2) || "0.00",
+              },
+            })),
+            amount: {
+              currency: "ARS",
+              value: total.toFixed(2),
+            },
+          },
+        ],
+        buyer: {
+          user_id: formData.email,
+          doc_type: "DNI",
+          doc_number: "N/A",
+          user_email: formData.email,
+          name: formData.name || "N/A",
+          phone: formData.phone || "N/A",
+          billing_address: {
+            street_1: formData.address || "Cliente",
+            street_2: "N/A",
+            city: formData.city || "1",
+            region: "Mendoza", // Podés hacerlo dinámico si querés
+            country: "AR",
+            zipcode: formData.postalCode || "5000",
+          },
+        },
+      },
+    };
+  
+    try {
+      const res = await fetch(
+        "https://e3-api.ranty.io/ecommerce/payment_request/external",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(body),
+        }
+      );
+  
+      const data = await res.json();
+      if (data.success) {
+        return data.data.checkout_url;
+      } else {
+        throw new Error(data.message || "Error al crear la solicitud de pago");
+      }
+    } catch (error) {
+      console.error("Error en createPaymentRequest:", error);
+      alert("Hubo un problema al generar el pago.");
+      return null;
+    }
   };
+  /* END PAYMENT REQUEST */  
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+  
+    const checkoutUrl = await createPaymentRequest();
+  
+    if (checkoutUrl) {
+      window.location.href = checkoutUrl; // Redirecciona al checkout externo
+    }
+  };
+  
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
