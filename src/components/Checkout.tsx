@@ -23,7 +23,7 @@ export default function Checkout() {
     cardCVC: "",
   });
 
-const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const getPrice = (product: Product, weight: number): number | undefined => {
     const weightData = product.weights?.find((w) => w.weight === weight);
@@ -171,8 +171,8 @@ const [isLoading, setIsLoading] = useState(false);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-  // Forzar redibujado
-  await new Promise((resolve) => setTimeout(resolve, 100));
+    // Forzar redibujado
+    await new Promise((resolve) => setTimeout(resolve, 100));
     const checkoutUrl = await createPaymentRequest();
 
     if (checkoutUrl) {
@@ -180,7 +180,7 @@ const [isLoading, setIsLoading] = useState(false);
       /* setTimeout(() => {
         window.location.href = checkoutUrl; // Redirecciona al checkout externo
       }, 500); // Agrega un retraso de 500ms */
-    }else{
+    } else {
       setIsLoading(false);
       alert("Error al generar el pago");
     }
@@ -202,7 +202,7 @@ const [isLoading, setIsLoading] = useState(false);
   const originalTotal = calculateOriginalTotal();
   const discount = originalTotal - total;
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
       <button
         onClick={() => navigate(-1)}
         className="flex items-center text-black hover:text-yellow-800 mb-6"
@@ -211,7 +211,7 @@ const [isLoading, setIsLoading] = useState(false);
         Volver
       </button>
 
-      <div className="lg:grid lg:grid-cols-2 lg:gap-x-12 xl:gap-x-16">
+      <div className="grid grid-cols-1 lg:grid lg:grid-cols-2 lg:gap-x-12 xl:gap-x-16">
         <div>
           <form onSubmit={handleSubmit} className="space-y-6">
             <CheckoutPersonal
@@ -227,7 +227,6 @@ const [isLoading, setIsLoading] = useState(false);
               formData={formData}
               handleInputChange={handleInputChange}
             />*/}
-            
 
             {/* <button
               type="submit"
@@ -250,7 +249,7 @@ const [isLoading, setIsLoading] = useState(false);
                   <span className="ml-2">Cargando...</span>
                 </div>
               ) : (
-                `Confirmar Compra ($${total.toFixed(2)})`
+                `Ir a pagar ($${total.toFixed(2)})`
               )}
             </button>
           </form>
@@ -286,9 +285,10 @@ const [isLoading, setIsLoading] = useState(false);
                             <h3 className="text-sm font-medium text-gray-900">
                               {item.product.name}
                             </h3>
-                            <p className="ml-4 text-sm font-medium text-gray-900">
-                              {discountedPrice ? (
-                                <>
+                            <div className="ml-4 text-sm font-medium text-gray-900">
+                              {discountedPrice &&
+                              discountedPrice < (price ?? 0) ? (
+                                <div className="flex flex-wrap items-center">
                                   <span className="text-base sm:text-lg font-bold mr-2">
                                     $
                                     {(
@@ -307,7 +307,7 @@ const [isLoading, setIsLoading] = useState(false);
                                       maximumFractionDigits: 0,
                                     })}
                                   </span>
-                                </>
+                                </div>
                               ) : (
                                 <span className="text-base sm:text-lg font-bold">
                                   $
@@ -319,7 +319,7 @@ const [isLoading, setIsLoading] = useState(false);
                                   })}
                                 </span>
                               )}
-                            </p>
+                            </div>
                           </div>
                           <p className="mt-1 text-sm text-gray-500">
                             Cantidad: {item.quantity}

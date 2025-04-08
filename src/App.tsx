@@ -11,7 +11,7 @@ import Checkout from "./components/Checkout";
 
 function App() {
   return (
-    <div className="grid grid-rows-[auto_1fr_auto] min-h-screen bg-gray-100">
+    <div className="grid grid-rows-[auto_1fr_auto] min-h-screen bg-gray-100 overflow-x-hidden">
       <AuthProvider>
         <CartProvider>
           <Navbar />
