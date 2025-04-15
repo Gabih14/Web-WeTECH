@@ -7,8 +7,23 @@ import { CheckoutPersonal } from "./CheckoutPersonal";
 import { CheckoutAdress } from "./CheckoutAdress";
 /* import { CheckoutPayment } from "./CheckoutPayment"; */
 
+function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(window.matchMedia(query).matches);
+
+  React.useEffect(() => {
+    const mediaQueryList = window.matchMedia(query);
+    const listener = (event: MediaQueryListEvent) => setMatches(event.matches);
+
+    mediaQueryList.addEventListener("change", listener);
+    return () => mediaQueryList.removeEventListener("change", listener);
+  }, [query]);
+
+  return matches;
+}
+
 export default function Checkout() {
   const navigate = useNavigate();
+  const isMobile = useMediaQuery("(max-width: 768px)"); // Detecta si es móvil
   const { items, total } = useCart();
 
   const [formData, setFormData] = useState({
@@ -97,7 +112,7 @@ export default function Checkout() {
       store_id: "store1-platform-x",
       callback_url: `https://platform_x.com.ar/../order/9546`,
       order_id: "9546", // Podés generar un ID dinámico si querés
-      mobile: false,
+      mobile: isMobile,
       payment_request: {
         transactions: [
           {
