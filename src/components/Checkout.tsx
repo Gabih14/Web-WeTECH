@@ -89,7 +89,7 @@ export default function Checkout() {
   const createPaymentRequest = async () => {
     /* obtener este token desde el backend */
     const token =
-      "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IllNS3JYbGdJdTJiNlFoNzVWdVp0cyJ9.eyJodHRwczovL25hcmFuamEuY29tL2luZm8iOnsiY2xpZW50SWQiOiJyN2xBVVVaTk51UUZPWUxlM3Y5TEd5ZkxCYWdEaW5xMiIsImNsaWVudE5hbWUiOiJCMkJFeHRlcm5hbEdvbGRNdXNpYyJ9LCJpc3MiOiJodHRwczovL20ybS5zdGFnaW5nLm5hcmFuamF4LmNvbS8iLCJzdWIiOiJyN2xBVVVaTk51UUZPWUxlM3Y5TEd5ZkxCYWdEaW5xMkBjbGllbnRzIiwiYXVkIjoiaHR0cHM6Ly9uYXJhbmphLmNvbS9yYW50eS9tZXJjaGFudHMvYXBpIiwiaWF0IjoxNzQ0MDI3OTk1LCJleHAiOjE3NDQxMTQzOTUsInNjb3BlIjoid3JpdGUuZWNvbW1lcmNlIHdyaXRlLmludGVncmF0aW9uIHdyaXRlLnBheW1lbnRfcmVxdWVzdCIsImd0eSI6ImNsaWVudC1jcmVkZW50aWFscyIsImF6cCI6InI3bEFVVVpOTnVRRk9ZTGUzdjlMR3lmTEJhZ0RpbnEyIn0.KH1TX0PFuIjvWpcu_NyzSGcIVlGq8FO-ssrzafoTOl3pbZJvKgi3wehjygx7A2pWt-vnt0IZI_B94eslIq3Git-KpWdBFLKgjrg1GctH9MOKBVWArdCG3cDFn_IzCQurmiLAqEUgQLkTY21IspTqSfTOmy6yz_ZK3_oaSv-8hc3j9klnfapGyGLJhdYWwtQmSMDqN6tMDbCXBAlFku16SaBbrb684frZigHfi-TxlS02562wTL9gZn9GFUps80c3-47_hvOZTPK2YQLfp1lEeDuFaiAKSAZdBMNmvyLCMbYAibK8Q4ohJtRiyJVqs0a-ZJgWtJRt76PaJLV1udr7VQ"; // 🔐 reemplazar con tu token real
+      import.meta.env.VITE_TOKEN_NAVE; // 🔐 reemplazar con tu token real
 
     // Armamos el body para el request
     const body = {
@@ -249,7 +249,7 @@ export default function Checkout() {
                   <span className="ml-2">Cargando...</span>
                 </div>
               ) : (
-                `Ir a pagar ($${total.toFixed(2)})`
+                `Ir a pagar`/* ($${total.toFixed(2)})  */
               )}
             </button>
           </form>
