@@ -1,77 +1,50 @@
-import { Link } from "react-router-dom";
-import { Printer as Printer3D, Shapes, Wrench } from "lucide-react";
+import { Clock, Instagram, Facebook } from "lucide-react";
 import { ContactInfo } from "../components/ContactInfo";
-import Logo from "../assets/Logo WeTECH Negro PNG.png";
-import filamentoCategoria from "../assets/Grilon_pla_piel.jpeg";
-import impresoraCategoria from "../assets/CR6 S.png";
-import repuestoCategoria from "../assets/racor 6mm plastico web2_Impresora 3D Creality CR-10 SMART Mendoza v2.jpg";
-
-const categories = [
-  {
-    id: "filamentos",
-    name: "Filamentos",
-    description:
-      "Descubre nuestra amplia gama de filamentos PLA y técnicos para tus proyectos.",
-    icon: Shapes,
-    image: filamentoCategoria,
-  },
-  {
-    id: "impresoras",
-    name: "Impresoras 3D",
-    description:
-      "Encuentra la impresora perfecta. Incluye curso de uso y armado gratuito.",
-    icon: Printer3D,
-    image: impresoraCategoria,
-  },
-  {
-    id: "repuestos",
-    name: "Repuestos",
-    description:
-      "Todo lo que necesitas para mantener tu impresora funcionando perfectamente.",
-    icon: Wrench,
-    image: repuestoCategoria,
-  },
-];
+/* import Logo from "../assets/Logo WeTECH Negro PNG.png";
+ */
 
 export function HomePage() {
   return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 font-sans">
-      <div className="text-center mb-12">
-        <img src={Logo} alt="Logo WeTECH" className="mx-auto h-16 md:h-48" />
+    <main className="min-h-screen flex flex-col justify-center items-center p-4 text-black">
+      {/* Animación de construcción */}
+      <div className="relative mb-8">
+        <div className="absolute -top-16 left-1/2 transform -translate-x-1/2">
+          <div className="w-4 h-16 bg-yellow-400 animate-bounce rounded-full"></div>
+        </div>
+        <div className="w-32 h-32 border-8 border-yellow-400 rounded-full flex items-center justify-center">
+          <Clock size={48} className="text-yellow-400 animate-pulse" />
+        </div>
       </div>
 
-      <div className="flex flex-row gap-2 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-8 mb-16">
-        {categories.map((category) => {
-          const Icon = category.icon;
-          return (
-            <Link
-              key={category.id}
-              to={`/products?category=${category.id}`}
-              className="group relative overflow-hidden rounded-lg shadow-lg hover:shadow-xl transition-shadow flex-1"
-            >
-              <div className="absolute inset-0">
-                <img
-                  src={category.image}
-                  alt={category.name}
-                  className="h-full w-full object-cover transform group-hover:scale-105 transition-transform duration-300"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/30" />
-              </div>
-              <div className="relative p-3 md:p-16 h-32 md:h-full flex flex-col items-center justify-center text-center text-white">
-                <Icon className="h-8 w-8 md:h-12 md:w-12 mb-2 md:mb-4" />
-                <h3 className="text-base sm:text-lg md:text-2xl font-bold mb-1 md:mb-2">
-                  {category.name}
-                </h3>{" "}
-                {/* <p className="text-gray-200 text-sm md:text-base hidden md:block">{category.description}</p> */}
-              </div>
-            </Link>
-          );
-        })}
+      {/* Contenido principal */}
+      <div className="text-center max-w-lg">
+        <h1 className="text-4xl md:text-5xl font-bold mb-4">
+          Página en Desarrollo
+        </h1>
+        <div className="w-16 h-1 bg-yellow-400 mx-auto mb-6"></div>
+        <p className="text-lg mb-8">
+          Estamos trabajando duro para crear algo increíble. Pronto estaremos en
+          línea con una nueva experiencia para ti.
+        </p>
       </div>
-      <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl mb-4">
-        VISITANOS
-      </h2>
+
+      <h2 className="text-3xl font-bold  sm:text-4xl mb-4">VISITANOS</h2>
       <ContactInfo />
+      <h2 className="text-3xl font-bold  sm:text-4xl mb-4  mt-6">SIGUENOS</h2>
+      <div className="flex space-x-4 mb-8">
+        <a
+          href="#"
+          className="bg-yellow-500 p-3 rounded-full hover:bg-yellow-400 transition"
+        >
+          <Facebook size={20} className="text-black" />
+        </a>
+        <a
+          href="#"
+          className="bg-yellow-500 p-3 rounded-full hover:bg-yellow-400 transition"
+        >
+          <Instagram size={20} className="text-black" />
+        </a>
+      </div>
     </main>
   );
 }
