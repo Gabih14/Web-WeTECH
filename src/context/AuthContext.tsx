@@ -1,16 +1,16 @@
-import React, { createContext, useContext, useState } from 'react';
-import users from '../data/users.json';
+/* import React, { createContext, useContext, useState } from 'react';
+import users from '../data/users.json'; */
 
-interface AuthContextType {
+/* interface AuthContextType {
   isAuthenticated: boolean;
   login: (username: string, password: string) => boolean;
   logout: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | undefined>(undefined); */
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  /* const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const login = (username: string, password: string) => {
     const user = users.users.find(
@@ -39,5 +39,5 @@ export function useAuth() {
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
-  return context;
+  return context; */
 }

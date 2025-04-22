@@ -1,7 +1,7 @@
 import {  FaWhatsapp } from "react-icons/fa";
 
 import { Link,  } from "react-router-dom";
-import Isologo from "../assets/Logo WeTECH Negro PNG.png";
+import Isologo from "../assets/Logo-WeTECH-Negro-PNG.webp";
 
 export default function Navbar() {
 
