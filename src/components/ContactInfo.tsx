@@ -24,9 +24,12 @@ export const ContactInfo = () => {
                     Horario de atención
                   </p>
                   <p className="text-gray-600">
-                    Lunes a Viernes: 10:00 - 19:00
+                    Lunes a Viernes:{" "}
+                    <span className="font-bold">10:00 - 19:00</span>
                   </p>
-                  <p className="text-gray-600">Sábados: 10:00 - 14:00</p>
+                  <p className="text-gray-600">
+                    Sábados: <span className="font-bold">10:00 - 14:00</span>
+                  </p>
                 </div>
               </div>
 

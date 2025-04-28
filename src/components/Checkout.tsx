@@ -5,10 +5,25 @@ import { useCart } from "../context/CartContext";
 import { Product } from "../types";
 import { CheckoutPersonal } from "./CheckoutPersonal";
 import { CheckoutAdress } from "./CheckoutAdress";
-import { CheckoutPayment } from "./CheckoutPayment";
+/* import { CheckoutPayment } from "./CheckoutPayment"; */
+
+function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(window.matchMedia(query).matches);
+
+  React.useEffect(() => {
+    const mediaQueryList = window.matchMedia(query);
+    const listener = (event: MediaQueryListEvent) => setMatches(event.matches);
+
+    mediaQueryList.addEventListener("change", listener);
+    return () => mediaQueryList.removeEventListener("change", listener);
+  }, [query]);
+
+  return matches;
+}
 
 export default function Checkout() {
   const navigate = useNavigate();
+  const isMobile = useMediaQuery("(max-width: 768px)"); // Detecta si es móvil
   const { items, total } = useCart();
 
   const [formData, setFormData] = useState({
@@ -22,6 +37,9 @@ export default function Checkout() {
     cardExpiry: "",
     cardCVC: "",
   });
+
+  const [isLoading, setIsLoading] = useState(false);
+
   const getPrice = (product: Product, weight: number): number | undefined => {
     const weightData = product.weights?.find((w) => w.weight === weight);
     return weightData ? weightData.price : product.price;
@@ -82,11 +100,105 @@ export default function Checkout() {
     );
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  /* PAYMENT REQUEST */
+  const createPaymentRequest = async () => {
+    /* obtener este token desde el backend */
+    const token =
+      import.meta.env.VITE_TOKEN_NAVE; // 🔐 reemplazar con tu token real
+
+    // Armamos el body para el request
+    const body = {
+      platform: "platform-x",
+      store_id: "store1-platform-x",
+      callback_url: `https://platform_x.com.ar/../order/9546`,
+      order_id: "9546", // Podés generar un ID dinámico si querés
+      mobile: isMobile,
+      payment_request: {
+        transactions: [
+          {
+            products: items.map((item) => ({
+              id: item.product.id.toString(),
+              name: item.product.name,
+              description: item.product.description || item.product.name,
+              quantity: item.quantity,
+              unit_price: {
+                currency: "ARS",
+                value:
+                  calculateDiscountedPrice(
+                    item.product,
+                    item.weight,
+                    item.quantity
+                  )?.toFixed(2) || "0.00",
+              },
+            })),
+            amount: {
+              currency: "ARS",
+              value: total.toFixed(2),
+            },
+          },
+        ],
+        buyer: {
+          user_id: formData.email,
+          doc_type: "DNI",
+          doc_number: "N/A",
+          user_email: formData.email,
+          name: formData.name || "N/A",
+          phone: formData.phone || "N/A",
+          billing_address: {
+            street_1: formData.address || "Cliente",
+            street_2: "N/A",
+            city: formData.city || "1",
+            region: "Mendoza", // Podés hacerlo dinámico si querés
+            country: "AR",
+            zipcode: formData.postalCode || "5000",
+          },
+        },
+      },
+    };
+
+    try {
+      const res = await fetch(
+        "https://e3-api.ranty.io/ecommerce/payment_request/external",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(body),
+        }
+      );
+
+      const data = await res.json();
+      if (data.success) {
+        return data.data.checkout_url;
+      } else {
+        throw new Error(data.message || "Error al crear la solicitud de pago");
+      }
+    } catch (error) {
+      console.error("Error en createPaymentRequest:", error);
+      alert("Hubo un problema al generar el pago.");
+      return null;
+    }
+  };
+  /* END PAYMENT REQUEST */
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Here you would typically process the payment and order
-    alert("¡Gracias por tu compra! Recibirás un email con los detalles.");
-    navigate("/");
+    setIsLoading(true);
+    // Forzar redibujado
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    const checkoutUrl = await createPaymentRequest();
+
+    if (checkoutUrl) {
+      window.location.href = checkoutUrl; // Redirecciona al checkout externo
+      /* setTimeout(() => {
+        window.location.href = checkoutUrl; // Redirecciona al checkout externo
+      }, 500); // Agrega un retraso de 500ms */
+    } else {
+      setIsLoading(false);
+      alert("Error al generar el pago");
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -105,7 +217,7 @@ export default function Checkout() {
   const originalTotal = calculateOriginalTotal();
   const discount = originalTotal - total;
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
       <button
         onClick={() => navigate(-1)}
         className="flex items-center text-black hover:text-yellow-800 mb-6"
@@ -114,18 +226,46 @@ export default function Checkout() {
         Volver
       </button>
 
-      <div className="lg:grid lg:grid-cols-2 lg:gap-x-12 xl:gap-x-16">
+      <div className="grid grid-cols-1 lg:grid lg:grid-cols-2 lg:gap-x-12 xl:gap-x-16">
         <div>
           <form onSubmit={handleSubmit} className="space-y-6">
-            <CheckoutPersonal formData={formData} handleInputChange={handleInputChange} />
-            <CheckoutAdress formData={formData} handleInputChange={handleInputChange} />
-            <CheckoutPayment formData={formData} handleInputChange={handleInputChange} />
+            <CheckoutPersonal
+              formData={formData}
+              handleInputChange={handleInputChange}
+            />
+            <CheckoutAdress
+              formData={formData}
+              handleInputChange={handleInputChange}
+            />
+            {/*  
+            <CheckoutPayment
+              formData={formData}
+              handleInputChange={handleInputChange}
+            />*/}
 
-            <button
+            {/* <button
               type="submit"
               className="w-full t py-3 px-4 rounded-md bg-yellow-400 hover:bg-yellow-700 transition-colors"
             >
               Confirmar Compra (${total.toFixed(2)})
+            </button> */}
+            <button
+              type="submit"
+              className={`w-full py-3 px-4 rounded-md ${
+                isLoading
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-yellow-400 hover:bg-yellow-700 transition-colors"
+              }`}
+              disabled={isLoading} // Deshabilitar el botón mientras se carga
+            >
+              {isLoading ? (
+                <div className="flex items-center justify-center">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span className="ml-2">Cargando...</span>
+                </div>
+              ) : (
+                `Ir a pagar`/* ($${total.toFixed(2)})  */
+              )}
             </button>
           </form>
         </div>
@@ -160,9 +300,10 @@ export default function Checkout() {
                             <h3 className="text-sm font-medium text-gray-900">
                               {item.product.name}
                             </h3>
-                            <p className="ml-4 text-sm font-medium text-gray-900">
-                              {discountedPrice ? (
-                                <>
+                            <div className="ml-4 text-sm font-medium text-gray-900">
+                              {discountedPrice &&
+                              discountedPrice < (price ?? 0) ? (
+                                <div className="flex flex-wrap items-center">
                                   <span className="text-base sm:text-lg font-bold mr-2">
                                     $
                                     {(
@@ -181,7 +322,7 @@ export default function Checkout() {
                                       maximumFractionDigits: 0,
                                     })}
                                   </span>
-                                </>
+                                </div>
                               ) : (
                                 <span className="text-base sm:text-lg font-bold">
                                   $
@@ -193,7 +334,7 @@ export default function Checkout() {
                                   })}
                                 </span>
                               )}
-                            </p>
+                            </div>
                           </div>
                           <p className="mt-1 text-sm text-gray-500">
                             Cantidad: {item.quantity}
