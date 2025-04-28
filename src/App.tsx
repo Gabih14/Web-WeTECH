@@ -12,7 +12,7 @@ import PaymentCallback from "./pages/PaymentCallback";
 
 function App() {
   return (
-    <div className="grid grid-rows-[auto_1fr_auto] min-h-screen bg-gray-100 overflow-x-hidden">
+    <div className="grid grid-rows-[auto_1fr_auto] min-h-screen bg-gray-100 overflow-x-hidden"> {/* bg-gradient-to-b from-yellow-50 to-yellow-500 */}
       <AuthProvider>
         <CartProvider>
           <Navbar />
