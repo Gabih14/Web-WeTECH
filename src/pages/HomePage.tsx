@@ -36,10 +36,31 @@ const categories = [
 export function HomePage() {
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 font-sans">
-      <div className="text-center mb-12">
-        <img src={Logo} alt="Logo WeTECH" className="mx-auto h-16 md:h-48" />
+      {/* Sección de Categorías */}
+      <div id="categories" className="text-center mb-8">
+        <img src={Logo} alt="Logo WeTECH" className="mx-auto h-24 md:h-48" />
       </div>
-
+      {/* Sección Franquicias */}
+      <section
+        id="franquicias"
+        className="bg-gray-50 py-2 my-14 rounded-lg shadow-md"
+      >
+        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl font-bold text-gray-900 sm:text-4xl mb-2">
+            Franquicias
+          </h2>
+          <p className="text-2x1 text-gray-700 mb-2">
+            ¿Querés emprender con nosotros? Sumate como franquiciado y llevá
+            nuestra marca a tu ciudad.
+          </p>
+          <Link
+            to="/franquicias"
+            className="inline-block px-6 py-2 bg-yellow-500 text-white font-semibold rounded-lg shadow hover:bg-yellow-700 transition"
+          >
+            Más info
+          </Link>
+        </div>
+      </section>
       <div className="flex flex-row gap-2 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-8 mb-16">
         {categories.map((category) => {
           const Icon = category.icon;
@@ -61,14 +82,18 @@ export function HomePage() {
                 <Icon className="h-8 w-8 md:h-12 md:w-12 mb-2 md:mb-4" />
                 <h3 className="text-base sm:text-lg md:text-2xl font-bold mb-1 md:mb-2">
                   {category.name}
-                </h3>{" "}
-                {/* <p className="text-gray-200 text-sm md:text-base hidden md:block">{category.description}</p> */}
+                </h3>
               </div>
             </Link>
           );
         })}
       </div>
-      <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl mb-4">
+
+      {/* Sección Visitános */}
+      <h2
+        id="visit"
+        className="text-3xl font-bold text-gray-900 sm:text-4xl mb-4"
+      >
         VISITANOS
       </h2>
       <ContactInfo />

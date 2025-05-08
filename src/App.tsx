@@ -9,6 +9,7 @@ import SearchResultsPage from "./pages/SearchResultsPage";
 import { Footer } from "./components/Footer";
 import Checkout from "./components/Checkout";
 import PaymentCallback from "./pages/PaymentCallback";
+import { Franquicias } from "./pages/Franquicias";
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
             <Route path="/product/:id" element={<ProductPage />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/checkout/callback" element={<PaymentCallback />} />  {/* http://localhost:5173/checkout/callback?payment_id=12345 */}
+            <Route path="/franquicias" element={<Franquicias />} />
           </Routes>
           <Footer />
         </CartProvider>

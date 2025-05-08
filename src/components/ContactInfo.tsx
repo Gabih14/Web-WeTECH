@@ -65,7 +65,7 @@ export const ContactInfo = () => {
                 href="https://maps.app.goo.gl/NbjkqZgv72pkWcTR8"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition"
+                className="bg-yellow-500 text-white px-4 py-2 rounded-lg shadow hover:bg-yellow-700 transition"
               >
                 Ver en Google Maps
               </a>
