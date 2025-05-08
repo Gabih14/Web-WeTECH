@@ -2,8 +2,8 @@ import { Category } from '../types';
 
 export const categories: Category[] = [
   {
-    name: 'Filamentos',
-    id: 'filamentos',
+    name: 'FILAMENTOS',
+    id: 'FILAMENTOS',
     subcategories: [
       { name: 'PLA', id: 'pla' },
       { name: 'Técnicos', id: 'tecnicos' }
@@ -11,7 +11,7 @@ export const categories: Category[] = [
   },
   {
     name: 'Impresoras 3D',
-    id: 'impresoras',
+    id: 'impresoras 3d',
     subcategories: [
       { name: 'Filamento', id: 'filamento' },
       { name: 'Resina', id: 'resina' }

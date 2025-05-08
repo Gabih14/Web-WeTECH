@@ -10,6 +10,7 @@ export interface Product {
     price: number;
     promotionalPrice?: number;
   }[];
+  familiaId?: string;
   price?: number;
   discountQuantity?: {[quantity: number]: number};
   promotionalPrice?: number;
