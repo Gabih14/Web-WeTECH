@@ -39,7 +39,7 @@ export function ProductsPage() {
       product.subcategory === selectedSubcategory.toUpperCase()
     );
   });
-  console.log(filteredProducts)
+  //console.log(filteredProducts)
   const toggleMobileFilter = () => {
     setIsMobileFilterOpen(!isMobileFilterOpen);
   };

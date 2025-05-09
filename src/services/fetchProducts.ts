@@ -9,7 +9,7 @@ export const fetchProducts = (): Promise<Product[]> => {
 
       rawProducts.forEach((item) => {
         const familiaId = item.familiaId || item.id; // Si no tiene familiaId, usar el id como único producto
-
+console.log(item);
         if (!groupedProducts[familiaId]) {
           // Crear el producto principal
           groupedProducts[familiaId] = {
@@ -19,8 +19,9 @@ export const fetchProducts = (): Promise<Product[]> => {
             image: "", // Puedes asignar una imagen genérica o específica si está disponible
             category: item.grupo,
             subcategory: item.subgrupo || undefined,
-            colors: [],
-            stock: 0,
+            price: parseFloat(item.precioVtaCotizado || "0"), // Guardar precioVtaCotizado en todos los productos
+            ...(item.grupo === "FILAMENTOS" && { colors: [] }), // Solo agregar `colors` si es "FILAMENTOS"
+            ...(item.grupo !== "FILAMENTOS" && { stock: 0 }), // Solo agregar `stock` si no es "FILAMENTOS"
           };
 
           // Solo agregar `weights` si el grupo es "FILAMENTOS"
@@ -31,8 +32,18 @@ export const fetchProducts = (): Promise<Product[]> => {
 
         // Si el grupo es "FILAMENTOS", manejar los weights y precios
         if (item.grupo === "FILAMENTOS") {
-          const weight = parseFloat(item.presentacion.match(/(\d+\.?\d*)kg/)?.[1] || "0"); // Extraer el peso de la presentación
-          const price = parseFloat(item.stkPrecios.find((p) => p.lista === "MINORISTA")?.precioVta || "0");
+          // Extraer el peso y la unidad (kg o g) de la presentación
+          const weightMatch = item.presentacion.match(/(\d+\.?\d*)\s*(kg|g)/i);
+          let weight = 0;
+
+          if (weightMatch) {
+            const value = parseFloat(weightMatch[1]); // Extraer el número
+            const unit = weightMatch[2].toLowerCase(); // Extraer la unidad (kg o g)
+
+            // Convertir a kilogramos si es necesario
+            weight = unit === "g" ? value / 1000 : value;
+          }
+          const price = parseFloat(item.precioVtaCotizado || "0"); // Usar precioVtaCotizado como precio
 
           // Verificar si el peso ya existe en `weights`
           const existingWeight = groupedProducts[familiaId].weights?.find(
@@ -53,16 +64,15 @@ export const fetchProducts = (): Promise<Product[]> => {
           );
 
           if (existingColor) {
-            // Si el color ya existe, sumar el stock
-            existingColor.stock["1kg"] =
-              (existingColor.stock["1kg"] || 0) + stock;
+            // Si el color ya existe, sumar el stock para el peso específico
+            existingColor.stock[weight] = (existingColor.stock[weight] || 0) + stock;
           } else {
             // Si el color no existe, agregarlo
             groupedProducts[familiaId].colors?.push({
               name: colorName,
               hex: "#000000", // Puedes asignar un color genérico o específico
               stock: {
-                "1kg": stock, // Manejar el stock por peso
+                [weight]: stock, // Manejar el stock por peso
               },
             });
           }

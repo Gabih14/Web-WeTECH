@@ -6,6 +6,7 @@ export const categories: Category[] = [
     id: 'FILAMENTOS',
     subcategories: [
       { name: 'PLA', id: 'pla' },
+      { name: '3N3', id: '3n3' },
       { name: 'Técnicos', id: 'tecnicos' }
     ]
   },
