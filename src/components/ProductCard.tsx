@@ -26,7 +26,6 @@ export function ProductCard({ product }: ProductCardProps) {
   );
   const [quantity, setQuantity] = useState(1);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
