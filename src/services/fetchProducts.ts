@@ -18,12 +18,14 @@ export const fetchProducts = (): Promise<Product[]> => {
             description: item.descripcion,
             image: `/assets/${familiaId}.png`, // Generar la ruta dinámica de la imagen
             category: item.grupo,
-            subcategory: item.subgrupo ? item.subgrupo.toUpperCase() : undefined,
+            subcategory: item.subgrupo
+              ? item.subgrupo.toUpperCase()
+              : undefined,
             price: parseFloat(item.precioVtaCotizado || "0"), // Guardar precioVtaCotizado en todos los productos
             ...(item.grupo === "FILAMENTOS" && { colors: [] }), // Solo agregar `colors` si es "FILAMENTOS"
             ...(item.grupo !== "FILAMENTOS" && { stock: 0 }), // Solo agregar `stock` si no es "FILAMENTOS"
           };
-        
+
           // Solo agregar `weights` si el grupo es "FILAMENTOS"
           if (item.grupo === "FILAMENTOS") {
             groupedProducts[familiaId].weights = [];
@@ -44,6 +46,7 @@ export const fetchProducts = (): Promise<Product[]> => {
             weight = unit === "g" ? value / 1000 : value;
           }
           const price = parseFloat(item.precioVtaCotizado || "0"); // Usar precioVtaCotizado como precio
+          const promotionalPrice = price - price * 0.15; // Calcular el precio promocional (15% de descuento)
 
           // Verificar si el peso ya existe en `weights`
           const existingWeight = groupedProducts[familiaId].weights?.find(
@@ -52,16 +55,23 @@ export const fetchProducts = (): Promise<Product[]> => {
 
           if (!existingWeight) {
             // Agregar el peso y precio a `weights` solo si no existe
-            groupedProducts[familiaId].weights?.push({ weight, price });
+            groupedProducts[familiaId].weights?.push({
+              weight,
+              price,
+              promotionalPrice,
+            });
           }
 
           // Manejar el stock por colores
-          const colorName = item.descripcion.split("|")[1]?.trim() || "Sin color"; // Extraer el color del campo descripción
+          const colorName =
+            item.descripcion.split("|")[1]?.trim() || "Sin color"; // Extraer el color del campo descripción
           const stock = parseFloat(item.stkExistencias[0]?.cantidad || "0");
 
-// Buscar el color en el array `colors` para obtener su valor `hex`
-const colorData = colors.find((color) => color.name.toLowerCase() === colorName.toLowerCase());
-const hexValue = colorData ? colorData.hex : "#000000"; // Usar el valor encontrado o un valor predeterminado
+          // Buscar el color en el array `colors` para obtener su valor `hex`
+          const colorData = colors.find(
+            (color) => color.name.toLowerCase() === colorName.toLowerCase()
+          );
+          const hexValue = colorData ? colorData.hex : "#000000"; // Usar el valor encontrado o un valor predeterminado
 
           const existingColor = groupedProducts[familiaId].colors?.find(
             (color) => color.name === colorName
@@ -69,7 +79,8 @@ const hexValue = colorData ? colorData.hex : "#000000"; // Usar el valor encontr
 
           if (existingColor) {
             // Si el color ya existe, sumar el stock para el peso específico
-            existingColor.stock[weight] = (existingColor.stock[weight] || 0) + stock;
+            existingColor.stock[weight] =
+              (existingColor.stock[weight] || 0) + stock;
           } else {
             // Si el color no existe, agregarlo
             groupedProducts[familiaId].colors?.push({
