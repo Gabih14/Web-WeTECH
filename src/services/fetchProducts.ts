@@ -1,5 +1,6 @@
 import { products as rawProducts } from "../data/products2";
 import { Product } from "../types";
+import { colors } from "../data/colors";
 
 export const fetchProducts = (): Promise<Product[]> => {
   return new Promise((resolve) => {
@@ -58,6 +59,10 @@ export const fetchProducts = (): Promise<Product[]> => {
           const colorName = item.descripcion.split("|")[1]?.trim() || "Sin color"; // Extraer el color del campo descripción
           const stock = parseFloat(item.stkExistencias[0]?.cantidad || "0");
 
+// Buscar el color en el array `colors` para obtener su valor `hex`
+const colorData = colors.find((color) => color.name.toLowerCase() === colorName.toLowerCase());
+const hexValue = colorData ? colorData.hex : "#000000"; // Usar el valor encontrado o un valor predeterminado
+
           const existingColor = groupedProducts[familiaId].colors?.find(
             (color) => color.name === colorName
           );
@@ -69,7 +74,7 @@ export const fetchProducts = (): Promise<Product[]> => {
             // Si el color no existe, agregarlo
             groupedProducts[familiaId].colors?.push({
               name: colorName,
-              hex: "#000000", // Puedes asignar un color genérico o específico
+              hex: hexValue, // Puedes asignar un color genérico o específico
               stock: {
                 [weight]: stock, // Manejar el stock por peso
               },

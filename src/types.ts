@@ -42,3 +42,8 @@ export interface CartContextType {
   updateQuantity: (productId: string, quantity: number, color: string, weight: number) => void;
   total: number;
 }
+
+export interface Colors {
+  name: string;
+  hex: string;
+}
