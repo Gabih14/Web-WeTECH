@@ -9,7 +9,7 @@ export const fetchProducts = (): Promise<Product[]> => {
 
       rawProducts.forEach((item) => {
         const familiaId = item.familiaId || item.id; // Si no tiene familiaId, usar el id como único producto
-console.log(item);
+        //console.log(item);
         if (!groupedProducts[familiaId]) {
           // Crear el producto principal
           groupedProducts[familiaId] = {
@@ -18,7 +18,7 @@ console.log(item);
             description: item.descripcion,
             image: "", // Puedes asignar una imagen genérica o específica si está disponible
             category: item.grupo,
-            subcategory: item.subgrupo || undefined,
+            subcategory: item.subgrupo ? item.subgrupo.toUpperCase() : undefined,
             price: parseFloat(item.precioVtaCotizado || "0"), // Guardar precioVtaCotizado en todos los productos
             ...(item.grupo === "FILAMENTOS" && { colors: [] }), // Solo agregar `colors` si es "FILAMENTOS"
             ...(item.grupo !== "FILAMENTOS" && { stock: 0 }), // Solo agregar `stock` si no es "FILAMENTOS"
