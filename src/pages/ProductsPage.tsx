@@ -5,7 +5,7 @@ import { ProductCard } from "../components/ProductCard";
 import { categories } from "../data/categories";
 import { CategoryFilter } from "../components/CategoryFilter";
 import { StkItem, StkExistencia, StkPrecio, Product } from "../types";
-
+import { fetchProducts } from "../services/fetchProducts"; // Asegúrate de que la ruta sea correcta
 export function ProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(
@@ -40,42 +40,63 @@ export function ProductsPage() {
     fetchProducts();
   }, []); */
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        setIsLoading(true);
-        const stkItems: StkItem[] = await fetch("http://localhost:3000/stk-item").then((res) => res.json());
-        const stkExistencias: StkExistencia[] = await fetch("http://localhost:3000/stk-existencia").then((res) => res.json());
-        const stkPrecios: StkPrecio[] = await fetch("http://localhost:3000/stk-precio").then((res) => res.json());
-        // Unimos la información en un solo objeto
-        const mergedProducts = stkItems.map((item) => {
-          const existencia = stkExistencias.find((e) => e.item === item.id) || { cantidad: "0" };
-          const precio = stkPrecios.find((p) => p.item === item.id) || { precioVta: "0", moneda: "USD" };
-
-          return {
-            id: item.id,
-            name: item.descripcion.split("|")[1]?.trim() || item.descripcion, // Extraer el color si existe
-            description: item.descripcion,
-            presentation: item.presentacion,
-            category: item.grupo,
-            subcategory: item.subgrupo,
-            stock: parseFloat(existencia.cantidad),
-            price: parseFloat(precio.precioVta),
-            currency: precio.moneda,
-          };
-        });
-        await setProducts(mergedProducts);
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
+  /*   useEffect(() => {
+      async function fetchData() {
+        try {
+          setIsLoading(true);
+          const stkItems: StkItem[] = await fetch("http://localhost:3000/stk-item").then((res) => res.json());
+          const stkExistencias: StkExistencia[] = await fetch("http://localhost:3000/stk-existencia").then((res) => res.json());
+          const stkPrecios: StkPrecio[] = await fetch("http://localhost:3000/stk-precio").then((res) => res.json());
+          // Unimos la información en un solo objeto
+          const mergedProducts = stkItems.map((item) => {
+            const existencia = stkExistencias.find((e) => e.item === item.id) || { cantidad: "0" };
+            const precio = stkPrecios.find((p) => p.item === item.id) || { precioVta: "0", moneda: "USD" };
+            console.log(item, existencia, precio);
+            return {
+              id: item.id,
+              name: item.descripcion.split("|")[1]?.trim() || item.descripcion, // Extraer el color si existe
+              description: item.descripcion,
+              presentation: item.presentacion,
+              category: item.grupo,
+              subcategory: item.subgrupo,
+              stock: parseFloat(existencia.cantidad),
+              price: parseFloat(
+                "precioVtaCotizado" in precio && precio.precioVtaCotizado
+                  ? precio.precioVtaCotizado
+                  : precio.precioVta
+              ),
+              currency: precio.moneda,
+            };
+          });
+          await setProducts(mergedProducts);
+        } catch (err: any) {
+          setError(err.message);
+        } finally {
+          setIsLoading(false);
+        }
+  
       }
+  
+      fetchData();
+    }, []); */
 
-    }
-
-    fetchData();
-  }, []);
-
+    useEffect(() => {
+      async function fetchData() {
+        try {
+          setIsLoading(true);
+          const data = await fetchProducts(); // 👈 Traemos productos con nuestro servicio
+          console.log(data);
+          setProducts(data); // 👈 Seteamos productos
+        } catch (err: any) {
+          setError(err.message);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+      fetchData();
+    }, []);
+    
+  
   const filteredProducts = products.filter((product: any) => {
     if (!selectedCategory) return true;
     if (!selectedSubcategory) return product.category === selectedCategory.toUpperCase();
@@ -84,7 +105,6 @@ export function ProductsPage() {
       product.subcategory === selectedSubcategory.toUpperCase()
     );
   });
-
   const toggleMobileFilter = () => {
     setIsMobileFilterOpen(!isMobileFilterOpen);
   };

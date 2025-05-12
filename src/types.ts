@@ -2,7 +2,7 @@ export interface Product {
   id: string;
   name: string;
   description: string;
-  image?: string; /* hay que sacarle la condicionalidad */
+  image?: string;
   category: string;
   subcategory?: string;
   weights?: {
@@ -10,18 +10,20 @@ export interface Product {
     price: number;
     promotionalPrice?: number;
   }[];
-  price?: number;
-  discountQuantity?: {[quantity: number]: number};
-  promotionalPrice?: number;
+  price?: number; //no
+  discountQuantity?: { [quantity: number]: number };//no
+  promotionalPrice?: number;//no
   colors?: {
-    name: string;
+    name: string; 
     hex: string;
-    stock: { [weight: string]: number };
+    stock: { [weight: string]: number }; 
   }[];
-  stock?: number;
+  stock?: number;//no
   presentatio?: string;
   currency?: string;
 }
+
+
 
 export interface StkItem {
   id: string;
@@ -46,6 +48,7 @@ export interface StkPrecio {
   item: string;
   precioVta: string;
   moneda: string;
+  precioVtaCotizado?: string;
 }
 
 
