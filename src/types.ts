@@ -10,6 +10,7 @@ export interface Product {
     price: number;
     promotionalPrice?: number;
   }[];
+  familiaId?: string;
   price?: number;
   discountQuantity?: {[quantity: number]: number};
   promotionalPrice?: number;
@@ -40,4 +41,9 @@ export interface CartContextType {
   removeFromCart: (productId: string, color: string, weight: number) => void;
   updateQuantity: (productId: string, quantity: number, color: string, weight: number) => void;
   total: number;
+}
+
+export interface Colors {
+  name: string;
+  hex: string;
 }
