@@ -38,8 +38,13 @@ export function HomePage() {
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 font-sans">
       {/* Sección de Categorías */}
       <div id="categories" className="text-center mb-8">
-        <img src={Logo} alt="Logo WeTECH" className="mx-auto h-24 md:h-48" />
-      </div>
+  <div className="flex items-center justify-center ">
+    <img src={Logo} alt="Logo WeTECH" className="mx-auto h-24 md:h-48" />
+    <span className="text-yellow-600 text-lg md:text-2xl font-semibold">
+      FILAMENTOS A UN SOLO CLICK
+    </span>
+  </div>
+</div>
       {/* Sección Franquicias */}
       <section
         id="franquicias"
@@ -50,8 +55,7 @@ export function HomePage() {
             Franquicias
           </h2>
           <p className="text-2x1 text-gray-700 mb-2">
-            ¿Querés emprender con nosotros? Sumate como franquiciado y llevá
-            nuestra marca a tu ciudad.
+            <span className="font-bold">¡Es tu momento de emprender!</span> Sumate a nuestra franquicia y llevá la revolución 3D a tu provincia.
           </p>
           <Link
             to="/franquicias"
