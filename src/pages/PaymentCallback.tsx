@@ -61,7 +61,7 @@ const PaymentCallback = () => {
         // Simulamos una respuesta aleatoria (éxito o fallo)
         const isSuccess = Math.random() > 0.5;
         
-        if (true) {
+        if (isSuccess) {
           setStatus(PaymentStatus.SUCCESS);
           setPaymentData({
             id: 'PAY-' + Math.random().toString(36).substring(2, 10).toUpperCase(),
