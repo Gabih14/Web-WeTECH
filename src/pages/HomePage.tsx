@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Printer as Printer3D, Shapes, Wrench } from "lucide-react";
 import { ContactInfo } from "../components/ContactInfo";
 import Logo from "../assets/Logo WeTECH Negro PNG.png";
+import Slogan from "../assets/slogan-removebg.webp";
 import filamentoCategoria from "../assets/Grilon_pla_piel.jpeg";
 import impresoraCategoria from "../assets/CR6 S.png";
 import repuestoCategoria from "../assets/racor 6mm plastico web2_Impresora 3D Creality CR-10 SMART Mendoza v2.jpg";
@@ -37,14 +38,16 @@ export function HomePage() {
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 font-sans">
       {/* Sección de Categorías */}
-      <div id="categories" className="text-center mb-8">
-  <div className="flex items-center justify-center ">
-    <img src={Logo} alt="Logo WeTECH" className="mx-auto h-24 md:h-48" />
-    <span className="text-yellow-600 text-lg md:text-2xl font-semibold">
-      FILAMENTOS A UN SOLO CLICK
-    </span>
-  </div>
-</div>
+      <div id="categories" className="text-center mb-8 gap-4">
+        <div className="flex items-center justify-center ">
+          <img src={Logo} alt="Logo WeTECH" className="mx-auto h-24 md:h-48" />
+          <img
+            src={Slogan}
+            alt="Slogan WeTECH"
+            className="mx-auto h-24 md:h-48 pt-4"
+          />
+        </div>
+      </div>
       {/* Sección Franquicias */}
       <section
         id="franquicias"
@@ -55,7 +58,8 @@ export function HomePage() {
             Franquicias
           </h2>
           <p className="text-2x1 text-gray-700 mb-2">
-            <span className="font-bold">¡Es tu momento de emprender!</span> Sumate a nuestra franquicia y llevá la revolución 3D a tu provincia.
+            <span className="font-bold">¡Es tu momento de emprender!</span>{" "}
+            Sumate a nuestra franquicia y llevá la revolución 3D a tu provincia.
           </p>
           <Link
             to="/franquicias"
