@@ -145,13 +145,13 @@ export function HomePage() {
       <div id="categories" className="text-center mb-8 gap-4">
         <div className="flex flex-col md:flex-row items-center justify-center">
           <img src={Logo} alt="Logo WeTECH" className="mx-auto h-24 md:h-48" />
-          {
+          <Link to={"/products"}>
             <img
               src={Slogan}
               alt="Slogan WeTECH"
               className="mx-auto h-24 md:h-48 pt-4 md:pt-0"
             />
-          }
+          </Link>
         </div>
       </div>
       {/* Sección Franquicias */}
