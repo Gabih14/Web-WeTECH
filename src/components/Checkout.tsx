@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Tag } from "lucide-react";
 import { useCart } from "../context/CartContext";
-import { Product } from "../types";
+import { Coupon, Product } from "../types";
 import { CheckoutPersonal } from "./CheckoutPersonal";
 import { CheckoutAdress } from "./CheckoutAdress";
+import { coupons } from "../data/coupon";
 /* import { CheckoutPayment } from "./CheckoutPayment"; */
 
 function useMediaQuery(query: string): boolean {
@@ -37,6 +38,37 @@ export default function Checkout() {
     cardExpiry: "",
     cardCVC: "",
   });
+
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
+  const [couponError, setCouponError] = useState('');
+
+const applyCoupon = () => {
+    const foundCoupon = coupons.find(c => c.code === couponCode.toUpperCase());
+    if (foundCoupon) {
+      setAppliedCoupon(foundCoupon);
+      setCouponError('');
+    } else {
+      setCouponError('Cupón inválido');
+      setAppliedCoupon(null);
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode('');
+    setCouponError('');
+  };
+
+  const calculateDiscount = () => {
+    if (!appliedCoupon) return 0;
+    if (appliedCoupon.type === 'percentage') {
+      return (total * appliedCoupon.discount) / 100;
+    }
+    return appliedCoupon.discount;
+  };
+
+  
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -344,6 +376,43 @@ export default function Checkout() {
                     );
                   })}
                 </ul>
+                <div className="mt-6">
+              <div className="flex items-center space-x-2">
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value)}
+                    placeholder="Código de cupón"
+                    className="w-full px-3 py-2 border rounded-md"
+                  />
+                </div>
+                <button
+                  onClick={applyCoupon}
+                  className="bg-gray-100 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-200 transition-colors flex items-center"
+                >
+                  <Tag className="h-4 w-4 mr-2" />
+                  Aplicar
+                </button>
+              </div>
+              {couponError && (
+                <p className="text-red-500 text-sm mt-1">{couponError}</p>
+              )}
+              {appliedCoupon && (
+                <div className="mt-2 flex items-center justify-between bg-green-50 p-2 rounded-md">
+                  <span className="text-green-700 text-sm">
+                    Cupón aplicado: {appliedCoupon.code} 
+                    ({appliedCoupon.type === 'percentage' ? `${appliedCoupon.discount}%` : `$${appliedCoupon.discount}`})
+                  </span>
+                  <button
+                    onClick={removeCoupon}
+                    className="text-green-700 hover:text-green-800 text-sm"
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              )}
+            </div>
                 <dl className="border-t border-gray-200 py-4 space-y-2">
                   <div className="flex items-center justify-between">
                     <dt className="text-sm text-gray-600">Subtotal</dt>
