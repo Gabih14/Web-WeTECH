@@ -60,13 +60,13 @@ const applyCoupon = () => {
     setCouponError('');
   };
 
-  const calculateDiscount = () => {
+ /*  const calculateCoupounDiscount = () => {
     if (!appliedCoupon) return 0;
     if (appliedCoupon.type === 'percentage') {
       return (total * appliedCoupon.discount) / 100;
     }
     return appliedCoupon.discount;
-  };
+  }; */
 
   
 
