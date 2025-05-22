@@ -41,3 +41,9 @@ export interface CartContextType {
   updateQuantity: (productId: string, quantity: number, color: string, weight: number) => void;
   total: number;
 }
+
+export interface Coupon {
+  code: string;
+  discount: number;
+  type: 'percentage' | 'fixed';
+}
