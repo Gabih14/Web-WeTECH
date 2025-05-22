@@ -7,7 +7,6 @@ import { ProductCard } from "../components/ProductCard";
 import { CategoryFilter } from "../components/CategoryFilter";
 import { Product } from "../types";
 
-
 export function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]); // Estado para los productos
   const [searchParams, setSearchParams] = useSearchParams();
@@ -33,7 +32,8 @@ export function ProductsPage() {
   }, []);
   const filteredProducts = products.filter((product: any) => {
     if (!selectedCategory) return true;
-    if (!selectedSubcategory) return product.category === selectedCategory.toUpperCase();
+    if (!selectedSubcategory)
+      return product.category === selectedCategory.toUpperCase();
     return (
       product.category === selectedCategory.toUpperCase() &&
       product.subcategory === selectedSubcategory.toUpperCase()
