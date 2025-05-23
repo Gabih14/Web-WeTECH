@@ -5,6 +5,7 @@ import { useCart } from "../context/CartContext";
 import { Coupon, Product } from "../types";
 import { CheckoutPersonal } from "./CheckoutPersonal";
 import { CheckoutAdress } from "./CheckoutAdress";
+
 import { coupons } from "../data/coupon";
 /* import { CheckoutPayment } from "./CheckoutPayment"; */
 
@@ -22,16 +23,19 @@ function useMediaQuery(query: string): boolean {
   return matches;
 }
 
+
 export default function Checkout() {
   const navigate = useNavigate();
   const isMobile = useMediaQuery("(max-width: 768px)"); // Detecta si es móvil
   const { items, total } = useCart();
+  const [shippingCost, setShippingCost] = useState(0);
 
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
     address: "",
+    distance: 0,
     city: "",
     postalCode: "",
     cardNumber: "",
@@ -261,19 +265,11 @@ const applyCoupon = () => {
       <div className="grid grid-cols-1 lg:grid lg:grid-cols-2 lg:gap-x-12 xl:gap-x-16">
         <div>
           <form onSubmit={handleSubmit} className="space-y-6">
-            <CheckoutPersonal
-              formData={formData}
-              handleInputChange={handleInputChange}
-            />
-            <CheckoutAdress
-              formData={formData}
-              handleInputChange={handleInputChange}
-            />
-            {/*  
-            <CheckoutPayment
-              formData={formData}
-              handleInputChange={handleInputChange}
-            />*/}
+
+            <CheckoutPersonal formData={formData} handleInputChange={handleInputChange} />
+            <CheckoutAdress formData={formData} handleInputChange={handleInputChange} setShippingCost={setShippingCost}/>
+            <CheckoutPayment formData={formData} handleInputChange={handleInputChange} />
+
 
             {/* <button
               type="submit"
@@ -298,6 +294,7 @@ const applyCoupon = () => {
               ) : (
                 `Ir a pagar`/* ($${total.toFixed(2)})  */
               )}
+
             </button>
           </form>
         </div>
@@ -427,7 +424,11 @@ const applyCoupon = () => {
                   <div className="flex items-center justify-between">
                     <dt className="text-sm text-gray-600">Envío</dt>
                     <dd className="text-sm font-medium text-gray-900">
-                      Gratis
+                      $
+                      {shippingCost.toLocaleString("es-ES", {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      })}
                     </dd>
                   </div>
                   <div className="flex justify-between items-center mb-2">
@@ -446,7 +447,7 @@ const applyCoupon = () => {
                     </dt>
                     <dd className="text-xl font-bold text-black">
                       $
-                      {total.toLocaleString("es-ES", {
+                      {(total + shippingCost).toLocaleString("es-ES", {
                         minimumFractionDigits: 0,
                         maximumFractionDigits: 0,
                       })}
