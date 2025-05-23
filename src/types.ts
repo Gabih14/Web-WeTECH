@@ -46,3 +46,9 @@ export interface ShippingCost {
   distances: [InitialDistance:number, FinalDistance:number];
   cost: number;
 }
+
+export interface Coupon {
+  code: string;
+  discount: number;
+  type: 'percentage' | 'fixed';
+}

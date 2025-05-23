@@ -5,6 +5,7 @@ import { useCart } from "../context/CartContext";
 import { Product } from "../types";
 import { CheckoutPersonal } from "./CheckoutPersonal";
 import { CheckoutAdress } from "./CheckoutAdress";
+/* import { CheckoutAdress } from "../copies/CheckoutAdress"; */
 import { CheckoutPayment } from "./CheckoutPayment";
 
 export default function Checkout() {
