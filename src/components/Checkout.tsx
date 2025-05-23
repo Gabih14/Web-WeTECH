@@ -268,7 +268,7 @@ const applyCoupon = () => {
 
             <CheckoutPersonal formData={formData} handleInputChange={handleInputChange} />
             <CheckoutAdress formData={formData} handleInputChange={handleInputChange} setShippingCost={setShippingCost}/>
-            <CheckoutPayment formData={formData} handleInputChange={handleInputChange} />
+            {/* <CheckoutPayment formData={formData} handleInputChange={handleInputChange} /> */}
 
 
             {/* <button
