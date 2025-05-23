@@ -275,24 +275,24 @@ export function ProductCard({ product }: ProductCardProps) {
           </button>
           {/* QUANTITY */}
           {canAddToCart && product.colors && product.weights && (
-            <div className="flex items-center gap-1 sm:gap-2 pt-2">
-              {[1, 5, 10, 50].map((qty) => (
-                <button
-                  key={qty}
-                  className={`px-2 py-1.5 text-xs sm:text-sm border rounded-md ${
-                    quantity === qty
-                      ? "bg-black text-white"
-                      : qty + cartQuantity > availableStock
-                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                      : "bg-white text-black"
-                  }`}
-                  onClick={() => setQuantity(qty)}
-                  disabled={qty + cartQuantity > availableStock}
-                >
-                  {qty}
-                </button>
-              ))}
-            </div>
+            <div className="flex flex-wrap items-center gap-1 sm:gap-2 pt-2">
+            {[1, 5, 10, 50].map((qty) => (
+              <button
+                key={qty}
+                className={`px-2 py-1.5 text-xs sm:text-sm border rounded-md ${
+                  quantity === qty
+                    ? "bg-black text-white"
+                    : qty + cartQuantity > availableStock
+                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : "bg-white text-black"
+                }`}
+                onClick={() => setQuantity(qty)}
+                disabled={qty + cartQuantity > availableStock}
+              >
+                x{qty}
+              </button>
+            ))}
+          </div>
           )}
           {/* QUANTITY */}
         </div>

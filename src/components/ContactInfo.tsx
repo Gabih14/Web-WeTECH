@@ -24,9 +24,12 @@ export const ContactInfo = () => {
                     Horario de atención
                   </p>
                   <p className="text-gray-600">
-                    Lunes a Viernes: 10:00 - 19:00
+                    Lunes a Viernes:{" "}
+                    <span className="font-bold">10:00 - 19:00</span>
                   </p>
-                  <p className="text-gray-600">Sábados: 10:00 - 14:00</p>
+                  <p className="text-gray-600">
+                    Sábados: <span className="font-bold">10:00 - 14:00</span>
+                  </p>
                 </div>
               </div>
 
@@ -62,7 +65,7 @@ export const ContactInfo = () => {
                 href="https://maps.app.goo.gl/NbjkqZgv72pkWcTR8"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition"
+                className="bg-yellow-500 text-white px-4 py-2 rounded-lg shadow hover:bg-yellow-700 transition"
               >
                 Ver en Google Maps
               </a>
