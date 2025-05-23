@@ -80,33 +80,42 @@ export const CheckoutAdress = ({
     }
   };
 
+  // Cuando cambia el método de entrega:
+  const handleDeliveryMethod = (method: "pickup" | "shipping") => {
+    setDeliveryMethod(method);
+    if (method === "pickup") {
+      setShippingCost(0);
+    }
+    // Si es shipping, el costo se calcula con fetchDistance
+  };
+
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
       <h2 className="text-lg font-medium text-gray-900 mb-4">
         Método de Entrega
       </h2>
       <div className="space-y-4">
-        <div className="flex items-center space-x-4">
+        <div className="flex flex-col md:flex-row w-full gap-2">
           <button
             type="button"
-            onClick={() => setDeliveryMethod("pickup")}
-            className={`flex-1 flex items-center justify-center px-4 py-3 rounded-lg border-2 ${
-              deliveryMethod === "pickup"
-                ? "border-indigo-600 bg-indigo-50 text-indigo-700"
-                : "border-gray-300 hover:border-gray-400"
-            }`}
+            onClick={() => handleDeliveryMethod("pickup")}
+            className={`flex-1 flex items-center justify-center px-4 py-3 rounded-lg border-2 transition-all
+      ${deliveryMethod === "pickup"
+                ? "border-yellow-600 bg-yellow-50 text-yellow-700"
+                : "border-gray-300 hover:border-gray-400"}
+    `}
           >
             <Store className="h-5 w-5 mr-2" />
             Retiro en Local
           </button>
           <button
             type="button"
-            onClick={() => setDeliveryMethod("shipping")}
-            className={`flex-1 flex items-center justify-center px-4 py-3 rounded-lg border-2 ${
-              deliveryMethod === "shipping"
-                ? "border-indigo-600 bg-indigo-50 text-indigo-700"
-                : "border-gray-300 hover:border-gray-400"
-            }`}
+            onClick={() => handleDeliveryMethod("shipping")}
+            className={`flex-1 flex items-center justify-center px-4 py-3 rounded-lg border-2 transition-all
+      ${deliveryMethod === "shipping"
+                ? "border-yellow-600 bg-yellow-50 text-yellow-700"
+                : "border-gray-300 hover:border-gray-400"}
+    `}
           >
             <Truck className="h-5 w-5 mr-2" />
             Envío a Domicilio
@@ -117,11 +126,24 @@ export const CheckoutAdress = ({
           <div className="bg-gray-50 p-4 rounded-lg">
             <h3 className="font-medium text-gray-900">Dirección del Local</h3>
             <p className="mt-2 text-gray-600">
-              Av. San Martín 1234
+              Santiago de Liniers 670
               <br />
-              Mendoza, Argentina
+              Godoy Cruz, Mendoza
               <br />
-              Horario: Lunes a Viernes 9:00 - 18:00
+              Horario: Lunes a Viernes{" "}
+              <span className="font-bold">10:00 - 19:00</span>
+              <br />
+              Sábados: <span className="font-bold">10:00 - 14:00</span>
+              <br />
+              <br />
+              <a
+                href="https://maps.app.goo.gl/NbjkqZgv72pkWcTR8"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-yellow-500 text-white px-4 py-2 rounded-lg shadow hover:bg-yellow-700 transition"
+              >
+                Ver en Google Maps
+              </a>
             </p>
           </div>
         )}
@@ -208,13 +230,16 @@ export const CheckoutAdress = ({
                 !formData.postalCode ||
                 !shippingInfoChecked
               }
-              className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-yellow-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {calculatingShipping ? "Calculando..." : "Calcular Costo de Envío"}
             </button>
             {/* Modal */}
             {showShippingInfo && (
-              <ShippingInfoModal open={showShippingInfo} onClose={() => setShowShippingInfo(false)} />
+              <ShippingInfoModal
+                open={showShippingInfo}
+                onClose={() => setShowShippingInfo(false)}
+              />
             )}
           </div>
         )}
