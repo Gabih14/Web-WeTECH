@@ -128,7 +128,7 @@ export default function Checkout() {
               type="submit"
               className="w-full t py-3 px-4 rounded-md bg-yellow-400 hover:bg-yellow-700 transition-colors"
             >
-              Confirmar Compra (${total.toFixed(2)})
+              Confirmar Compra 
             </button>
           </form>
         </div>

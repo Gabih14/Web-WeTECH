@@ -1,6 +1,7 @@
 import { Store, Truck } from "lucide-react"; //MapPin,
 import { shippingCosts } from "../data/shippingCost";
 import { useState } from "react";
+import { ShippingInfoModal } from "./ShippingInfoModal";
 
 type Props = {
   formData: {
@@ -22,6 +23,8 @@ export const CheckoutAdress = ({
   const [deliveryMethod, setDeliveryMethod] = useState<"pickup" | "shipping">(
     "pickup"
   );
+  const [showShippingInfo, setShowShippingInfo] = useState(false);
+  const [shippingInfoChecked, setShippingInfoChecked] = useState(false);
   // Función para calcular el costo de envío
   const calculateShippingCost = (distance: number) => {
     const costEntry = shippingCosts.find(
@@ -32,50 +35,50 @@ export const CheckoutAdress = ({
   };
   const [calculatingShipping, setCalculatingShipping] = useState(false);
   // Función para obtener la distancia desde la API de Google
- const fetchDistance = async () => {
-  setCalculatingShipping(true);
-  try {
-    const response = await fetch("http://localhost:3000/maps/distance", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        address: formData.address,
-        city: formData.city,
-      }),
-    });
-    const data = await response.json();
-    console.log("Respuesta del backend:", data);
+  const fetchDistance = async () => {
+    setCalculatingShipping(true);
+    try {
+      const response = await fetch("http://localhost:3000/maps/distance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          address: formData.address,
+          city: formData.city,
+        }),
+      });
+      const data = await response.json();
+      console.log("Respuesta del backend:", data);
 
-    if (data && data.distance && data.destinationResolved) {
-      // Pregunta al usuario si la dirección resuelta es correcta
-      const isConfirmed = window.confirm(
-        `¿Este es tu domicilio?\n\n${data.destinationResolved}\n\nPresiona "Aceptar" si es correcto, o "Cancelar" para volver a intentarlo con datos más precisos.`
-      );
-      if (!isConfirmed) {
-        alert("Por favor, ingresa tu dirección con más detalles.");
-        setCalculatingShipping(false);
-        return;
-      }
+      if (data && data.distance && data.destinationResolved) {
+        // Pregunta al usuario si la dirección resuelta es correcta
+        const isConfirmed = window.confirm(
+          `¿Este es tu domicilio?\n\n${data.destinationResolved}\n\nPresiona "Aceptar" si es correcto, o "Cancelar" para volver a intentarlo con datos más precisos.`
+        );
+        if (!isConfirmed) {
+          alert("Por favor, ingresa tu dirección con más detalles.");
+          setCalculatingShipping(false);
+          return;
+        }
 
-      const distanceText = data.distance; // Ejemplo: "2.2 km"
-      const distanceValue = parseFloat(distanceText.replace(" km", ""));
-      if (distanceValue > 24) {
-        alert("La distancia supera los 24 km. El envío no está permitido.");
-        setShippingCost(0);
+        const distanceText = data.distance; // Ejemplo: "2.2 km"
+        const distanceValue = parseFloat(distanceText.replace(" km", ""));
+        if (distanceValue > 24) {
+          alert("La distancia supera los 24 km. El envío no está permitido.");
+          setShippingCost(0);
+        } else {
+          const cost = calculateShippingCost(distanceValue);
+          setShippingCost(cost);
+        }
       } else {
-        const cost = calculateShippingCost(distanceValue);
-        setShippingCost(cost);
+        alert("No se pudo calcular la distancia. Verifica la dirección.");
       }
-    } else {
-      alert("No se pudo calcular la distancia. Verifica la dirección.");
+    } catch (error) {
+      console.error("Error al obtener la distancia:", error);
+      alert("Hubo un error al calcular la distancia. Inténtalo de nuevo.");
+    } finally {
+      setCalculatingShipping(false);
     }
-  } catch (error) {
-    console.error("Error al obtener la distancia:", error);
-    alert("Hubo un error al calcular la distancia. Inténtalo de nuevo.");
-  } finally {
-    setCalculatingShipping(false);
-  }
-};
+  };
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
@@ -178,16 +181,41 @@ export const CheckoutAdress = ({
                 />
               </div>
             </div>
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="shippingInfoChecked"
+                checked={shippingInfoChecked}
+                onChange={(e) => setShippingInfoChecked(e.target.checked)}
+                className="accent-yellow-600"
+              />
+              <label htmlFor="shippingInfoChecked" className="text-sm">
+                Leí{" "}
+                <button
+                  type="button"
+                  className="text-yellow-700 font-semibold underline hover:text-yellow-900"
+                  onClick={() => setShowShippingInfo(true)}
+                >
+                  información importante de envíos
+                </button>
+              </label>
+            </div>
             <button
               type="button"
               onClick={fetchDistance}
-              disabled={calculatingShipping || !formData.postalCode}
+              disabled={
+                calculatingShipping ||
+                !formData.postalCode ||
+                !shippingInfoChecked
+              }
               className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {calculatingShipping
-                ? "Calculando..."
-                : "Calcular Costo de Envío"}
+              {calculatingShipping ? "Calculando..." : "Calcular Costo de Envío"}
             </button>
+            {/* Modal */}
+            {showShippingInfo && (
+              <ShippingInfoModal open={showShippingInfo} onClose={() => setShowShippingInfo(false)} />
+            )}
           </div>
         )}
       </div>
