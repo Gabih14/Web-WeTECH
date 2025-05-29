@@ -296,6 +296,9 @@ const applyCoupon = () => {
               )}
 
             </button>
+            <div className="text-xs text-gray-500 text-center mt-4">
+                Al confirmar tu compra aceptas nuestros términos y condiciones
+              </div>
           </form>
         </div>
 
