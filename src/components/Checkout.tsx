@@ -5,6 +5,7 @@ import { useCart } from "../context/CartContext";
 import { Coupon, Product } from "../types";
 import { CheckoutPersonal } from "./CheckoutPersonal";
 import { CheckoutAdress } from "./CheckoutAdress";
+
 import { coupons } from "../data/coupon";
 /* import { CheckoutPayment } from "./CheckoutPayment"; */
 
@@ -26,12 +27,17 @@ export default function Checkout() {
   const navigate = useNavigate();
   const isMobile = useMediaQuery("(max-width: 768px)"); // Detecta si es móvil
   const { items, total } = useCart();
+  const [shippingCost, setShippingCost] = useState(0);
+  const [deliveryMethod, setDeliveryMethod] = useState<"pickup" | "shipping">(
+    "pickup"
+  );
 
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
     address: "",
+    distance: 0,
     city: "",
     postalCode: "",
     cardNumber: "",
@@ -39,36 +45,36 @@ export default function Checkout() {
     cardCVC: "",
   });
 
-  const [couponCode, setCouponCode] = useState('');
+  const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
-  const [couponError, setCouponError] = useState('');
+  const [couponError, setCouponError] = useState("");
 
-const applyCoupon = () => {
-    const foundCoupon = coupons.find(c => c.code === couponCode.toUpperCase());
+  const applyCoupon = () => {
+    const foundCoupon = coupons.find(
+      (c) => c.code === couponCode.toUpperCase()
+    );
     if (foundCoupon) {
       setAppliedCoupon(foundCoupon);
-      setCouponError('');
+      setCouponError("");
     } else {
-      setCouponError('Cupón inválido');
+      setCouponError("Cupón inválido");
       setAppliedCoupon(null);
     }
   };
 
   const removeCoupon = () => {
     setAppliedCoupon(null);
-    setCouponCode('');
-    setCouponError('');
+    setCouponCode("");
+    setCouponError("");
   };
 
- /*  const calculateCoupounDiscount = () => {
+  /*  const calculateCoupounDiscount = () => {
     if (!appliedCoupon) return 0;
     if (appliedCoupon.type === 'percentage') {
       return (total * appliedCoupon.discount) / 100;
     }
     return appliedCoupon.discount;
   }; */
-
-  
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -135,8 +141,7 @@ const applyCoupon = () => {
   /* PAYMENT REQUEST */
   const createPaymentRequest = async () => {
     /* obtener este token desde el backend */
-    const token =
-      import.meta.env.VITE_TOKEN_NAVE; // 🔐 reemplazar con tu token real
+    const token = import.meta.env.VITE_TOKEN_NAVE; // 🔐 reemplazar con tu token real
 
     // Armamos el body para el request
     const body = {
@@ -268,12 +273,11 @@ const applyCoupon = () => {
             <CheckoutAdress
               formData={formData}
               handleInputChange={handleInputChange}
+              setShippingCost={setShippingCost}
+              deliveryMethod={deliveryMethod}
+              setDeliveryMethod={setDeliveryMethod}
             />
-            {/*  
-            <CheckoutPayment
-              formData={formData}
-              handleInputChange={handleInputChange}
-            />*/}
+            {/* <CheckoutPayment formData={formData} handleInputChange={handleInputChange} /> */}
 
             {/* <button
               type="submit"
@@ -282,23 +286,35 @@ const applyCoupon = () => {
               Confirmar Compra (${total.toFixed(2)})
             </button> */}
             <button
-              type="submit"
-              className={`w-full py-3 px-4 rounded-md ${
-                isLoading
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-yellow-400 hover:bg-yellow-700 transition-colors"
-              }`}
-              disabled={isLoading} // Deshabilitar el botón mientras se carga
-            >
-              {isLoading ? (
-                <div className="flex items-center justify-center">
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span className="ml-2">Cargando...</span>
-                </div>
-              ) : (
-                `Ir a pagar`/* ($${total.toFixed(2)})  */
-              )}
-            </button>
+  type="submit"
+  className={`w-full py-3 px-4 rounded-md transition-colors ${
+    isLoading ||
+    (deliveryMethod === "shipping" && shippingCost === 0)
+      ? "bg-gray-400 cursor-not-allowed"
+      : "bg-yellow-400 hover:bg-yellow-700"
+  }`}
+  disabled={
+    isLoading ||
+    (deliveryMethod === "shipping" && shippingCost === 0)
+  }
+>
+  {isLoading ? (
+    <div className="flex items-center justify-center">
+      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+      <span className="ml-2">Cargando...</span>
+    </div>
+  ) : (
+    `Ir a pagar`
+  )}
+</button>
+            {deliveryMethod === "shipping" && shippingCost === 0 && !isLoading && (
+              <div className="mt-2 text-center text-sm text-red-600 font-semibold">
+                Debes calcular el costo de envío antes de continuar.
+              </div>
+            )}
+            <div className="text-xs text-gray-500 text-center mt-4">
+              Al confirmar tu compra aceptas nuestros términos y condiciones
+            </div>
           </form>
         </div>
 
@@ -377,42 +393,45 @@ const applyCoupon = () => {
                   })}
                 </ul>
                 <div className="mt-6">
-              <div className="flex items-center space-x-2">
-                <div className="flex-1">
-                  <input
-                    type="text"
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value)}
-                    placeholder="Código de cupón"
-                    className="w-full px-3 py-2 border rounded-md"
-                  />
+                  <div className="flex items-center space-x-2">
+                    <div className="flex-1">
+                      <input
+                        type="text"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value)}
+                        placeholder="Código de cupón"
+                        className="w-full px-3 py-2 border rounded-md"
+                      />
+                    </div>
+                    <button
+                      onClick={applyCoupon}
+                      className="bg-gray-100 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-200 transition-colors flex items-center"
+                    >
+                      <Tag className="h-4 w-4 mr-2" />
+                      Aplicar
+                    </button>
+                  </div>
+                  {couponError && (
+                    <p className="text-red-500 text-sm mt-1">{couponError}</p>
+                  )}
+                  {appliedCoupon && (
+                    <div className="mt-2 flex items-center justify-between bg-green-50 p-2 rounded-md">
+                      <span className="text-green-700 text-sm">
+                        Cupón aplicado: {appliedCoupon.code}(
+                        {appliedCoupon.type === "percentage"
+                          ? `${appliedCoupon.discount}%`
+                          : `$${appliedCoupon.discount}`}
+                        )
+                      </span>
+                      <button
+                        onClick={removeCoupon}
+                        className="text-green-700 hover:text-green-800 text-sm"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  )}
                 </div>
-                <button
-                  onClick={applyCoupon}
-                  className="bg-gray-100 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-200 transition-colors flex items-center"
-                >
-                  <Tag className="h-4 w-4 mr-2" />
-                  Aplicar
-                </button>
-              </div>
-              {couponError && (
-                <p className="text-red-500 text-sm mt-1">{couponError}</p>
-              )}
-              {appliedCoupon && (
-                <div className="mt-2 flex items-center justify-between bg-green-50 p-2 rounded-md">
-                  <span className="text-green-700 text-sm">
-                    Cupón aplicado: {appliedCoupon.code} 
-                    ({appliedCoupon.type === 'percentage' ? `${appliedCoupon.discount}%` : `$${appliedCoupon.discount}`})
-                  </span>
-                  <button
-                    onClick={removeCoupon}
-                    className="text-green-700 hover:text-green-800 text-sm"
-                  >
-                    Eliminar
-                  </button>
-                </div>
-              )}
-            </div>
                 <dl className="border-t border-gray-200 py-4 space-y-2">
                   <div className="flex items-center justify-between">
                     <dt className="text-sm text-gray-600">Subtotal</dt>
@@ -427,7 +446,11 @@ const applyCoupon = () => {
                   <div className="flex items-center justify-between">
                     <dt className="text-sm text-gray-600">Envío</dt>
                     <dd className="text-sm font-medium text-gray-900">
-                      Gratis
+                      $
+                      {shippingCost.toLocaleString("es-ES", {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      })}
                     </dd>
                   </div>
                   <div className="flex justify-between items-center mb-2">
@@ -446,7 +469,7 @@ const applyCoupon = () => {
                     </dt>
                     <dd className="text-xl font-bold text-black">
                       $
-                      {total.toLocaleString("es-ES", {
+                      {(total + shippingCost).toLocaleString("es-ES", {
                         minimumFractionDigits: 0,
                         maximumFractionDigits: 0,
                       })}

@@ -28,7 +28,7 @@ export const CheckoutPersonal = ({formData, handleInputChange}: Props) => {
         value={formData.name}
         onChange={handleInputChange}
         required
-        className="mt-1 block w-full rounded-md border-2 border-black shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+        className="mt-1 p-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
       />
     </div>
     <div>
@@ -45,7 +45,7 @@ export const CheckoutPersonal = ({formData, handleInputChange}: Props) => {
         value={formData.email}
         onChange={handleInputChange}
         required
-        className="mt-1 block w-full rounded-md border-2 border-black shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+        className="mt-1 p-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
       />
     </div>
     <div>
@@ -62,7 +62,7 @@ export const CheckoutPersonal = ({formData, handleInputChange}: Props) => {
         value={formData.phone}
         onChange={handleInputChange}
         required
-        className="mt-1 block w-full rounded-md border-2 border-black shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+        className="mt-1 p-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
       />
     </div>
   </div></div>

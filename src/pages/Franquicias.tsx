@@ -99,16 +99,7 @@ export const Franquicias = () => {
     
   };
 
-  // Sample gallery images (replace with actual images)
-  const galleryImages = [
-    "/api/placeholder/400/300",
-    "/api/placeholder/400/300",
-    "/api/placeholder/400/300",
-    "/api/placeholder/400/300",
-    "/api/placeholder/400/300",
-    "/api/placeholder/400/300",
-  ];
-
+const galleryImages = Array.from({ length: 6 }, (_, i) => `/assets/local${i + 1}.webp`);
   return (
     <div className="bg-white">
       {/* Header Section */}
@@ -240,16 +231,16 @@ export const Franquicias = () => {
           Galería
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {galleryImages.map((src, index) => (
-            <div key={index} className="overflow-hidden rounded-lg shadow">
-              <img
-                src={src}
-                alt={`WeTECH Gallery ${index + 1}`}
-                className="w-full h-64 object-cover transition-transform duration-300 hover:scale-105"
-              />
-            </div>
-          ))}
-        </div>
+  {galleryImages.map((src, index) => (
+    <div key={index} className="overflow-hidden rounded-lg shadow">
+      <img
+        src={src}
+        alt={`WeTECH Gallery ${index + 1}`}
+        className="w-full h-64 object-cover transition-transform duration-300 hover:scale-105"
+      />
+    </div>
+  ))}
+</div>
       </div>
 
       {/* Contact Form Section */}
