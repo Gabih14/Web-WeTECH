@@ -1,4 +1,4 @@
-import { Store, Truck } from "lucide-react"; //MapPin,
+import { MapPin, Store, Truck } from "lucide-react"; //MapPin,
 import { shippingCosts } from "../data/shippingCost";
 import { useState } from "react";
 import { ShippingInfoModal } from "./ShippingInfoModal";
@@ -100,9 +100,11 @@ export const CheckoutAdress = ({
             type="button"
             onClick={() => handleDeliveryMethod("pickup")}
             className={`flex-1 flex items-center justify-center px-4 py-3 rounded-lg border-2 transition-all
-      ${deliveryMethod === "pickup"
-                ? "border-yellow-600 bg-yellow-50 text-yellow-700"
-                : "border-gray-300 hover:border-gray-400"}
+      ${
+        deliveryMethod === "pickup"
+          ? "border-yellow-600 bg-yellow-50 text-yellow-700"
+          : "border-gray-300 hover:border-gray-400"
+      }
     `}
           >
             <Store className="h-5 w-5 mr-2" />
@@ -112,9 +114,11 @@ export const CheckoutAdress = ({
             type="button"
             onClick={() => handleDeliveryMethod("shipping")}
             className={`flex-1 flex items-center justify-center px-4 py-3 rounded-lg border-2 transition-all
-      ${deliveryMethod === "shipping"
-                ? "border-yellow-600 bg-yellow-50 text-yellow-700"
-                : "border-gray-300 hover:border-gray-400"}
+      ${
+        deliveryMethod === "shipping"
+          ? "border-yellow-600 bg-yellow-50 text-yellow-700"
+          : "border-gray-300 hover:border-gray-400"
+      }
     `}
           >
             <Truck className="h-5 w-5 mr-2" />
@@ -150,6 +154,42 @@ export const CheckoutAdress = ({
 
         {deliveryMethod === "shipping" && (
           <div className="space-y-4">
+            <p className="text-sm text-gray-600 bg-blue-50 p-3 rounded-md border border-blue-100">
+              <MapPin className="inline-block h-4 w-4 mr-1 text-blue-500" />
+              Solo se muestran las provincias donde se realizan envíos
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label
+                  htmlFor="country"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  País
+                </label>
+                <input
+                  type="text"
+                  id="country"
+                  value="Argentina"
+                  disabled
+                  className="mt-1 p-2 block w-full rounded-md border-gray-300 bg-gray-100 cursor-not-allowed shadow-sm"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="province"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Provincia
+                </label>
+                <input
+                  type="text"
+                  id="province"
+                  value="Mendoza"
+                  disabled
+                  className="mt-1 p-2 block w-full rounded-md border-gray-300 bg-gray-100 cursor-not-allowed shadow-sm"
+                />
+              </div>
+            </div>
             <div>
               <label
                 htmlFor="address"
@@ -164,7 +204,8 @@ export const CheckoutAdress = ({
                 value={formData.address}
                 onChange={handleInputChange}
                 required={deliveryMethod === "shipping"}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+                placeholder="Calle y número"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -182,7 +223,8 @@ export const CheckoutAdress = ({
                   value={formData.city}
                   onChange={handleInputChange}
                   required={deliveryMethod === "shipping"}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+                  placeholder="Ej: Godoy Cruz"
                 />
               </div>
               <div>
@@ -199,7 +241,8 @@ export const CheckoutAdress = ({
                   value={formData.postalCode}
                   onChange={handleInputChange}
                   required={deliveryMethod === "shipping"}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  placeholder="Ej: 5501"
                 />
               </div>
             </div>
@@ -218,7 +261,7 @@ export const CheckoutAdress = ({
                   className="text-yellow-700 font-semibold underline hover:text-yellow-900"
                   onClick={() => setShowShippingInfo(true)}
                 >
-                  información importante de envíos
+                  información de envíos
                 </button>
               </label>
             </div>
@@ -232,7 +275,9 @@ export const CheckoutAdress = ({
               }
               className="w-full bg-yellow-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {calculatingShipping ? "Calculando..." : "Calcular Costo de Envío"}
+              {calculatingShipping
+                ? "Calculando..."
+                : "Calcular Costo de Envío"}
             </button>
             {/* Modal */}
             {showShippingInfo && (
