@@ -12,17 +12,20 @@ type Props = {
   };
   handleInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   setShippingCost: (cost: number) => void;
+    deliveryMethod: "pickup" | "shipping";
+  setDeliveryMethod: (method: "pickup" | "shipping") => void;
 };
+
 
 export const CheckoutAdress = ({
   formData,
   handleInputChange,
   setShippingCost,
+  deliveryMethod,
+  setDeliveryMethod,
 }: Props) => {
   // const GOOGLE_API_KEY = "AIzaSyCDesHGPMQEk72w8X9sFRu1O1rzno9UopQ";
-  const [deliveryMethod, setDeliveryMethod] = useState<"pickup" | "shipping">(
-    "pickup"
-  );
+  
   const [showShippingInfo, setShowShippingInfo] = useState(false);
   const [shippingInfoChecked, setShippingInfoChecked] = useState(false);
   // Función para calcular el costo de envío
