@@ -62,8 +62,8 @@ export const CheckoutAdress = ({
 
         const distanceText = data.distance; // Ejemplo: "2.2 km"
         const distanceValue = parseFloat(distanceText.replace(" km", ""));
-        if (distanceValue > 24) {
-          alert("La distancia supera los 24 km. El envío no está permitido.");
+        if (distanceValue > 20) {
+          alert("La distancia supera los 20 km. El envío no está permitido.");
           setShippingCost(0);
         } else {
           const cost = calculateShippingCost(distanceValue);
