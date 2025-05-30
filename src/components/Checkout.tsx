@@ -24,6 +24,7 @@ function useMediaQuery(query: string): boolean {
 }
 
 export default function Checkout() {
+  const [confirmedAddress, setConfirmedAddress] = useState<string | null>(null);
   const navigate = useNavigate();
   const isMobile = useMediaQuery("(max-width: 768px)"); // Detecta si es móvil
   const { items, total } = useCart();
@@ -36,7 +37,8 @@ export default function Checkout() {
     name: "",
     email: "",
     phone: "",
-    address: "",
+      street: "",
+  number: "",
     distance: 0,
     city: "",
     postalCode: "",
@@ -182,7 +184,7 @@ export default function Checkout() {
           name: formData.name || "N/A",
           phone: formData.phone || "N/A",
           billing_address: {
-            street_1: formData.address || "Cliente",
+            street_1: formData.street || "Cliente",
             street_2: "N/A",
             city: formData.city || "1",
             region: "Mendoza", // Podés hacerlo dinámico si querés
@@ -276,6 +278,8 @@ export default function Checkout() {
               setShippingCost={setShippingCost}
               deliveryMethod={deliveryMethod}
               setDeliveryMethod={setDeliveryMethod}
+              confirmedAddress={confirmedAddress}
+  setConfirmedAddress={setConfirmedAddress}
             />
             {/* <CheckoutPayment formData={formData} handleInputChange={handleInputChange} /> */}
 
@@ -286,32 +290,34 @@ export default function Checkout() {
               Confirmar Compra (${total.toFixed(2)})
             </button> */}
             <button
-  type="submit"
-  className={`w-full py-3 px-4 rounded-md transition-colors ${
-    isLoading ||
-    (deliveryMethod === "shipping" && shippingCost === 0)
-      ? "bg-gray-400 cursor-not-allowed"
-      : "bg-yellow-400 hover:bg-yellow-700"
-  }`}
-  disabled={
-    isLoading ||
-    (deliveryMethod === "shipping" && shippingCost === 0)
-  }
->
-  {isLoading ? (
-    <div className="flex items-center justify-center">
-      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-      <span className="ml-2">Cargando...</span>
-    </div>
-  ) : (
-    `Ir a pagar`
-  )}
-</button>
-            {deliveryMethod === "shipping" && shippingCost === 0 && !isLoading && (
-              <div className="mt-2 text-center text-sm text-red-600 font-semibold">
-                Debes calcular el costo de envío antes de continuar.
-              </div>
-            )}
+              type="submit"
+              className={`w-full py-3 px-4 rounded-md transition-colors ${
+                isLoading ||
+                (deliveryMethod === "shipping" && shippingCost === 0)
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-yellow-400 hover:bg-yellow-700"
+              }`}
+              disabled={
+                isLoading ||
+                (deliveryMethod === "shipping" && (!shippingCost || !confirmedAddress))
+              }
+            >
+              {isLoading ? (
+                <div className="flex items-center justify-center">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span className="ml-2">Cargando...</span>
+                </div>
+              ) : (
+                `Ir a pagar`
+              )}
+            </button>
+            {deliveryMethod === "shipping" &&
+              shippingCost === 0 &&
+              !isLoading && (
+                <div className="mt-2 text-center text-sm text-red-600 font-semibold">
+                  Debes calcular el costo de envío antes de continuar.
+                </div>
+              )}
             <div className="text-xs text-gray-500 text-center mt-4">
               Al confirmar tu compra aceptas nuestros términos y condiciones
             </div>

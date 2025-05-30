@@ -5,17 +5,19 @@ import { ShippingInfoModal } from "./ShippingInfoModal";
 
 type Props = {
   formData: {
-    address: string;
+    street: string;
+    number: string;
     city: string;
     postalCode: string;
     distance: number;
   };
   handleInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   setShippingCost: (cost: number) => void;
-    deliveryMethod: "pickup" | "shipping";
+  deliveryMethod: "pickup" | "shipping";
   setDeliveryMethod: (method: "pickup" | "shipping") => void;
+  confirmedAddress: string | null;
+  setConfirmedAddress: (address: string | null) => void;
 };
-
 
 export const CheckoutAdress = ({
   formData,
@@ -25,9 +27,10 @@ export const CheckoutAdress = ({
   setDeliveryMethod,
 }: Props) => {
   // const GOOGLE_API_KEY = "AIzaSyCDesHGPMQEk72w8X9sFRu1O1rzno9UopQ";
-  
+
   const [showShippingInfo, setShowShippingInfo] = useState(false);
   const [shippingInfoChecked, setShippingInfoChecked] = useState(false);
+  const [confirmedAddress, setConfirmedAddress] = useState<string | null>(null);
   // Función para calcular el costo de envío
   const calculateShippingCost = (distance: number) => {
     const costEntry = shippingCosts.find(
@@ -45,7 +48,7 @@ export const CheckoutAdress = ({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          address: formData.address,
+          address: `${formData.street} ${formData.number}`,
           city: formData.city,
         }),
       });
@@ -60,9 +63,10 @@ export const CheckoutAdress = ({
         if (!isConfirmed) {
           alert("Por favor, ingresa tu dirección con más detalles.");
           setCalculatingShipping(false);
+          setConfirmedAddress(null);
           return;
         }
-
+        setConfirmedAddress(data.destinationResolved);
         const distanceText = data.distance; // Ejemplo: "2.2 km"
         const distanceValue = parseFloat(distanceText.replace(" km", ""));
         if (distanceValue > 20) {
@@ -193,24 +197,44 @@ export const CheckoutAdress = ({
                 />
               </div>
             </div>
-            <div>
-              <label
-                htmlFor="address"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Dirección
-              </label>
-              <input
-                type="text"
-                id="address"
-                name="address"
-                value={formData.address}
-                onChange={handleInputChange}
-                required={deliveryMethod === "shipping"}
-                className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
-                placeholder="Calle y número"
-              />
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <div>
+    <label
+      htmlFor="street"
+      className="block text-sm font-medium text-gray-700"
+    >
+      Calle
+    </label>
+    <input
+      type="text"
+      id="street"
+      name="street"
+      value={formData.street}
+      onChange={handleInputChange}
+      required={deliveryMethod === "shipping"}
+      className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+      placeholder="Ej: Santiago de Liniers"
+    />
+  </div>
+  <div>
+    <label
+      htmlFor="number"
+      className="block text-sm font-medium text-gray-700"
+    >
+      Número
+    </label>
+    <input
+      type="text"
+      id="number"
+      name="number"
+      value={formData.number}
+      onChange={handleInputChange}
+      required={deliveryMethod === "shipping"}
+      className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+      placeholder="Ej: 670"
+    />
+  </div>
+</div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label
@@ -282,6 +306,12 @@ export const CheckoutAdress = ({
                 ? "Calculando..."
                 : "Calcular Costo de Envío"}
             </button>
+            {confirmedAddress && (
+              <div className="mt-2 p-3 rounded bg-green-50 border border-green-200 text-green-700 text-sm">
+                <strong>Ubicación confirmada:</strong>
+                <div>{confirmedAddress}</div>
+              </div>
+            )}
             {/* Modal */}
             {showShippingInfo && (
               <ShippingInfoModal
