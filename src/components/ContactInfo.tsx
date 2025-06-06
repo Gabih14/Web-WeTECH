@@ -1,4 +1,5 @@
 import { MapPin, Phone, Mail, Clock } from "lucide-react";
+import { SiWhatsapp } from "react-icons/si";
 
 export const ContactInfo = () => {
   return (
@@ -34,7 +35,7 @@ export const ContactInfo = () => {
               </div>
 
               <div className="flex items-start space-x-3">
-                <Phone className="w-5 h-5 mt-1" />
+                <SiWhatsapp className="w-5 h-5 mt-1" />
                 <div>
                   <p className="font-semibold text-gray-900">Teléfono</p>
                   <p className="text-gray-600">+54 9 261 598 7988</p>
