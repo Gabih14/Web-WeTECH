@@ -52,3 +52,8 @@ export interface Coupon {
   discount: number;
   type: 'percentage' | 'fixed';
 }
+
+export interface Colors {
+  name: string;
+  hex: string;
+}

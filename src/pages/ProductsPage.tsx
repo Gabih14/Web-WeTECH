@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Filter, X } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
-import { products } from "../data/products";
 import { categories } from "../data/categories";
 import { ProductCard } from "../components/ProductCard";
 import { CategoryFilter } from "../components/CategoryFilter";
+import { Product } from "../types";
+import { fetchProducts } from "../services/fetchProducts";
 
 export function ProductsPage() {
+  const [products, setProducts] = useState<Product[]>([]);
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(
     searchParams.get("category")
@@ -15,13 +17,26 @@ export function ProductsPage() {
     null
   );
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const filteredProducts = products.filter((product) => {
+  useEffect(() => {
+    fetchProducts()
+      .then((data) => {
+        setProducts(data);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching products:", error);
+        setLoading(false);
+      });
+  }, []);
+   const filteredProducts = products.filter((product: any) => {
     if (!selectedCategory) return true;
-    if (!selectedSubcategory) return product.category === selectedCategory;
+    if (!selectedSubcategory)
+      return product.category === selectedCategory.toUpperCase();
     return (
-      product.category === selectedCategory &&
-      product.subcategory === selectedSubcategory
+      product.category === selectedCategory.toUpperCase() &&
+      product.subcategory === selectedSubcategory.toUpperCase()
     );
   });
 
@@ -38,7 +53,9 @@ export function ProductsPage() {
     }
     setSelectedSubcategory(null);
   };
-
+  if (loading) {
+    return <p>Cargando productos...</p>;
+  }
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex gap-8 min-h-screen">

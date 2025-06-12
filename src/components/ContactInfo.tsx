@@ -1,4 +1,4 @@
-import { MapPin, Phone, Mail, Clock } from "lucide-react";
+import { MapPin, Mail, Clock } from "lucide-react";
 import { SiWhatsapp } from "react-icons/si";
 
 export const ContactInfo = () => {

@@ -1,14 +1,47 @@
-import { Link, useParams } from "react-router-dom";
-import { products } from "../data/products";
-import { ShoppingCart, ChevronDown } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { useParams, Link } from "react-router-dom";
+import { fetchProducts } from "../services/fetchProducts";
 import { useCart } from "../context/CartContext";
 import Isologo from "../assets/Isologo Fondo Negro SVG.svg";
+import { ShoppingCart, ChevronDown } from "lucide-react";
+import { Product } from "../types";
 
 export function ProductPage() {
-  /* Busca la ruta por id */
   const { id } = useParams<{ id: string }>();
+  const { addToCart, items } = useCart();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Hooks para UI y lógica
+  const [currentPrice, setCurrentPrice] = useState<number | undefined>(
+    undefined
+  );
+  const [currentPromotionalPrice, setCurrentPromotionalPrice] = useState<
+    number | undefined
+  >(undefined);
+  const [isColorMenuOpen, setIsColorMenuOpen] = useState(false);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [selectedWeight, setSelectedWeight] = useState<number | null>(null);
+  const [quantity, setQuantity] = useState(1);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetchProducts()
+      .then((data) => setProducts(data))
+      .finally(() => setLoading(false));
+  }, []);
+
   const product = products.find((p) => p.id === id);
+
+  // Inicializa los estados dependientes de product cuando product cambia
+  useEffect(() => {
+    if (product) {
+      setCurrentPrice(product.price);
+      setCurrentPromotionalPrice(product.promotionalPrice);
+      setSelectedColor(product.colors?.[0]?.name || null);
+      setSelectedWeight(product.weights?.[0]?.weight || null);
+    }
+  }, [product]);
 
   /* Si el producto no existe mostrar mensaje de error */
   if (!product) {
@@ -32,95 +65,6 @@ export function ProductPage() {
       </div>
     );
   }
-
-  const { addToCart, items } = useCart();
-
-  const [currentPrice, setCurrentPrice] = useState<number | undefined>(
-    product.price
-  );
-  const [currentPromotionalPrice, setCurrentPromotionalPrice] = useState<
-    number | undefined
-  >(product.promotionalPrice);
-  const [isColorMenuOpen, setIsColorMenuOpen] = useState(false);
-  const [selectedColor, setSelectedColor] = useState<string | null>(
-    product.colors?.[0]?.name || null
-  );
-  const [selectedWeight, setSelectedWeight] = useState<number | null>(
-    product.weights?.[0]?.weight || null
-  );
-  const [quantity, setQuantity] = useState(1);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsColorMenuOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  useEffect(() => {
-    if (selectedWeight !== null && product.weights) {
-      const weightData = product.weights.find(
-        (w) => w.weight === selectedWeight
-      );
-      if (weightData) {
-        setCurrentPrice(weightData.price);
-        setCurrentPromotionalPrice(weightData.promotionalPrice);
-      }
-    } else {
-      setCurrentPrice(product.price);
-      setCurrentPromotionalPrice(product.promotionalPrice);
-    }
-  }, [selectedWeight, product]);
-  useEffect(() => {
-    if (selectedWeight !== null && product.weights) {
-      const weightData = product.weights.find(
-        (w) => w.weight === selectedWeight
-      );
-      if (weightData) {
-        let price = weightData.price;
-        if (product.discountQuantity && product.discountQuantity[quantity]) {
-          price = price - price * product.discountQuantity[quantity];
-          setCurrentPrice(weightData.price);
-          setCurrentPromotionalPrice(price);
-        } else {
-          setCurrentPrice(weightData.price);
-          setCurrentPromotionalPrice(weightData.promotionalPrice);
-        }
-      }
-    } else {
-      if (product.price) {
-        let price = product.price;
-        if (product.discountQuantity && product.discountQuantity[quantity]) {
-          price = price - price * product.discountQuantity[quantity];
-        }
-        setCurrentPrice(price);
-        setCurrentPromotionalPrice(product.promotionalPrice);
-      }
-    }
-  }, [selectedWeight, quantity, product]);
-
-  const handleAddToCart = () => {
-    if (
-      selectedColor &&
-      selectedWeight !== null &&
-      quantity + cartQuantity <= availableStock
-    ) {
-      addToCart(product, selectedColor, selectedWeight, quantity);
-    } else if (
-      !product.colors &&
-      !product.weights &&
-      quantity + cartQuantity <= (product.stock ?? 0)
-    ) {
-      addToCart(product, "", 0, quantity);
-    }
-  };
 
   const getStock = (color: string, weight: number) => {
     const colorData = product.colors?.find((c) => c.name === color);
@@ -154,7 +98,25 @@ export function ProductPage() {
       ? getCartQuantity(product.id, selectedColor, selectedWeight)
       : getCartQuantity(product.id, "", 0);
 
-  
+  const handleAddToCart = () => {
+    if (
+      selectedColor &&
+      selectedWeight !== null &&
+      quantity + cartQuantity <= availableStock
+    ) {
+      addToCart(product, selectedColor, selectedWeight, quantity);
+    } else if (
+      !product.colors &&
+      !product.weights &&
+      quantity + cartQuantity <= (product.stock ?? 0)
+    ) {
+      addToCart(product, "", 0, quantity);
+    }
+  };
+
+  if (loading) {
+    return <div className="text-center py-10">Cargando producto...</div>;
+  }
 
   return (
     <section className="container flex-grow mx-auto max-w-[1200px] border-b py-5 lg:grid lg:grid-cols-2 lg:py-10">
@@ -186,30 +148,30 @@ export function ProductPage() {
         </p> */}
         {/* PRODUCT PRICE */}
         <p className="mt-4 text-4xl font-bold">
-  {currentPromotionalPrice ? (
-    <>
-      <span className="text-base sm:text-2xl font-bold">
-        ${currentPromotionalPrice.toLocaleString("es-ES", {
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0,
-        })}
-      </span>
-      <span className="text-xs sm:text-lg text-gray-300 font-bold line-through px-2">
-        ${currentPrice?.toLocaleString("es-ES", {
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0,
-        })}
-      </span>
-    </>
-  ) : (
-    <span className="text-base sm:text-2xl font-bold">
-      ${currentPrice?.toLocaleString("es-ES", {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      })}
-    </span>
-  )}
-</p>
+          {currentPromotionalPrice ? (
+            <>
+              <span className="text-base sm:text-2xl font-bold">
+                ${currentPromotionalPrice.toLocaleString("es-ES", {
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: 0,
+                })}
+              </span>
+              <span className="text-xs sm:text-lg text-gray-300 font-bold line-through px-2">
+                ${currentPrice?.toLocaleString("es-ES", {
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: 0,
+                })}
+              </span>
+            </>
+          ) : (
+            <span className="text-base sm:text-2xl font-bold">
+              ${currentPrice?.toLocaleString("es-ES", {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0,
+              })}
+            </span>
+          )}
+        </p>
         <p className="pt-5 text-sm leading-5 text-gray-500 mb-5">
           {product.description}
         </p>
@@ -290,26 +252,26 @@ export function ProductPage() {
         {/* COLORS */}
         {/* QUANTITY */}
         {canAddToCart && product.colors && product.weights && (
-              <div className="flex items-center gap-1 sm:gap-2 pt-2">
-                {[1, 5, 10, 50].map((qty) => (
-                  <button
-                    key={qty}
-                    className={`px-2 py-1.5 text-xs sm:text-sm border rounded-md ${
-                      quantity === qty
-                        ? "bg-black text-white"
-                        : qty + cartQuantity > availableStock
-                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                        : "bg-white text-black"
-                    }`}
-                    onClick={() => setQuantity(qty)}
-                    disabled={qty + cartQuantity > availableStock}
-                  >
-                    {qty}
-                  </button>
-                ))}
-              </div>
-            )}
-            {/* QUANTITY */}
+          <div className="flex items-center gap-1 sm:gap-2 pt-2">
+            {[1, 5, 10, 50].map((qty) => (
+              <button
+                key={qty}
+                className={`px-2 py-1.5 text-xs sm:text-sm border rounded-md ${
+                  quantity === qty
+                    ? "bg-black text-white"
+                    : qty + cartQuantity > availableStock
+                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : "bg-white text-black"
+                }`}
+                onClick={() => setQuantity(qty)}
+                disabled={qty + cartQuantity > availableStock}
+              >
+                {qty}
+              </button>
+            ))}
+          </div>
+        )}
+        {/* QUANTITY */}
 
         <div className="mt-7 flex flex-row items-center gap-6">
           <button
