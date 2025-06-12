@@ -37,8 +37,8 @@ export default function Checkout() {
     name: "",
     email: "",
     phone: "",
-      street: "",
-  number: "",
+    street: "",
+    number: "",
     distance: 0,
     city: "",
     postalCode: "",
@@ -279,7 +279,7 @@ export default function Checkout() {
               deliveryMethod={deliveryMethod}
               setDeliveryMethod={setDeliveryMethod}
               confirmedAddress={confirmedAddress}
-  setConfirmedAddress={setConfirmedAddress}
+              setConfirmedAddress={setConfirmedAddress}
             />
             {/* <CheckoutPayment formData={formData} handleInputChange={handleInputChange} /> */}
 
@@ -299,7 +299,8 @@ export default function Checkout() {
               }`}
               disabled={
                 isLoading ||
-                (deliveryMethod === "shipping" && (!shippingCost || !confirmedAddress))
+                (deliveryMethod === "shipping" &&
+                  (!shippingCost || !confirmedAddress))
               }
             >
               {isLoading ? (

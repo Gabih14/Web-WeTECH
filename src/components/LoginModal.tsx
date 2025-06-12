@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { X } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import React, { useState } from "react";
+import { X } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -8,9 +8,9 @@ interface LoginModalProps {
 }
 
 export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const { login } = useAuth();
 
   if (!isOpen) return null;
@@ -19,10 +19,10 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     e.preventDefault();
     const success = login(username, password);
     if (success) {
-      setError('');
+      setError("");
       onClose();
     } else {
-      setError('Usuario o contraseña incorrectos');
+      setError("Usuario o contraseña incorrectos");
     }
   };
 
@@ -45,7 +45,10 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
               <p className="text-red-500 text-sm text-center">{error}</p>
             )}
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="username"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Usuario
               </label>
               <input
@@ -58,7 +61,10 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
               />
             </div>
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Contraseña
               </label>
               <input

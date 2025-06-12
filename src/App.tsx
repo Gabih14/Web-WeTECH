@@ -13,7 +13,9 @@ import { Franquicias } from "./pages/Franquicias";
 
 function App() {
   return (
-    <div className="grid grid-rows-[auto_1fr_auto] min-h-screen bg-gray-100 overflow-x-hidden"> {/* bg-gradient-to-b from-yellow-50 to-yellow-500 */}
+    <div className="grid grid-rows-[auto_1fr_auto] min-h-screen bg-gray-100 overflow-x-hidden">
+      {" "}
+      {/* bg-gradient-to-b from-yellow-50 to-yellow-500 */}
       <AuthProvider>
         <CartProvider>
           <Navbar />
@@ -23,7 +25,11 @@ function App() {
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/product/:id" element={<ProductPage />} />
             <Route path="/checkout" element={<Checkout />} />
-            <Route path="/checkout/callback" element={<PaymentCallback />} />  {/* http://localhost:5173/checkout/callback?payment_id=12345 */}
+            <Route
+              path="/checkout/callback"
+              element={<PaymentCallback />}
+            />{" "}
+            {/* http://localhost:5173/checkout/callback?payment_id=12345 */}
             <Route path="/franquicias" element={<Franquicias />} />
           </Routes>
           <Footer />

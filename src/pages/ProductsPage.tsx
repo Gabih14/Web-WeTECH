@@ -30,7 +30,7 @@ export function ProductsPage() {
         setLoading(false);
       });
   }, []);
-   const filteredProducts = products.filter((product: any) => {
+  const filteredProducts = products.filter((product: any) => {
     if (!selectedCategory) return true;
     if (!selectedSubcategory)
       return product.category === selectedCategory.toUpperCase();

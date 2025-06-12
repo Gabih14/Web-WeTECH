@@ -33,9 +33,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
           description: item.descripcion,
           image: `/assets/${familiaId}.png`, // Generar la ruta dinámica de la imagen
           category: item.grupo,
-          subcategory: item.subgrupo
-            ? item.subgrupo.toUpperCase()
-            : undefined,
+          subcategory: item.subgrupo ? item.subgrupo.toUpperCase() : undefined,
           price: parseFloat(item.precioVtaCotizado || "0"), // Guardar precioVtaCotizado en todos los productos
           ...(item.grupo === "FILAMENTOS" && { colors: [] }), // Solo agregar `colors` si es "FILAMENTOS"
           ...(item.grupo !== "FILAMENTOS" && { stock: 0 }), // Solo agregar `stock` si no es "FILAMENTOS"
@@ -78,8 +76,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
         }
 
         // Manejar el stock por colores
-        const colorName =
-          item.descripcion.split("|")[1]?.trim() || "Sin color"; // Extraer el color del campo descripción
+        const colorName = item.descripcion.split("|")[1]?.trim() || "Sin color"; // Extraer el color del campo descripción
         const stock = parseFloat(item.stkExistencias?.[0]?.cantidad || "0");
 
         // Buscar el color en el array `colors` para obtener su valor `hex`
@@ -119,6 +116,8 @@ export const fetchProducts = async (): Promise<Product[]> => {
     return transformedProducts;
   } catch (error: any) {
     console.error("Error al obtener los productos:", error.message);
-    throw new Error("No se pudieron obtener los productos. Intenta nuevamente más tarde.");
+    throw new Error(
+      "No se pudieron obtener los productos. Intenta nuevamente más tarde."
+    );
   }
 };

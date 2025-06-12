@@ -1,24 +1,24 @@
-import { Category } from '../types';
+import { Category } from "../types";
 
 export const categories: Category[] = [
   {
-    name: 'Filamentos',
-    id: 'filamentos',
+    name: "Filamentos",
+    id: "filamentos",
     subcategories: [
-      { name: 'PLA', id: 'pla' },
-      { name: 'Técnicos', id: 'tecnicos' }
-    ]
+      { name: "PLA", id: "pla" },
+      { name: "Técnicos", id: "tecnicos" },
+    ],
   },
   {
-    name: 'Impresoras 3D',
-    id: 'impresoras',
+    name: "Impresoras 3D",
+    id: "impresoras",
     subcategories: [
-      { name: 'Filamento', id: 'filamento' },
-      { name: 'Resina', id: 'resina' }
-    ]
+      { name: "Filamento", id: "filamento" },
+      { name: "Resina", id: "resina" },
+    ],
   },
   {
-    name: 'Repuestos',
-    id: 'repuestos'
-  }
+    name: "Repuestos",
+    id: "repuestos",
+  },
 ];

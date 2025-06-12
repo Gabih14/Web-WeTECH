@@ -198,43 +198,43 @@ export const CheckoutAdress = ({
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-  <div>
-    <label
-      htmlFor="street"
-      className="block text-sm font-medium text-gray-700"
-    >
-      Calle
-    </label>
-    <input
-      type="text"
-      id="street"
-      name="street"
-      value={formData.street}
-      onChange={handleInputChange}
-      required={deliveryMethod === "shipping"}
-      className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
-      placeholder="Ej: Santiago de Liniers"
-    />
-  </div>
-  <div>
-    <label
-      htmlFor="number"
-      className="block text-sm font-medium text-gray-700"
-    >
-      Número
-    </label>
-    <input
-      type="text"
-      id="number"
-      name="number"
-      value={formData.number}
-      onChange={handleInputChange}
-      required={deliveryMethod === "shipping"}
-      className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
-      placeholder="Ej: 670"
-    />
-  </div>
-</div>
+              <div>
+                <label
+                  htmlFor="street"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Calle
+                </label>
+                <input
+                  type="text"
+                  id="street"
+                  name="street"
+                  value={formData.street}
+                  onChange={handleInputChange}
+                  required={deliveryMethod === "shipping"}
+                  className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+                  placeholder="Ej: Santiago de Liniers"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="number"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Número
+                </label>
+                <input
+                  type="text"
+                  id="number"
+                  name="number"
+                  value={formData.number}
+                  onChange={handleInputChange}
+                  required={deliveryMethod === "shipping"}
+                  className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+                  placeholder="Ej: 670"
+                />
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label
