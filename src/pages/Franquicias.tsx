@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import emailjs from '@emailjs/browser';
+import emailjs from "@emailjs/browser";
 
 export const Franquicias = () => {
   const [formData, setFormData] = useState({
@@ -51,27 +51,27 @@ export const Franquicias = () => {
       phone: formData.celular,
       zone: formData.zona,
       message: formData.mensaje,
-    }
+    };
     emailjs
-    .send(serviceId, templateIdCanudas, templateParams, publicKey)
-    .then(
-      (response) => {
-        console.log("Email sent successfully:", response);
-        setFormData({
-          nombre: "",
-          celular: "",
-          email: "",
-          zona: "",
-          mensaje: "",
-        });
-      },
-      (error) => {
-        console.error("Error sending Canudas email:", error);
-      }
-    )
-    .catch((error) => {
-      console.error("Error sending email:", error);
-    });
+      .send(serviceId, templateIdCanudas, templateParams, publicKey)
+      .then(
+        (response) => {
+          console.log("Email sent successfully:", response);
+          setFormData({
+            nombre: "",
+            celular: "",
+            email: "",
+            zona: "",
+            mensaje: "",
+          });
+        },
+        (error) => {
+          console.error("Error sending Canudas email:", error);
+        }
+      )
+      .catch((error) => {
+        console.error("Error sending email:", error);
+      });
     // Send the email using EmailJS
     emailjs
       .send(serviceId, templateId, templateParams, publicKey)
@@ -85,21 +85,26 @@ export const Franquicias = () => {
             zona: "",
             mensaje: "",
           });
-          alert("¡Gracias por tu interés! Nos comunicaremos contigo a la brevedad.");
+          alert(
+            "¡Gracias por tu interés! Nos comunicaremos contigo a la brevedad."
+          );
         },
         (error) => {
           console.error("Error sending email:", error);
-          alert("Ocurrió un error al enviar tu consulta. Por favor, intenta nuevamente.");
+          alert(
+            "Ocurrió un error al enviar tu consulta. Por favor, intenta nuevamente."
+          );
         }
       )
       .catch((error) => {
         console.error("Error sending email:", error);
       });
-
-    
   };
 
-const galleryImages = Array.from({ length: 6 }, (_, i) => `/assets/local${i + 1}.webp`);
+  const galleryImages = Array.from(
+    { length: 6 },
+    (_, i) => `/assets/local${i + 1}.webp`
+  );
   return (
     <div className="bg-white">
       {/* Header Section */}
@@ -231,16 +236,16 @@ const galleryImages = Array.from({ length: 6 }, (_, i) => `/assets/local${i + 1}
           Galería
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-  {galleryImages.map((src, index) => (
-    <div key={index} className="overflow-hidden rounded-lg shadow">
-      <img
-        src={src}
-        alt={`WeTECH Gallery ${index + 1}`}
-        className="w-full h-64 object-cover transition-transform duration-300 hover:scale-105"
-      />
-    </div>
-  ))}
-</div>
+          {galleryImages.map((src, index) => (
+            <div key={index} className="overflow-hidden rounded-lg shadow">
+              <img
+                src={src}
+                alt={`WeTECH Gallery ${index + 1}`}
+                className="w-full h-64 object-cover transition-transform duration-300 hover:scale-105"
+              />
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Contact Form Section */}

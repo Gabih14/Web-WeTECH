@@ -11,7 +11,7 @@ export interface Product {
     promotionalPrice?: number;
   }[];
   price?: number;
-  discountQuantity?: {[quantity: number]: number};
+  discountQuantity?: { [quantity: number]: number };
   promotionalPrice?: number;
   colors?: {
     name: string;
@@ -36,19 +36,34 @@ export interface CartItem {
 
 export interface CartContextType {
   items: CartItem[];
-  addToCart: (product: Product, color: string, weight: number, quantity: number) => void;
+  addToCart: (
+    product: Product,
+    color: string,
+    weight: number,
+    quantity: number
+  ) => void;
   removeFromCart: (productId: string, color: string, weight: number) => void;
-  updateQuantity: (productId: string, quantity: number, color: string, weight: number) => void;
+  updateQuantity: (
+    productId: string,
+    quantity: number,
+    color: string,
+    weight: number
+  ) => void;
   total: number;
 }
 
 export interface ShippingCost {
-  distances: [InitialDistance:number, FinalDistance:number];
+  distances: [InitialDistance: number, FinalDistance: number];
   cost: number;
 }
 
 export interface Coupon {
   code: string;
   discount: number;
-  type: 'percentage' | 'fixed';
+  type: "percentage" | "fixed";
+}
+
+export interface Colors {
+  name: string;
+  hex: string;
 }

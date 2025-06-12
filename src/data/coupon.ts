@@ -1,14 +1,14 @@
-import { Coupon } from '../types';
+import { Coupon } from "../types";
 
 export const coupons: Coupon[] = [
   {
-    code: 'WELCOME10',
+    code: "WELCOME10",
     discount: 10,
-    type: 'percentage'
+    type: "percentage",
   },
   {
-    code: 'SAVE20',
+    code: "SAVE20",
     discount: 20,
-    type: 'fixed'
-  }
+    type: "fixed",
+  },
 ];
