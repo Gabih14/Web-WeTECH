@@ -25,12 +25,13 @@ export const CheckoutAdress = ({
   setShippingCost,
   deliveryMethod,
   setDeliveryMethod,
+  confirmedAddress,
+  setConfirmedAddress,
 }: Props) => {
   // const GOOGLE_API_KEY = "AIzaSyCDesHGPMQEk72w8X9sFRu1O1rzno9UopQ";
 
   const [showShippingInfo, setShowShippingInfo] = useState(false);
   const [shippingInfoChecked, setShippingInfoChecked] = useState(false);
-  const [confirmedAddress, setConfirmedAddress] = useState<string | null>(null);
   // Función para calcular el costo de envío
   const calculateShippingCost = (distance: number) => {
     const costEntry = shippingCosts.find(
