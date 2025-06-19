@@ -34,6 +34,7 @@ export default function Checkout() {
   );
 
   const [formData, setFormData] = useState({
+    cuit: "",
     name: "",
     email: "",
     phone: "",
