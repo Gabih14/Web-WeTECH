@@ -5,6 +5,7 @@ import { useCart } from "../context/CartContext";
 import { Coupon, Product } from "../types";
 import { CheckoutPersonal } from "./CheckoutPersonal";
 import { CheckoutAdress } from "./CheckoutAdress";
+import { CheckoutBilling } from "./CheckoutBilling";
 
 import { coupons } from "../data/coupon";
 /* import { CheckoutPayment } from "./CheckoutPayment"; */
@@ -32,6 +33,7 @@ export default function Checkout() {
   const [deliveryMethod, setDeliveryMethod] = useState<"pickup" | "shipping">(
     "pickup"
   );
+  const [sameBillingAddress, setSameBillingAddress] = useState(true); // por defecto sí
 
   const [formData, setFormData] = useState({
     cuit: "",
@@ -43,9 +45,11 @@ export default function Checkout() {
     distance: 0,
     city: "",
     postalCode: "",
-    cardNumber: "",
-    cardExpiry: "",
-    cardCVC: "",
+    // Sección de facturación:
+    billingStreet: "",
+    billingNumber: "",
+    billingCity: "",
+    billingPostalCode: "",
   });
 
   const [couponCode, setCouponCode] = useState("");
@@ -143,53 +147,82 @@ export default function Checkout() {
 
   /* PAYMENT REQUEST */
   const createPaymentRequest = async () => {
-  const body = {
-    cliente_cuit: formData.cuit,
-    cliente_nombre: formData.name,
-    total: Number(total.toFixed(2)),
-    mobile: isMobile,
-    email: formData.email,
-    telefono: formData.phone,
-    calle: formData.street,
-    ciudad: formData.city,
-    region: "Mendoza",
-    pais: "AR",
-    codigo_postal: formData.postalCode,
-    productos: items.map((item) => ({
-      nombre: item.product.name,
-      cantidad: item.quantity,
-      precio_unitario:
-        calculateDiscountedPrice(item.product, item.weight, item.quantity) ??
-        getPrice(item.product, item.weight) ??
-        0,
-    })),
-  };
-//console.log("items:", items);
-console.log("body:", body); 
-  try {
-    const res = await fetch("http://localhost:3000/pedido", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    });
+    const isShipping = deliveryMethod === "shipping";
 
-    const data = await res.json();
-console.log("Respuesta del servidor:", data);
-    if (data?.naveUrl) {
-      return data.naveUrl;
-    } else {
-      throw new Error("No se recibió URL de Nave");
+    const calle =
+      sameBillingAddress && isShipping
+        ? formData.street
+        : formData.billingStreet;
+    const ciudad =
+      sameBillingAddress && isShipping ? formData.city : formData.billingCity;
+    const codigo_postal =
+      sameBillingAddress && isShipping
+        ? formData.postalCode
+        : formData.billingPostalCode;
+
+    const body = {
+      cliente_cuit: formData.cuit,
+      cliente_nombre: formData.name,
+      total: Number(total.toFixed(2)),
+      mobile: isMobile,
+      email: formData.email,
+      telefono: formData.phone,
+      calle,
+      ciudad,
+      region: "Mendoza",
+      pais: "AR",
+      codigo_postal,
+      productos: items.map((item) => ({
+        nombre: item.product.name,
+        cantidad: item.quantity,
+        precio_unitario:
+          calculateDiscountedPrice(item.product, item.weight, item.quantity) ??
+          getPrice(item.product, item.weight) ??
+          0,
+      })),
+    };
+
+    console.log("body:", body);
+
+    try {
+      const res = await fetch("http://localhost:3000/pedido", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+
+      const data = await res.json();
+      console.log("Respuesta del servidor:", data);
+      if (data?.naveUrl) {
+        return data.naveUrl;
+      } else {
+        throw new Error("No se recibió URL de Nave");
+      }
+    } catch (error) {
+      console.error("Error en createPaymentRequest:", error);
+      alert("Hubo un problema al generar el pago.");
+      return null;
     }
-  } catch (error) {
-    console.error("Error en createPaymentRequest:", error);
-    alert("Hubo un problema al generar el pago.");
-    return null;
-  }
-};
+  };
 
   /* END PAYMENT REQUEST */
+
+  const handleSameBillingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const checked = e.target.checked;
+    setSameBillingAddress(checked);
+
+    if (checked) {
+      setFormData((prev) => ({
+        ...prev,
+        billingStreet: prev.street,
+        billingNumber: prev.number,
+        billingCity: prev.city,
+        billingPostalCode: prev.postalCode,
+      }));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -241,6 +274,8 @@ console.log("Respuesta del servidor:", data);
               formData={formData}
               handleInputChange={handleInputChange}
             />
+
+            {/* Mostrar método de entrega y dirección de envío */}
             <CheckoutAdress
               formData={formData}
               handleInputChange={handleInputChange}
@@ -250,20 +285,46 @@ console.log("Respuesta del servidor:", data);
               confirmedAddress={confirmedAddress}
               setConfirmedAddress={setConfirmedAddress}
             />
-            {/* <CheckoutPayment formData={formData} handleInputChange={handleInputChange} /> */}
 
-            {/* <button
-              type="submit"
-              className="w-full t py-3 px-4 rounded-md bg-yellow-400 hover:bg-yellow-700 transition-colors"
-            >
-              Confirmar Compra (${total.toFixed(2)})
-            </button> */}
+            {/* Mostrar checkbox y form de facturación si es envío */}
+            {deliveryMethod === "shipping" && (
+              <>
+                <div className="mt-4">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={sameBillingAddress}
+                      onChange={handleSameBillingChange}
+                      className="mr-2"
+                    />
+                    Usar esta dirección para la facturación
+                  </label>
+                </div>
+
+                {!sameBillingAddress && (
+                  <CheckoutBilling
+                    formData={formData}
+                    handleInputChange={handleInputChange}
+                  />
+                )}
+              </>
+            )}
+
+            {/* Mostrar facturación obligatoria si es retiro */}
+            {deliveryMethod === "pickup" && (
+              <CheckoutBilling
+                formData={formData}
+                handleInputChange={handleInputChange}
+              />
+            )}
+
             <button
               type="submit"
               className="w-full py-3 px-4 rounded-md transition-colors bg-yellow-400 hover:bg-yellow-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
               disabled={
                 isLoading ||
-                (deliveryMethod === "shipping" && (!shippingCost || !confirmedAddress))
+                (deliveryMethod === "shipping" &&
+                  (!shippingCost || !confirmedAddress))
               }
             >
               {isLoading ? (
@@ -275,6 +336,7 @@ console.log("Respuesta del servidor:", data);
                 `Ir a pagar`
               )}
             </button>
+
             {deliveryMethod === "shipping" && !isLoading && (
               <div className="mt-2 text-center text-sm text-red-600 font-semibold">
                 {!shippingCost
@@ -284,6 +346,7 @@ console.log("Respuesta del servidor:", data);
                   : null}
               </div>
             )}
+
             <div className="text-xs text-gray-500 text-center mt-4">
               Al confirmar tu compra aceptas nuestros términos y condiciones
             </div>
