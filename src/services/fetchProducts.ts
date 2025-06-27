@@ -27,9 +27,10 @@ export const fetchProducts = async (): Promise<Product[]> => {
 
       if (!groupedProducts[familiaId]) {
         // Crear el producto principal
+        console.log("Creando producto:", familiaId, item.id);
         groupedProducts[familiaId] = {
           id: familiaId,
-          name: item.familiaId ? item.familiaId : item.descripcion,
+          name: item.id, //item.familiaId ? item.familiaId : item.descripcion
           description: item.descripcion,
           image: `/assets/${familiaId}.png`, // Generar la ruta dinámica de la imagen
           category: item.grupo,
