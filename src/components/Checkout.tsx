@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Tag } from "lucide-react";
 import { useCart } from "../context/CartContext";
@@ -149,29 +149,36 @@ export default function Checkout() {
   const createPaymentRequest = async () => {
     const isShipping = deliveryMethod === "shipping";
 
-    const calle =
-      sameBillingAddress && isShipping
-        ? formData.street
-        : formData.billingStreet;
-    const ciudad =
-      sameBillingAddress && isShipping ? formData.city : formData.billingCity;
-    const codigo_postal =
-      sameBillingAddress && isShipping
-        ? formData.postalCode
-        : formData.billingPostalCode;
+    // Dirección de envío
+    const calle = isShipping ? formData.street : formData.billingStreet;
+    const numero = isShipping ? formData.number : formData.billingNumber;
+    const ciudad = isShipping ? formData.city : formData.billingCity;
+    const codigo_postal = isShipping ? formData.postalCode : formData.billingPostalCode;
+    const region = "Mendoza";
+    const pais = "AR";
+
+    // Dirección de facturación (siempre se envía)
+    const billing_address = {
+      street: formData.billingStreet,
+      number: formData.billingNumber,
+      city: formData.billingCity,
+      region: region,
+      country: pais,
+      postal_code: formData.billingPostalCode,
+    };
 
     const body = {
-      cliente_cuit: formData.cuit,
       cliente_nombre: formData.name,
+      cliente_cuit: formData.cuit,
       total: Number(total.toFixed(2)),
-      mobile: isMobile,
       email: formData.email,
       telefono: formData.phone,
       calle,
       ciudad,
-      region: "Mendoza",
-      pais: "AR",
+      region,
+      pais,
       codigo_postal,
+      mobile: isMobile,
       productos: items.map((item) => ({
         nombre: item.product.name,
         cantidad: item.quantity,
@@ -180,6 +187,7 @@ export default function Checkout() {
           getPrice(item.product, item.weight) ??
           0,
       })),
+      billing_address,
     };
 
     console.log("body:", body);
@@ -257,6 +265,26 @@ export default function Checkout() {
 
   const originalTotal = calculateOriginalTotal();
   const discount = originalTotal - total;
+
+  // Sincroniza billing con envío si el check está marcado
+  useEffect(() => {
+    if (sameBillingAddress) {
+      setFormData((prev) => ({
+        ...prev,
+        billingStreet: prev.street,
+        billingNumber: prev.number,
+        billingCity: prev.city,
+        billingPostalCode: prev.postalCode,
+      }));
+    }
+  }, [
+    sameBillingAddress,
+    formData.street,
+    formData.number,
+    formData.city,
+    formData.postalCode,
+  ]);
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
       <button
@@ -297,7 +325,7 @@ export default function Checkout() {
                       onChange={handleSameBillingChange}
                       className="mr-2"
                     />
-                    Usar esta dirección para la facturación
+                    Usar la dirección de envío para la dirección de facturación
                   </label>
                 </div>
 
