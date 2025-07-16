@@ -13,14 +13,12 @@ export const fetchProducts = async (): Promise<Product[]> => {
 
     // Obtener los datos en formato JSON
     const rawProducts = await response.json();
-    //console.log("Productos obtenidos:", rawProducts);
+
     // Transformar los datos
     const groupedProducts: { [key: string]: Product } = {};
 
     rawProducts.forEach((item: any) => {
-      //console.log("familia id:", item.familia, "id:", item.id);
       // Usar familia si está disponible, de lo contrario usar id
-      console.log(item)
       const familia = item.familia || item.id;
 
       // Ignorar ítems del grupo "FILAMENTOS" sin familia
@@ -29,11 +27,11 @@ export const fetchProducts = async (): Promise<Product[]> => {
       }
 
       if (!groupedProducts[familia]) {
+
         // Crear el producto principal
-        //console.log("Creando producto:", familia, item.id);
         groupedProducts[familia] = {
-          id: familia,
-          name: familia,//item.id, //item.familia ? item.familia : item.descripcion
+          id: item.id,
+          name: familia,//item.id
           description: item.descripcion,
           image: `/assets/${familia}.png`, // Generar la ruta dinámica de la imagen
           category: item.grupo,
