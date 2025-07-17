@@ -51,7 +51,7 @@ export default function Checkout() {
     billingPostalCode: "",
   });
 
- // Sincroniza billing con envío si el check está marcado
+  // Sincroniza billing con envío si el check está marcado
   useEffect(() => {
     if (sameBillingAddress) {
       setFormData((prev) => ({
@@ -69,7 +69,7 @@ export default function Checkout() {
     formData.city,
     formData.postalCode,
   ]);
-  
+
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [couponError, setCouponError] = useState("");
@@ -100,7 +100,6 @@ export default function Checkout() {
     }
     return appliedCoupon.discount;
   }; */
-
 
   const getPrice = (product: Product, weight: number): number | undefined => {
     const weightData = product.weights?.find((w) => w.weight === weight);
@@ -168,9 +167,11 @@ export default function Checkout() {
 
     // Dirección de envío
     const calle = isShipping ? formData.street : formData.billingStreet;
-    const numero = isShipping ? formData.number : formData.billingNumber;
+    // const numero = isShipping ? formData.number : formData.billingNumber;
     const ciudad = isShipping ? formData.city : formData.billingCity;
-    const codigo_postal = isShipping ? formData.postalCode : formData.billingPostalCode;
+    const codigo_postal = isShipping
+      ? formData.postalCode
+      : formData.billingPostalCode;
     const region = "Mendoza";
     const pais = "AR";
 
@@ -207,10 +208,10 @@ export default function Checkout() {
       billing_address,
     };
 
-    console.log("body:", items);
+    const API_URL = import.meta.env.VITE_API_URL;
 
     try {
-      const res = await fetch("http://localhost:3000/pedido", {
+      const res = await fetch(`${API_URL}/pedido`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -282,8 +283,6 @@ export default function Checkout() {
 
   const originalTotal = calculateOriginalTotal();
   const discount = originalTotal - total;
-
- 
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
