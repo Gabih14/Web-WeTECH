@@ -1,4 +1,3 @@
-```markdown
 # 🛒 Web-WeTECH
 
 Sitio web e-commerce para venta de productos relacionados con la impresión 3D, desarrollado con **React + TypeScript + Vite**, utilizando **TailwindCSS** para estilos y enfoque mobile-first.
