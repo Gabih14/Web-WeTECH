@@ -100,14 +100,5 @@ La plataforma se integra con **Nave**, un sistema externo de gestión de pagos. 
 
 ---
 
-## 🤝 Contribuciones
-
-¡Las contribuciones están abiertas! Si tenés sugerencias o encontrás bugs, sentite libre de abrir issues o Pull Requests.
-
----
-
-## 📄 Licencia
-
-Este proyecto se distribuye bajo licencia MIT.
 
 
