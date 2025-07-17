@@ -22,6 +22,8 @@ export const fetchProducts = async (): Promise<Product[]> => {
       // Usar familia si está disponible, de lo contrario usar id
       console.log(item)
       const familia = item.familia || item.id;
+      const [marca, ...modeloArr] = familia.split(" ");
+      const modelo = modeloArr.join(" ");
 
       // Ignorar ítems del grupo "FILAMENTOS" sin familia
       if (item.grupo === "FILAMENTOS" && !item.familia) {
