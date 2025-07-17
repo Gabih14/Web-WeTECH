@@ -25,12 +25,13 @@ export const CheckoutAdress = ({
   setShippingCost,
   deliveryMethod,
   setDeliveryMethod,
+  confirmedAddress,
+  setConfirmedAddress,
 }: Props) => {
   // const GOOGLE_API_KEY = "AIzaSyCDesHGPMQEk72w8X9sFRu1O1rzno9UopQ";
 
   const [showShippingInfo, setShowShippingInfo] = useState(false);
   const [shippingInfoChecked, setShippingInfoChecked] = useState(false);
-  const [confirmedAddress, setConfirmedAddress] = useState<string | null>(null);
   // Función para calcular el costo de envío
   const calculateShippingCost = (distance: number) => {
     const costEntry = shippingCosts.find(
@@ -40,11 +41,12 @@ export const CheckoutAdress = ({
     return costEntry ? costEntry.cost : 0;
   };
   const [calculatingShipping, setCalculatingShipping] = useState(false);
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
   // Función para obtener la distancia desde la API de Google
   const fetchDistance = async () => {
     setCalculatingShipping(true);
     try {
-      const response = await fetch("http://localhost:3000/maps/distance", {
+      const response = await fetch(`${API_URL}/maps/distance`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -1,13 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Tag } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { Coupon, Product } from "../types";
 import { CheckoutPersonal } from "./CheckoutPersonal";
 import { CheckoutAdress } from "./CheckoutAdress";
+import { CheckoutBilling } from "./CheckoutBilling";
 
 import { coupons } from "../data/coupon";
-/* import { CheckoutPayment } from "./CheckoutPayment"; */
 
 function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(window.matchMedia(query).matches);
@@ -32,8 +32,10 @@ export default function Checkout() {
   const [deliveryMethod, setDeliveryMethod] = useState<"pickup" | "shipping">(
     "pickup"
   );
-
+  const [sameBillingAddress, setSameBillingAddress] = useState(true); // por defecto sí
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
+    cuit: "",
     name: "",
     email: "",
     phone: "",
@@ -42,10 +44,31 @@ export default function Checkout() {
     distance: 0,
     city: "",
     postalCode: "",
-    cardNumber: "",
-    cardExpiry: "",
-    cardCVC: "",
+    // Sección de facturación:
+    billingStreet: "",
+    billingNumber: "",
+    billingCity: "",
+    billingPostalCode: "",
   });
+
+  // Sincroniza billing con envío si el check está marcado
+  useEffect(() => {
+    if (sameBillingAddress) {
+      setFormData((prev) => ({
+        ...prev,
+        billingStreet: prev.street,
+        billingNumber: prev.number,
+        billingCity: prev.city,
+        billingPostalCode: prev.postalCode,
+      }));
+    }
+  }, [
+    sameBillingAddress,
+    formData.street,
+    formData.number,
+    formData.city,
+    formData.postalCode,
+  ]);
 
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
@@ -77,8 +100,6 @@ export default function Checkout() {
     }
     return appliedCoupon.discount;
   }; */
-
-  const [isLoading, setIsLoading] = useState(false);
 
   const getPrice = (product: Product, weight: number): number | undefined => {
     const weightData = product.weights?.find((w) => w.weight === weight);
@@ -142,77 +163,68 @@ export default function Checkout() {
 
   /* PAYMENT REQUEST */
   const createPaymentRequest = async () => {
-    /* obtener este token desde el backend */
-    const token = import.meta.env.VITE_TOKEN_NAVE; // 🔐 reemplazar con tu token real
+    const isShipping = deliveryMethod === "shipping";
 
-    // Armamos el body para el request
-    const body = {
-      platform: "platform-x",
-      store_id: "store1-platform-x",
-      callback_url: `https://platform_x.com.ar/../order/9546`,
-      order_id: "9546", // Podés generar un ID dinámico si querés
-      mobile: isMobile,
-      payment_request: {
-        transactions: [
-          {
-            products: items.map((item) => ({
-              id: item.product.id.toString(),
-              name: item.product.name,
-              description: item.product.description || item.product.name,
-              quantity: item.quantity,
-              unit_price: {
-                currency: "ARS",
-                value:
-                  calculateDiscountedPrice(
-                    item.product,
-                    item.weight,
-                    item.quantity
-                  )?.toFixed(2) || "0.00",
-              },
-            })),
-            amount: {
-              currency: "ARS",
-              value: total.toFixed(2),
-            },
-          },
-        ],
-        buyer: {
-          user_id: formData.email,
-          doc_type: "DNI",
-          doc_number: "N/A",
-          user_email: formData.email,
-          name: formData.name || "N/A",
-          phone: formData.phone || "N/A",
-          billing_address: {
-            street_1: formData.street || "Cliente",
-            street_2: "N/A",
-            city: formData.city || "1",
-            region: "Mendoza", // Podés hacerlo dinámico si querés
-            country: "AR",
-            zipcode: formData.postalCode || "5000",
-          },
-        },
-      },
+    // Dirección de envío
+    const calle = isShipping ? formData.street : formData.billingStreet;
+    // const numero = isShipping ? formData.number : formData.billingNumber;
+    const ciudad = isShipping ? formData.city : formData.billingCity;
+    const codigo_postal = isShipping
+      ? formData.postalCode
+      : formData.billingPostalCode;
+    const region = "Mendoza";
+    const pais = "AR";
+
+    // Dirección de facturación (siempre se envía)
+    const billing_address = {
+      street: formData.billingStreet,
+      number: formData.billingNumber,
+      city: formData.billingCity,
+      region: region,
+      country: pais,
+      postal_code: formData.billingPostalCode,
     };
 
+    const body = {
+      cliente_nombre: formData.name,
+      cliente_cuit: formData.cuit,
+      total: Number(total.toFixed(2)),
+      email: formData.email,
+      telefono: formData.phone,
+      calle,
+      ciudad,
+      region,
+      pais,
+      codigo_postal,
+      mobile: isMobile,
+      productos: items.map((item) => ({
+        nombre: item.product.id,
+        cantidad: item.quantity,
+        precio_unitario:
+          calculateDiscountedPrice(item.product, item.weight, item.quantity) ??
+          getPrice(item.product, item.weight) ??
+          0,
+      })),
+      billing_address,
+    };
+
+    const API_URL = import.meta.env.VITE_API_URL;
+
     try {
-      const res = await fetch(
-        "https://e3-api.ranty.io/ecommerce/payment_request/external",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(body),
-        }
-      );
+      const res = await fetch(`${API_URL}/pedido`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
 
       const data = await res.json();
-      if (data.success) {
-        return data.data.checkout_url;
+      console.log("Respuesta del servidor:", data);
+      if (data?.naveUrl) {
+        return data.naveUrl;
       } else {
-        throw new Error(data.message || "Error al crear la solicitud de pago");
+        throw new Error("No se recibió URL de Nave");
       }
     } catch (error) {
       console.error("Error en createPaymentRequest:", error);
@@ -220,7 +232,23 @@ export default function Checkout() {
       return null;
     }
   };
+
   /* END PAYMENT REQUEST */
+
+  const handleSameBillingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const checked = e.target.checked;
+    setSameBillingAddress(checked);
+
+    if (checked) {
+      setFormData((prev) => ({
+        ...prev,
+        billingStreet: prev.street,
+        billingNumber: prev.number,
+        billingCity: prev.city,
+        billingPostalCode: prev.postalCode,
+      }));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -255,6 +283,7 @@ export default function Checkout() {
 
   const originalTotal = calculateOriginalTotal();
   const discount = originalTotal - total;
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
       <button
@@ -272,6 +301,8 @@ export default function Checkout() {
               formData={formData}
               handleInputChange={handleInputChange}
             />
+
+            {/* Mostrar método de entrega y dirección de envío */}
             <CheckoutAdress
               formData={formData}
               handleInputChange={handleInputChange}
@@ -281,22 +312,42 @@ export default function Checkout() {
               confirmedAddress={confirmedAddress}
               setConfirmedAddress={setConfirmedAddress}
             />
-            {/* <CheckoutPayment formData={formData} handleInputChange={handleInputChange} /> */}
 
-            {/* <button
-              type="submit"
-              className="w-full t py-3 px-4 rounded-md bg-yellow-400 hover:bg-yellow-700 transition-colors"
-            >
-              Confirmar Compra (${total.toFixed(2)})
-            </button> */}
+            {/* Mostrar checkbox y form de facturación si es envío */}
+            {deliveryMethod === "shipping" && (
+              <>
+                <div className="mt-4">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={sameBillingAddress}
+                      onChange={handleSameBillingChange}
+                      className="mr-2"
+                    />
+                    Usar la dirección de envío para la dirección de facturación
+                  </label>
+                </div>
+
+                {!sameBillingAddress && (
+                  <CheckoutBilling
+                    formData={formData}
+                    handleInputChange={handleInputChange}
+                  />
+                )}
+              </>
+            )}
+
+            {/* Mostrar facturación obligatoria si es retiro */}
+            {deliveryMethod === "pickup" && (
+              <CheckoutBilling
+                formData={formData}
+                handleInputChange={handleInputChange}
+              />
+            )}
+
             <button
               type="submit"
-              className={`w-full py-3 px-4 rounded-md transition-colors ${
-                isLoading ||
-                (deliveryMethod === "shipping" && shippingCost === 0)
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-yellow-400 hover:bg-yellow-700"
-              }`}
+              className="w-full py-3 px-4 rounded-md transition-colors bg-yellow-400 hover:bg-yellow-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
               disabled={
                 isLoading ||
                 (deliveryMethod === "shipping" &&
@@ -312,13 +363,17 @@ export default function Checkout() {
                 `Ir a pagar`
               )}
             </button>
-            {deliveryMethod === "shipping" &&
-              shippingCost === 0 &&
-              !isLoading && (
-                <div className="mt-2 text-center text-sm text-red-600 font-semibold">
-                  Debes calcular el costo de envío antes de continuar.
-                </div>
-              )}
+
+            {deliveryMethod === "shipping" && !isLoading && (
+              <div className="mt-2 text-center text-sm text-red-600 font-semibold">
+                {!shippingCost
+                  ? "Debes calcular el costo de envío antes de continuar."
+                  : !confirmedAddress
+                  ? "Debes confirmar tu dirección antes de continuar."
+                  : null}
+              </div>
+            )}
+
             <div className="text-xs text-gray-500 text-center mt-4">
               Al confirmar tu compra aceptas nuestros términos y condiciones
             </div>

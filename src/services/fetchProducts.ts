@@ -2,9 +2,13 @@ import { Product } from "../types";
 import { colors } from "../data/colors";
 
 export const fetchProducts = async (): Promise<Product[]> => {
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+  if (!API_URL) {
+    throw new Error("API URL is not defined");
+  }
   try {
     // Petición
-    const response = await fetch("http://localhost:3000/stk-item");
+    const response = await fetch(`${API_URL}/stk-item`);
 
     // Verificar si la respuesta es exitosa
     if (!response.ok) {
@@ -18,20 +22,21 @@ export const fetchProducts = async (): Promise<Product[]> => {
     const groupedProducts: { [key: string]: Product } = {};
 
     rawProducts.forEach((item: any) => {
-      const familiaId = item.familiaId || item.id;
+      // Usar familia si está disponible, de lo contrario usar id
+      const familia = item.familia || item.id;
 
-      // Ignorar ítems del grupo "FILAMENTOS" sin familiaId
-      if (item.grupo === "FILAMENTOS" && !item.familiaId) {
+      // Ignorar ítems del grupo "FILAMENTOS" sin familia
+      if (item.grupo === "FILAMENTOS" && !item.familia) {
         return; // Salir de esta iteración
       }
 
-      if (!groupedProducts[familiaId]) {
+      if (!groupedProducts[familia]) {
         // Crear el producto principal
-        groupedProducts[familiaId] = {
-          id: familiaId,
-          name: item.familiaId ? item.familiaId : item.descripcion,
+        groupedProducts[familia] = {
+          id: item.id,
+          name: familia, //item.id
           description: item.descripcion,
-          image: `/assets/${familiaId}.png`, // Generar la ruta dinámica de la imagen
+          image: `/assets/${familia}.png`, // Generar la ruta dinámica de la imagen
           category: item.grupo,
           subcategory: item.subgrupo ? item.subgrupo.toUpperCase() : undefined,
           price: parseFloat(item.precioVtaCotizado || "0"), // Guardar precioVtaCotizado en todos los productos
@@ -41,7 +46,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
 
         // Solo agregar `weights` si el grupo es "FILAMENTOS"
         if (item.grupo === "FILAMENTOS") {
-          groupedProducts[familiaId].weights = [];
+          groupedProducts[familia].weights = [];
         }
       }
 
@@ -62,13 +67,13 @@ export const fetchProducts = async (): Promise<Product[]> => {
         const promotionalPrice = price - price * 0.15; // Calcular el precio promocional (15% de descuento)
 
         // Verificar si el peso ya existe en `weights`
-        const existingWeight = groupedProducts[familiaId].weights?.find(
+        const existingWeight = groupedProducts[familia].weights?.find(
           (w) => w.weight === weight
         );
 
         if (!existingWeight) {
           // Agregar el peso y precio a `weights` solo si no existe
-          groupedProducts[familiaId].weights?.push({
+          groupedProducts[familia].weights?.push({
             weight,
             price,
             promotionalPrice,
@@ -85,7 +90,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
         );
         const hexValue = colorData ? colorData.hex : "#000000"; // Usar el valor encontrado o un valor predeterminado
 
-        const existingColor = groupedProducts[familiaId].colors?.find(
+        const existingColor = groupedProducts[familia].colors?.find(
           (color) => color.name === colorName
         );
 
@@ -95,7 +100,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
             (existingColor.stock[weight] || 0) + stock;
         } else {
           // Si el color no existe, agregarlo
-          groupedProducts[familiaId].colors?.push({
+          groupedProducts[familia].colors?.push({
             name: colorName,
             hex: hexValue, // Puedes asignar un color genérico o específico
             stock: {
@@ -105,8 +110,8 @@ export const fetchProducts = async (): Promise<Product[]> => {
         }
       } else {
         // Para otras categorías, sumar el stock de forma general
-        groupedProducts[familiaId].stock =
-          (groupedProducts[familiaId].stock || 0) +
+        groupedProducts[familia].stock =
+          (groupedProducts[familia].stock || 0) +
           parseFloat(item.stkExistencias?.[0]?.cantidad || "0");
       }
     });
