@@ -2,9 +2,13 @@ import { Product } from "../types";
 import { colors } from "../data/colors";
 
 export const fetchProducts = async (): Promise<Product[]> => {
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+  if (!API_URL) {
+    throw new Error("API URL is not defined");
+  }
   try {
     // Petición
-    const response = await fetch("http://localhost:3000/stk-item");
+    const response = await fetch(`${API_URL}/stk-item`);
 
     // Verificar si la respuesta es exitosa
     if (!response.ok) {
@@ -27,11 +31,10 @@ export const fetchProducts = async (): Promise<Product[]> => {
       }
 
       if (!groupedProducts[familia]) {
-
         // Crear el producto principal
         groupedProducts[familia] = {
           id: item.id,
-          name: familia,//item.id
+          name: familia, //item.id
           description: item.descripcion,
           image: `/assets/${familia}.png`, // Generar la ruta dinámica de la imagen
           category: item.grupo,
