@@ -219,6 +219,81 @@ export function HomePage() {
         </h2>
         <Reviews />
       </section>
+      {/* Sección En Desarrollo */}
+      <section className="bg-gradient-to-r from-yellow-50 to-yellow-100 py-6 sm:py-8  lg:my-16 rounded-xl shadow-lg border-l-4 border-yellow-500">
+        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row items-center justify-center mb-4 sm:mb-6">
+            <div className="bg-yellow-200 p-2 sm:p-3 rounded-full mb-3 sm:mb-0 sm:mr-3">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-700"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+              </svg>
+            </div>
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 text-center sm:text-left">
+              Estamos Mejorando Para Vos
+            </h2>
+          </div>
+          
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md mb-4 sm:mb-6">
+            <p className="text-base sm:text-lg text-gray-700 mb-3 sm:mb-4 leading-relaxed">
+              Nuestro sitio web está en <span className="font-semibold text-yellow-700">constante desarrollo</span> para 
+              brindarte la mejor experiencia de compra posible.
+            </p>
+            <p className="text-sm sm:text-base text-gray-600 mb-4 leading-relaxed">
+              Tu opinión es fundamental para nosotros. Si tenés ideas, sugerencias o encontrás algo que podamos mejorar, 
+              no dudes en escribirnos.
+            </p>
+            
+            <div className="bg-yellow-50 p-3 sm:p-4 rounded-lg border border-yellow-200">
+              <p className="text-xs sm:text-sm font-medium text-gray-800 mb-2">
+                📧 Envianos tus sugerencias:
+              </p>
+              <a
+                href="mailto:hernandezg.alvarez@gmail.com"
+                className="inline-flex flex-col sm:flex-row items-center text-yellow-700 hover:text-yellow-900 font-semibold transition-colors duration-200 break-all"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4 sm:h-5 sm:w-5 mb-1 sm:mb-0 sm:mr-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  />
+                </svg>
+                <span className="text-xs sm:text-sm lg:text-base">
+                  hernandezg.alvarez@gmail.com
+                </span>
+              </a>
+            </div>
+          </div>
+          
+          <p className="text-xs sm:text-sm text-gray-500 italic">
+            Gracias por tu paciencia y por ayudarnos a crecer 🚀
+          </p>
+        </div>
+      </section>
     </main>
   );
 }
