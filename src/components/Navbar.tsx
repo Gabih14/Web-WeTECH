@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { ShoppingCart, UserCircle } from "lucide-react";
-import { FaMapMarkerAlt, FaWhatsapp } from "react-icons/fa";
+import { ShoppingCart } from "lucide-react"; // UserCircle
+import { FaWhatsapp } from "react-icons/fa"; // FaMapMarkerAlt
 import { useCart } from "../context/CartContext";
-import { useAuth } from "../context/AuthContext";
+//import { useAuth } from "../context/AuthContext";
 import CartModal from "../components/CartModal";
 import LoginModal from "../components/LoginModal";
 import { Link, useNavigate } from "react-router-dom";
@@ -12,9 +12,9 @@ export default function Navbar() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedProvince, setSelectedProvince] = useState("Mendoza");
+  //const [selectedProvince, setSelectedProvince] = useState("Mendoza");
   const { items } = useCart();
-  const { isAuthenticated, logout } = useAuth();
+  //const { isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
 
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -33,9 +33,9 @@ export default function Navbar() {
     navigate(`/search?query=${encodeURIComponent(searchQuery)}`);
   };
 
-  const handleProvinceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  /* const handleProvinceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedProvince(e.target.value);
-  };
+  }; */
 
   return (
     <>
@@ -46,14 +46,13 @@ export default function Navbar() {
             <Link to="/" className="flex items-center pr-2">
               <img src={Isologo} alt="Logo WeTECH" className="h-20 w-auto" />
             </Link>
-            <div className="flex items-center">
+            {/* <div className="flex items-center">
               <FaMapMarkerAlt className="pr-1" />
               <div className="relative flex items-center space-x-2">
-                {/* <FaMapMarkerAlt className="absolute left-3 text-white" /> */}
                 <select
                   value={selectedProvince}
                   onChange={handleProvinceChange}
-                  className="p-2 pl-3 border rounded-md bg-black text-white w-32 max-w-xs" /* pl-6 con el ícono */
+                  className="p-2 pl-3 border rounded-md bg-black text-white w-32 max-w-xs" 
                 >
                   <option value="Mendoza">Mendoza</option>
                   <option value="Buenos Aires">Buenos Aires</option>
@@ -61,7 +60,7 @@ export default function Navbar() {
                   <option value="Santa Fe">Santa Fe</option>
                 </select>
               </div>
-            </div>
+            </div> */}
 
             {/* Barra de busqueda para computadoras */}
             <form
@@ -103,7 +102,7 @@ export default function Navbar() {
             </form>
 
             <div className="flex items-center space-x-2 pl-2 sm:space-x-4">
-              {isAuthenticated ? (
+              {/* {isAuthenticated ? (
                 <button
                   onClick={logout}
                   className="text-black hover:text-white transition-colors flex items-center"
@@ -119,7 +118,7 @@ export default function Navbar() {
                   <UserCircle className="h-6 w-6 mr-2" />
                   <span className="hidden lg:flex">Iniciar Sesión</span>
                 </button>
-              )}
+              )} */}
               <button
                 className="p-2 rounded-full text-black hover:bg-white relative"
                 onClick={() => setIsCartOpen(true)}

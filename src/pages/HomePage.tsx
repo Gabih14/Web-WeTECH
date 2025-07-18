@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Printer as Printer3D, Shapes, Wrench, X } from "lucide-react";
 import { ContactInfo } from "../components/ContactInfo";
 import Logo from "../assets/Logo WeTECH Negro PNG.png";
-import Slogan from "../assets/slogan-removebg.webp";
+import Slogan from "../assets/filamentso-removebg-preview.webp";
 import filamentoCategoria from "../assets/Grilon_pla_piel.jpeg";
 import impresoraCategoria from "../assets/CR6 S.png";
 import repuestoCategoria from "../assets/racor 6mm plastico web2_Impresora 3D Creality CR-10 SMART Mendoza v2.jpg";
@@ -146,11 +146,11 @@ export function HomePage() {
       <div id="categories" className="text-center mb-8 gap-4">
         <div className="flex flex-col md:flex-row items-center justify-center">
           <img src={Logo} alt="Logo WeTECH" className="mx-auto h-24 md:h-48" />
-          <Link to={"/products"}>
+          <Link to={"/products?category=filamentos"}>
             <img
               src={Slogan}
               alt="Slogan WeTECH"
-              className="mx-auto h-24 md:h-48 pt-4 md:pt-0"
+              className="mx-auto h-32 md:h-56 pt-4 md:pt-0"
             />
           </Link>
         </div>
