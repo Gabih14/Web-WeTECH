@@ -7,6 +7,7 @@ import filamentoCategoria from "../assets/Grilon_pla_piel.jpeg";
 import impresoraCategoria from "../assets/CR6 S.png";
 import repuestoCategoria from "../assets/racor 6mm plastico web2_Impresora 3D Creality CR-10 SMART Mendoza v2.jpg";
 import { useState } from "react";
+import { Reviews } from "../components/ReviewSection";
 
 const categories = [
   {
@@ -212,6 +213,12 @@ export function HomePage() {
         VISITANOS
       </h2>
       <ContactInfo />
+      <section className="mt-12">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center">
+          Opiniones de nuestros clientes
+        </h2>
+        <Reviews />
+      </section>
     </main>
   );
 }
