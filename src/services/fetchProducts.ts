@@ -24,6 +24,8 @@ export const fetchProducts = async (): Promise<Product[]> => {
     rawProducts.forEach((item: any) => {
       // Usar familia si está disponible, de lo contrario usar id
       const familia = item.familia || item.id;
+      const [marca, ...modeloArr] = familia.split(" ");
+      const modelo = modeloArr.join(" ");
 
       // Ignorar ítems del grupo "FILAMENTOS" sin familia
       if (item.grupo === "FILAMENTOS" && !item.familia) {
@@ -34,9 +36,9 @@ export const fetchProducts = async (): Promise<Product[]> => {
         // Crear el producto principal
         groupedProducts[familia] = {
           id: item.id,
-          name: familia, //item.id
+          name: familia,//item.id, //item.familia ? item.familia : item.descripcion
           description: item.descripcion,
-          image: `/assets/${familia}.png`, // Generar la ruta dinámica de la imagen
+          image: `/assets/filamentos/${item.id}.png`, // Generar la ruta dinámica de la imagen
           category: item.grupo,
           subcategory: item.subgrupo ? item.subgrupo.toUpperCase() : undefined,
           price: parseFloat(item.precioVtaCotizado || "0"), // Guardar precioVtaCotizado en todos los productos
