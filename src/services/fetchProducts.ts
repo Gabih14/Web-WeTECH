@@ -34,10 +34,10 @@ export const fetchProducts = async (): Promise<Product[]> => {
         // Crear el producto principal
         //console.log("Creando producto:", familia, item.id);
         groupedProducts[familia] = {
-          id: familia,
+          id: item.id,
           name: familia,//item.id, //item.familia ? item.familia : item.descripcion
           description: item.descripcion,
-          image: `/assets/${familia}.png`, // Generar la ruta dinámica de la imagen
+          image: `/assets/${marca}/${modelo}/${item.id}.png`, // Generar la ruta dinámica de la imagen
           category: item.grupo,
           subcategory: item.subgrupo ? item.subgrupo.toUpperCase() : undefined,
           price: parseFloat(item.precioVtaCotizado || "0"), // Guardar precioVtaCotizado en todos los productos
