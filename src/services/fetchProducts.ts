@@ -38,7 +38,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
           id: item.id,
           name: familia,//item.id, //item.familia ? item.familia : item.descripcion
           description: item.descripcion,
-          image: `/assets/${marca}/${modelo}/${item.id}.png`, // Generar la ruta dinámica de la imagen
+          image: `/assets/filamentos/${item.id}.png`, // Generar la ruta dinámica de la imagen
           category: item.grupo,
           subcategory: item.subgrupo ? item.subgrupo.toUpperCase() : undefined,
           price: parseFloat(item.precioVtaCotizado || "0"), // Guardar precioVtaCotizado en todos los productos
