@@ -125,13 +125,13 @@ export const Franquicias = () => {
           Razones para elegirnos
         </h2>
         <div className="grid md:grid-cols-2 gap-8">
-          <div className="bg-yellow-50 p-6 rounded-lg shadow">
+          <div className="bg-yellow-100 p-6 rounded-lg shadow">
             <h3 className="text-xl font-semibold mb-4">
               1. Liderazgo en el mercado
             </h3>
             <p>Somos líderes en el mercado tecnológico de impresión 3D.</p>
           </div>
-          <div className="bg-yellow-50 p-6 rounded-lg shadow">
+          <div className="bg-yellow-100 p-6 rounded-lg shadow">
             <h3 className="text-xl font-semibold mb-4">
               2. Alianzas estratégicas
             </h3>
@@ -141,17 +141,17 @@ export const Franquicias = () => {
               Altamente rentable por sus margenes.
             </p>
           </div>
-          <div className="bg-yellow-50 p-6 rounded-lg shadow">
+          <div className="bg-yellow-100 p-6 rounded-lg shadow">
             <h3 className="text-xl font-semibold mb-4">
               3. Conocimiento del mercado
             </h3>
             <p>Amplio conocimiento del mercado y del consumidor.</p>
           </div>
-          <div className="bg-yellow-50 p-6 rounded-lg shadow">
+          <div className="bg-yellow-100 p-6 rounded-lg shadow">
             <h3 className="text-xl font-semibold mb-4">4. Negocio probado</h3>
             <p>Wetech es un negocio probado, tecnológico y disruptivo.</p>
           </div>
-          <div className="bg-yellow-50 p-6 rounded-lg shadow">
+          <div className="bg-yellow-100 p-6 rounded-lg shadow">
             <h3 className="text-xl font-semibold mb-4">
               5. Servicio técnico oficial
             </h3>
@@ -160,7 +160,7 @@ export const Franquicias = () => {
               lo que genera confianza en nuestros consumidores.
             </p>
           </div>
-          <div className="bg-yellow-50 p-6 rounded-lg shadow">
+          <div className="bg-yellow-100 p-6 rounded-lg shadow">
             <h3 className="text-xl font-semibold mb-4">
               6. Fidelización de clientes
             </h3>

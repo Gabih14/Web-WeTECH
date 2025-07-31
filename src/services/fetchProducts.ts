@@ -2,9 +2,13 @@ import { Product } from "../types";
 import { colors } from "../data/colors";
 
 export const fetchProducts = async (): Promise<Product[]> => {
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+  if (!API_URL) {
+    throw new Error("API URL is not defined");
+  }
   try {
     // Petición
-    const response = await fetch("http://localhost:3000/stk-item");
+    const response = await fetch(`${API_URL}/stk-item`);
 
     // Verificar si la respuesta es exitosa
     if (!response.ok) {
@@ -13,14 +17,12 @@ export const fetchProducts = async (): Promise<Product[]> => {
 
     // Obtener los datos en formato JSON
     const rawProducts = await response.json();
-    //console.log("Productos obtenidos:", rawProducts);
+
     // Transformar los datos
     const groupedProducts: { [key: string]: Product } = {};
 
     rawProducts.forEach((item: any) => {
-      //console.log("familia id:", item.familia, "id:", item.id);
       // Usar familia si está disponible, de lo contrario usar id
-      console.log(item)
       const familia = item.familia || item.id;
       const [marca, ...modeloArr] = familia.split(" ");
       const modelo = modeloArr.join(" ");
@@ -32,7 +34,6 @@ export const fetchProducts = async (): Promise<Product[]> => {
 
       if (!groupedProducts[familia]) {
         // Crear el producto principal
-        //console.log("Creando producto:", familia, item.id);
         groupedProducts[familia] = {
           id: item.id,
           name: familia,//item.id, //item.familia ? item.familia : item.descripcion

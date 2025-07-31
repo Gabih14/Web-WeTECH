@@ -8,7 +8,6 @@ import { CheckoutAdress } from "./CheckoutAdress";
 import { CheckoutBilling } from "./CheckoutBilling";
 
 import { coupons } from "../data/coupon";
-/* import { CheckoutPayment } from "./CheckoutPayment"; */
 
 function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(window.matchMedia(query).matches);
@@ -34,7 +33,7 @@ export default function Checkout() {
     "pickup"
   );
   const [sameBillingAddress, setSameBillingAddress] = useState(true); // por defecto sí
-
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     cuit: "",
     name: "",
@@ -51,6 +50,25 @@ export default function Checkout() {
     billingCity: "",
     billingPostalCode: "",
   });
+
+  // Sincroniza billing con envío si el check está marcado
+  useEffect(() => {
+    if (sameBillingAddress) {
+      setFormData((prev) => ({
+        ...prev,
+        billingStreet: prev.street,
+        billingNumber: prev.number,
+        billingCity: prev.city,
+        billingPostalCode: prev.postalCode,
+      }));
+    }
+  }, [
+    sameBillingAddress,
+    formData.street,
+    formData.number,
+    formData.city,
+    formData.postalCode,
+  ]);
 
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
@@ -82,8 +100,6 @@ export default function Checkout() {
     }
     return appliedCoupon.discount;
   }; */
-
-  const [isLoading, setIsLoading] = useState(false);
 
   const getPrice = (product: Product, weight: number): number | undefined => {
     const weightData = product.weights?.find((w) => w.weight === weight);
@@ -151,9 +167,11 @@ export default function Checkout() {
 
     // Dirección de envío
     const calle = isShipping ? formData.street : formData.billingStreet;
-    const numero = isShipping ? formData.number : formData.billingNumber;
+    // const numero = isShipping ? formData.number : formData.billingNumber;
     const ciudad = isShipping ? formData.city : formData.billingCity;
-    const codigo_postal = isShipping ? formData.postalCode : formData.billingPostalCode;
+    const codigo_postal = isShipping
+      ? formData.postalCode
+      : formData.billingPostalCode;
     const region = "Mendoza";
     const pais = "AR";
 
@@ -180,7 +198,7 @@ export default function Checkout() {
       codigo_postal,
       mobile: isMobile,
       productos: items.map((item) => ({
-        nombre: item.product.name,
+        nombre: item.product.id,
         cantidad: item.quantity,
         precio_unitario:
           calculateDiscountedPrice(item.product, item.weight, item.quantity) ??
@@ -190,10 +208,10 @@ export default function Checkout() {
       billing_address,
     };
 
-    console.log("body:", body);
+    const API_URL = import.meta.env.VITE_API_URL;
 
     try {
-      const res = await fetch("http://localhost:3000/pedido", {
+      const res = await fetch(`${API_URL}/pedido`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -265,25 +283,6 @@ export default function Checkout() {
 
   const originalTotal = calculateOriginalTotal();
   const discount = originalTotal - total;
-
-  // Sincroniza billing con envío si el check está marcado
-  useEffect(() => {
-    if (sameBillingAddress) {
-      setFormData((prev) => ({
-        ...prev,
-        billingStreet: prev.street,
-        billingNumber: prev.number,
-        billingCity: prev.city,
-        billingPostalCode: prev.postalCode,
-      }));
-    }
-  }, [
-    sameBillingAddress,
-    formData.street,
-    formData.number,
-    formData.city,
-    formData.postalCode,
-  ]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
