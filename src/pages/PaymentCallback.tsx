@@ -14,6 +14,7 @@ const PaymentCallback = () => {
   const paymentId = searchParams.get("payment_id");
 
   const [status, setStatus] = useState(PaymentStatus.LOADING);
+  const [products, setProducts] = useState([{nombre:"", cantidad: 0, precio_unitario: 0}]);
   const [paymentData, setPaymentData] = useState({
     id: "",
     amount: 0,
@@ -71,6 +72,7 @@ const PaymentCallback = () => {
             currency: "ARS",
             date: data.creado,
           });
+          setProducts(data.productos || []);
         } else {
           setStatus(PaymentStatus.FAIL);
         }
@@ -142,6 +144,19 @@ const PaymentCallback = () => {
                 >
                   Monto: {paymentData.amount} {paymentData.currency}
                 </p>
+                {/* Lista de productos */}
+            <div className="w-full max-w-md mt-6">
+              <h3 className="text-lg font-medium mb-2">Productos:</h3>
+              <ul className="space-y-3">
+                {products.map((prod, index) => (
+                  <li key={index} className="border border-gray-200 rounded p-3 bg-white shadow-sm">
+                    <p className="text-sm font-semibold">{prod.nombre}</p>
+                    <p className="text-sm text-gray-700">Cantidad: {prod.cantidad}</p>
+                    <p className="text-sm text-gray-700">Precio unitario: ${prod.precio_unitario}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
                 <p
                   className="text-sm opacity-0 animate-fadeIn"
                   style={{
