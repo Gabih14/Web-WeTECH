@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { CheckCircle, XCircle, Loader, PartyPopper } from "lucide-react";
 
 // Enum para los posibles estados del pago
@@ -8,20 +9,19 @@ const PaymentStatus = {
   FAIL: "fail",
 };
 
-// Componente principal de la página de pago
 const PaymentCallback = () => {
-  // Estado para controlar el estado del pago
-  const [status, setStatus] = useState(PaymentStatus.LOADING);
+  const [searchParams] = useSearchParams();
+  const paymentId = searchParams.get("payment_id");
 
-  // Datos simulados del pago
+  const [status, setStatus] = useState(PaymentStatus.LOADING);
   const [paymentData, setPaymentData] = useState({
     id: "",
     amount: 0,
-    currency: "",
+    currency: "ARS",
     date: "",
   });
 
-  // Añadimos estilos CSS para animaciones personalizadas
+  // Estilos de animación (igual que antes)
   useEffect(() => {
     const style = document.createElement("style");
     style.textContent = `
@@ -29,7 +29,7 @@ const PaymentCallback = () => {
         from { opacity: 0; transform: translateY(10px); }
         to { opacity: 1; transform: translateY(0); }
       }
-      
+
       @keyframes confetti {
         0% { transform: translateY(0) rotate(0deg); }
         100% { transform: translateY(100vh) rotate(720deg); }
@@ -38,50 +38,51 @@ const PaymentCallback = () => {
       .animate-fadeIn {
         animation: fadeIn 0.8s ease-out forwards;
       }
-      
+
       .animate-confetti {
         animation: confetti 5s ease-in-out forwards;
       }
     `;
     document.head.appendChild(style);
-
     return () => {
       document.head.removeChild(style);
     };
   }, []);
 
-  // Simulamos la verificación del pago al cargar el componente
   useEffect(() => {
-    // Simulación de una llamada a API para verificar el estado del pago
     const verifyPayment = async () => {
+      if (!paymentId) {
+        setStatus(PaymentStatus.FAIL);
+        return;
+      }
+
       try {
-        // Simulamos un tiempo de espera para la verificación
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        const response = await fetch(`http://localhost:3000/pedido/${paymentId}`);
+        if (!response.ok) throw new Error("Pedido no encontrado");
 
-        // Simulamos una respuesta aleatoria (éxito o fallo)
-        const isSuccess = Math.random() > 0.5;
+        const data = await response.json();
+        console.log("Pedido recibido:", data);
 
-        if (isSuccess) {
+        if (data.estado === "PENDIENTE" || data.estado === "APROBADO") {
           setStatus(PaymentStatus.SUCCESS);
           setPaymentData({
-            id:
-              "PAY-" +
-              Math.random().toString(36).substring(2, 10).toUpperCase(),
-            amount: parseFloat((Math.random() * 1000).toFixed(2)),
-            currency: "USD",
-            date: new Date().toISOString(),
+            id: data.external_id,
+            amount: data.total,
+            currency: "ARS",
+            date: data.creado,
           });
         } else {
           setStatus(PaymentStatus.FAIL);
         }
       } catch (error) {
-        setStatus(PaymentStatus.FAIL);
         console.error("Error al verificar el pago:", error);
+        setStatus(PaymentStatus.FAIL);
       }
     };
 
     verifyPayment();
-  }, []);
+  }, [paymentId]);
+
 
   // Función para renderizar el contenido según el estado
   const renderContent = () => {
