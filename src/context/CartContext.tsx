@@ -6,7 +6,7 @@ import React, {
   useMemo,
   useEffect,
 } from "react";
-import { Product, CartItem, CartContextType } from "../types";
+import { Product, CartItem, CartContextType } from "../types/types";
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 

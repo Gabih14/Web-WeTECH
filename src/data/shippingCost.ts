@@ -1,4 +1,4 @@
-import { ShippingCost } from "../types";
+import { ShippingCost } from "../types/types";
 
 export const shippingCosts: ShippingCost[] = [
   { distances: [0, 4.99], cost: 3500 },

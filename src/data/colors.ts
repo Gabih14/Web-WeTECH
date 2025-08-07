@@ -1,4 +1,4 @@
-import { Colors } from "../types";
+import { Colors } from "../types/types";
 
 export const colors: Colors[] = [
   { name: "Amarillo", hex: "#FFFF00" },

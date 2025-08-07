@@ -1,6 +1,6 @@
 import { X, Minus, Plus, ShoppingCart } from "lucide-react";
-import { useCart } from "../context/CartContext";
-import { Product } from "../types";
+import { useCart } from "../../context/CartContext";
+import { Product } from "../../types/types";
 import { useNavigate } from "react-router-dom";
 
 interface CartModalProps {

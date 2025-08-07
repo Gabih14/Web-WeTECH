@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Tag } from "lucide-react";
-import { useCart } from "../context/CartContext";
-import { Coupon, Product } from "../types";
+import { useCart } from "../../context/CartContext";
+import { Coupon, Product } from "../../types/types";
 import { CheckoutPersonal } from "./CheckoutPersonal";
-import { CheckoutAdress } from "./CheckoutAdress";
+import { CheckoutAdress } from "./CheckoutAddress";
 import { CheckoutBilling } from "./CheckoutBilling";
 
-import { coupons } from "../data/coupon";
+import { coupons } from "../../data/coupon";
 
 function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(window.matchMedia(query).matches);
