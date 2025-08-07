@@ -6,7 +6,7 @@ import { useCart } from "../../context/CartContext";
 import CartModal from "../cart/CartModal";
 import LoginModal from "../modals/LoginModal";
 import { Link, useNavigate } from "react-router-dom";
-import Isologo from "../../assets/logos/Isologo Fondo Negro SVG.svg";
+import Isologo from "../.assets/logos/Isologo Fondo Negro SVG.svg";
 
 export default function Navbar() {
   const [isCartOpen, setIsCartOpen] = useState(false);
