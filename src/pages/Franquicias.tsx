@@ -103,7 +103,7 @@ export const Franquicias = () => {
 
   const galleryImages = Array.from(
     { length: 6 },
-    (_, i) => `/assets/local${i + 1}.webp`
+    (_, i) => `/assets/locations/local${i + 1}.webp`
   );
   return (
     <div className="bg-white">

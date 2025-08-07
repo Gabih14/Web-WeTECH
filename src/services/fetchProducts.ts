@@ -1,4 +1,4 @@
-import { Product } from "../types";
+import { Product } from "../types/types";
 import { colors } from "../data/colors";
 
 export const fetchProducts = async (): Promise<Product[]> => {

@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Printer as Printer3D, Shapes, Wrench, X } from "lucide-react";
 import { ContactInfo } from "../components/ContactInfo";
-import Logo from "../assets/Logo WeTECH Negro PNG.png";
+import Logo from "../assets/logos/Logo WeTECH Negro PNG.png";
 import Slogan from "../assets/filamentso-removebg-preview.webp";
 import filamentoCategoria from "../assets/Grilon_pla_piel.jpeg";
 import impresoraCategoria from "../assets/CR6 S.png";

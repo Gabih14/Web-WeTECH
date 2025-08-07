@@ -102,3 +102,94 @@ La plataforma se integra con **Nave**, un sistema externo de gestión de pagos. 
 
 
 
+
+```
+Web-WeTECH
+├─ README.md
+├─ eslint.config.js
+├─ index.html
+├─ package-lock.json
+├─ package.json
+├─ postcss.config.js
+├─ public
+│  └─ assets
+│     ├─ filamentos
+│     │  ├─ 3N3 EPET AZUL.png
+│     │  ├─ 3N3 EPET BLANCO.png
+│     │  ├─ 3N3 EPET GRIS ESPACIAL.png
+│     │  ├─ 3N3 EPET NEGRO.png
+│     │  ├─ 3N3 EPET ROJO CARMIN.png
+│     │  ├─ 3N3 EPET VERDE LIMA.png
+│     │  ├─ 3N3 PETG AZUL.png
+│     │  ├─ 3N3 PETG BLANCO.png
+│     │  ├─ 3N3 PETG BRONCE.png
+│     │  ├─ 3N3 PETG GRIS ESPACIAL.png
+│     │  ├─ 3N3 PETG NEGRO.png
+│     │  └─ 3N3 PETG ROJO.png
+│     ├─ local1.webp
+│     ├─ local2.webp
+│     ├─ local3.webp
+│     ├─ local4.webp
+│     ├─ local5.webp
+│     └─ local6.webp
+├─ src
+│  ├─ App.tsx
+│  ├─ assets
+│  │  ├─ CR6 S.png
+│  │  ├─ GST-AMARILLO-700x700.png
+│  │  ├─ GST-AMARILLO-FLUOR-700x700.png
+│  │  ├─ Grilo_pla_blanco-1.jpeg
+│  │  ├─ Grilon_pla_piel.jpeg
+│  │  ├─ Isologo Fondo Negro SVG.svg
+│  │  ├─ Logo WeTECH Negro PNG.png
+│  │  ├─ filamentso-removebg-preview.webp
+│  │  └─ racor 6mm plastico web2_Impresora 3D Creality CR-10 SMART Mendoza v2.jpg
+│  ├─ components
+│  │  ├─ CartModal.tsx
+│  │  ├─ CategoryFilter.tsx
+│  │  ├─ Checkout.tsx
+│  │  ├─ CheckoutAdress.tsx
+│  │  ├─ CheckoutBilling.tsx
+│  │  ├─ CheckoutPersonal.tsx
+│  │  ├─ ContactInfo.tsx
+│  │  ├─ Footer.tsx
+│  │  ├─ LoginModal.tsx
+│  │  ├─ Navbar.tsx
+│  │  ├─ ProductCard.tsx
+│  │  ├─ ReviewSection.tsx
+│  │  └─ ShippingInfoModal.tsx
+│  ├─ context
+│  │  ├─ AuthContext.tsx
+│  │  └─ CartContext.tsx
+│  ├─ copies
+│  │  ├─ CheckoutAdress.tsx
+│  │  ├─ CheckoutPayment.tsx
+│  │  ├─ checkout-form.tsx
+│  │  └─ hola.tsx
+│  ├─ data
+│  │  ├─ categories.ts
+│  │  ├─ colors.ts
+│  │  ├─ coupon.ts
+│  │  ├─ products.ts
+│  │  ├─ shippingCost.ts
+│  │  └─ users.json
+│  ├─ index.css
+│  ├─ main.tsx
+│  ├─ pages
+│  │  ├─ Franquicias.tsx
+│  │  ├─ HomePage.tsx
+│  │  ├─ PaymentCallback.tsx
+│  │  ├─ ProductPage.tsx
+│  │  ├─ ProductsPage.tsx
+│  │  └─ SearchResultsPage.tsx
+│  ├─ services
+│  │  └─ fetchProducts.ts
+│  ├─ types.ts
+│  └─ vite-env.d.ts
+├─ tailwind.config.js
+├─ tsconfig.app.json
+├─ tsconfig.json
+├─ tsconfig.node.json
+└─ vite.config.ts
+
+```

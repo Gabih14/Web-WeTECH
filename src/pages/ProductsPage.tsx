@@ -4,7 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import { categories } from "../data/categories";
 import { ProductCard } from "../components/ProductCard";
 import { CategoryFilter } from "../components/CategoryFilter";
-import { Product } from "../types";
+import { Product } from "../types/types";
 import { fetchProducts } from "../services/fetchProducts";
 
 export function ProductsPage() {

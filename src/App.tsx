@@ -1,13 +1,13 @@
 import { Routes, Route } from "react-router-dom";
 import { HomePage } from "./pages/HomePage";
 import { ProductsPage } from "./pages/ProductsPage";
-import Navbar from "./components/Navbar";
+import Navbar from "./components/layout/Navbar";
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 import { ProductPage } from "./pages/ProductPage";
 import SearchResultsPage from "./pages/SearchResultsPage";
-import { Footer } from "./components/Footer";
-import Checkout from "./components/Checkout";
+import { Footer } from "./components/layout/Footer";
+import Checkout from "./components/checkout/Checkout";
 import PaymentCallback from "./pages/PaymentCallback";
 import { Franquicias } from "./pages/Franquicias";
 

@@ -1,4 +1,4 @@
-import { Product } from '../types';
+import { Product } from '../types/types';
 import Amarillo from '../assets/GST-AMARILLO-700x700.png';
 import AmarilloFluor from '../assets/GST-AMARILLO-FLUOR-700x700.png';
 import Blanco from '../assets/Grilo_pla_blanco-1.jpeg';

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Product } from "../types";
+import { Product } from "../types/types";
 import { ChevronDown } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { Link } from "react-router-dom";

@@ -2,9 +2,9 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { fetchProducts } from "../services/fetchProducts";
 import { useCart } from "../context/CartContext";
-import Isologo from "../assets/Isologo Fondo Negro SVG.svg";
+import Isologo from "../assets/logos/Isologo Fondo Negro SVG.svg";
 import { ShoppingCart, ChevronDown } from "lucide-react";
-import { Product } from "../types";
+import { Product } from "../types/types";
 
 export function ProductPage() {
   const { id } = useParams<{ id: string }>();

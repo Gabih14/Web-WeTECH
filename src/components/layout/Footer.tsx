@@ -1,4 +1,4 @@
-import Logo from "../assets/Logo WeTECH Negro PNG.png";
+import Logo from "../../assets/logos/Isologo Fondo Negro SVG.svg";
 import { MapPin, Phone, Mail, Clock } from "lucide-react";
 
 export const Footer = () => {

@@ -1,4 +1,4 @@
-import { Category } from "../types";
+import { Category } from "../types/types";
 import { ChevronDown } from "lucide-react";
 
 interface CategoryFilterProps {

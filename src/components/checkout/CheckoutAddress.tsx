@@ -1,7 +1,7 @@
 import { MapPin, Store, Truck } from "lucide-react"; //MapPin,
-import { shippingCosts } from "../data/shippingCost";
+import { shippingCosts } from "../../data/shippingCost";
 import { useState } from "react";
-import { ShippingInfoModal } from "./ShippingInfoModal";
+import { ShippingInfoModal } from "../modals/ShippingInfoModal";
 
 type Props = {
   formData: {
