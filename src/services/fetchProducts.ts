@@ -3,7 +3,7 @@ import { colors } from "../data/colors";
 
 export const fetchProducts = async (): Promise<Product[]> => {
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
-  if (!API_URL) {
+  if (!API_URL || API_URL === "http://localhost:3000") {
     throw new Error("API URL is not defined");
   }
   try {
@@ -24,8 +24,8 @@ export const fetchProducts = async (): Promise<Product[]> => {
     rawProducts.forEach((item: any) => {
       // Usar familia si está disponible, de lo contrario usar id
       const familia = item.familia || item.id;
-      const [marca, ...modeloArr] = familia.split(" ");
-      const modelo = modeloArr.join(" ");
+      // const [marca, ...modeloArr] = familia.split(" ");
+      // const modelo = modeloArr.join(" ");
 
       // Ignorar ítems del grupo "FILAMENTOS" sin familia
       if (item.grupo === "FILAMENTOS" && !item.familia) {
