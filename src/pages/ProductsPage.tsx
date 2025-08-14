@@ -20,6 +20,7 @@ export function ProductsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log("Fetching products...");
     fetchProducts()
       .then((data) => {
         setProducts(data);
