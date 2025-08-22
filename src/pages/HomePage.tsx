@@ -38,6 +38,17 @@ const categories = [
 
 export function HomePage() {
   const [showModal, setShowModal] = useState(true);
+  /* en caso de querer que solo se vea una vez el modal cambiar const close modal por:
+  useEffect(() => {
+  const seen = localStorage.getItem("seenModal");
+  if (seen) setShowModal(false);
+}, []);
+
+const closeModal = () => {
+  setShowModal(false);
+  localStorage.setItem("seenModal", "true");
+};
+ */
   const closeModal = () => {
     setShowModal(false);
   };
@@ -147,23 +158,22 @@ export function HomePage() {
         </div>
       )}
       <header id="hero" className="text-center mb-8 gap-4">
-  <div className="flex flex-col md:flex-row items-center justify-center">
-    <img src={Logo} alt="Logo WeTECH" className="mx-auto h-24 md:h-48" />
+        <div className="flex flex-col md:flex-row items-center justify-center">
+          <img src={Logo} alt="Logo WeTECH" className="mx-auto h-24 md:h-48" />
 
-  <Link to={"/products?category=filamentos"}>
-    <img
-      src={Slogan}
-      alt="Slogan WeTECH"
-      className="mx-auto h-32 md:h-56 pt-4 md:pt-0"
-    />
-  </Link>
-    {/* Encabezado principal H1 */}
-    <h1 className="sr-only">
-      WeTECH: Impresoras 3D, Filamentos y Repuestos
-    </h1>
-  </div>
-
-</header>
+          <Link to={"/products?category=filamentos"}>
+            <img
+              src={Slogan}
+              alt="Slogan WeTECH"
+              className="mx-auto h-32 md:h-56 pt-4 md:pt-0"
+            />
+          </Link>
+          {/* Encabezado principal H1 */}
+          <h1 className="sr-only">
+            WeTECH: Impresoras 3D, Filamentos y Repuestos
+          </h1>
+        </div>
+      </header>
 
       {/* Sección Franquicias */}
       <section
