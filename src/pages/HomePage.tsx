@@ -89,7 +89,10 @@ export function HomePage() {
                 Si encuentras algún problema o tienes sugerencias, por favor
                 contáctanos:
               </p>
-
+              <br />
+              <p className="font-medium text-gray-800">
+                (SOLO PARA TEMAS RELACIONADOS CON LA WEB)
+              </p>
               <div className="flex flex-col space-y-3 mt-4">
                 <div className="flex items-center">
                   <div className="bg-green-100 p-2 rounded-full mr-3">
@@ -143,18 +146,25 @@ export function HomePage() {
           </div>
         </div>
       )}
-      <div id="categories" className="text-center mb-8 gap-4">
-        <div className="flex flex-col md:flex-row items-center justify-center">
-          <img src={Logo} alt="Logo WeTECH" className="mx-auto h-24 md:h-48" />
-          <Link to={"/products?category=filamentos"}>
-            <img
-              src={Slogan}
-              alt="Slogan WeTECH"
-              className="mx-auto h-32 md:h-56 pt-4 md:pt-0"
-            />
-          </Link>
-        </div>
-      </div>
+      <header id="hero" className="text-center mb-8 gap-4">
+  <div className="flex flex-col md:flex-row items-center justify-center">
+    <img src={Logo} alt="Logo WeTECH" className="mx-auto h-24 md:h-48" />
+
+  <Link to={"/products?category=filamentos"}>
+    <img
+      src={Slogan}
+      alt="Slogan WeTECH"
+      className="mx-auto h-32 md:h-56 pt-4 md:pt-0"
+    />
+  </Link>
+    {/* Encabezado principal H1 */}
+    <h1 className="sr-only">
+      WeTECH: Impresoras 3D, Filamentos y Repuestos
+    </h1>
+  </div>
+
+</header>
+
       {/* Sección Franquicias */}
       <section
         id="franquicias"
@@ -249,17 +259,21 @@ export function HomePage() {
               Estamos Mejorando Para Vos
             </h2>
           </div>
-          
+
           <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md mb-4 sm:mb-6">
             <p className="text-base sm:text-lg text-gray-700 mb-3 sm:mb-4 leading-relaxed">
-              Nuestro sitio web está en <span className="font-semibold text-yellow-700">constante desarrollo</span> para 
-              brindarte la mejor experiencia de compra posible.
+              Nuestro sitio web está en{" "}
+              <span className="font-semibold text-yellow-700">
+                constante desarrollo
+              </span>{" "}
+              para brindarte la mejor experiencia de compra posible.
             </p>
             <p className="text-sm sm:text-base text-gray-600 mb-4 leading-relaxed">
-              Tu opinión es fundamental para nosotros. Si tenés ideas, sugerencias o encontrás algo que podamos mejorar, 
-              no dudes en escribirnos.
+              Tu opinión es fundamental para nosotros. Si tenés ideas,
+              sugerencias o encontrás algo que podamos mejorar, no dudes en
+              escribirnos.
             </p>
-            
+
             <div className="bg-yellow-50 p-3 sm:p-4 rounded-lg border border-yellow-200">
               <p className="text-xs sm:text-sm font-medium text-gray-800 mb-2">
                 📧 Envianos tus sugerencias:
@@ -288,7 +302,7 @@ export function HomePage() {
               </a>
             </div>
           </div>
-          
+
           <p className="text-xs sm:text-sm text-gray-500 italic">
             Gracias por tu paciencia y por ayudarnos a crecer 🚀
           </p>
