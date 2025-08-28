@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Filter, X } from "lucide-react";
+import { Filter, X, AlertCircle } from "lucide-react";
+import { FaWhatsapp } from "react-icons/fa";
 import { useSearchParams } from "react-router-dom";
 import { categories } from "../data/categories";
 import { ProductCard } from "../components/ProductCard";
@@ -18,6 +19,15 @@ export function ProductsPage() {
   );
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const openWhatsApp = () => {
+    const phoneNumber = "5492615987988";
+    const message = "¡Hola! Estoy interesado en realizar una compra. ¿Podrían ayudarme?";
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(
+      message
+    )}`;
+    window.open(whatsappUrl, "_blank");
+  };
 
   useEffect(() => {
     console.log("Fetching products...");
@@ -59,6 +69,27 @@ export function ProductsPage() {
   }
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Banner de desarrollo */}
+      <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start gap-3">
+        <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+        <div className="flex-1">
+          <h3 className="text-sm font-medium text-yellow-800 mb-1">
+            Página en Desarrollo
+          </h3>
+          <p className="text-sm text-yellow-700 mb-3">
+            Por el momento no se pueden realizar compras a través de la página web. 
+            Para adquirir cualquiera de nuestros productos, por favor contáctanos directamente.
+          </p>
+          <button
+            onClick={openWhatsApp}
+            className="inline-flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-700 transition-colors"
+          >
+            <FaWhatsapp className="h-4 w-4" />
+            Contactar por WhatsApp
+          </button>
+        </div>
+      </div>
+
       <div className="flex gap-8 min-h-screen">
         {/* Desktop Sidebar */}
         <div className="hidden lg:block w-64 flex-shrink-0">
