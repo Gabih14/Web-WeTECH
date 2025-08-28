@@ -1,0 +1,26 @@
+# Usa la imagen base de Node
+FROM node:18-alpine
+
+# Directorio de trabajo
+WORKDIR /app
+
+# Copia package.json y package-lock.json
+COPY package*.json ./
+
+# Instala dependencias
+RUN npm install
+
+# Copia el resto del código
+COPY . .
+
+# Construye la app
+RUN npm run build
+
+# Usa servidor ligero para servir la app estática
+RUN npm install -g serve
+
+# Expone el puerto
+EXPOSE 3000
+
+# Inicia el servidor
+CMD ["serve", "-s", "build", "-p", "3000"]
