@@ -55,14 +55,14 @@ export function HomePage() {
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 font-sans w-full overflow-x-hidden">
       {/* Construction Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
-          <div className="bg-white p-8 rounded-xl shadow-2xl max-w-md w-full border-t-4 border-yellow-500">
-            <div className="flex justify-between items-center mb-6">
-              <div className="flex items-center">
-                <div className="bg-yellow-100 p-3 rounded-full mr-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4">
+          <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-xl shadow-2xl max-w-md w-full max-h-screen overflow-y-auto border-t-4 border-yellow-500">
+            <div className="flex justify-between items-start mb-4 sm:mb-6">
+              <div className="flex items-start flex-1 pr-2">
+                <div className="bg-yellow-100 p-2 sm:p-3 rounded-full mr-2 sm:mr-3 flex-shrink-0">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6 text-yellow-600"
+                    className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-600"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -75,20 +75,20 @@ export function HomePage() {
                     />
                   </svg>
                 </div>
-                <h2 className="text-2xl font-bold text-gray-800">
+                <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800 leading-tight">
                   Sitio en Construcción
                 </h2>
               </div>
               <button
                 onClick={closeModal}
-                className="p-2 rounded-full hover:bg-gray-200 transition duration-200"
+                className="p-1 sm:p-2 rounded-full hover:bg-gray-200 transition duration-200 flex-shrink-0"
               >
-                <X size={20} />
+                <X size={18} className="sm:w-5 sm:h-5" />
               </button>
             </div>
 
-            <div className="bg-gray-50 p-4 rounded-lg mb-6 border-l-4 border-yellow-500">
-              <p className="text-gray-700 mb-3 leading-relaxed">
+            <div className="bg-gray-50 p-3 sm:p-4 rounded-lg mb-4 sm:mb-6 border-l-4 border-yellow-500">
+              <p className="text-sm sm:text-base text-gray-700 mb-3 leading-relaxed">
                 Estamos trabajando para mejorar nuestro sitio web y ofrecer una
                 mejor experiencia.
               </p>
@@ -96,12 +96,12 @@ export function HomePage() {
                 Algunas secciones pueden estar incompletas o no funcionar correctamente.
               </p> */}
                             {/* Sección Para Comprar */}
-              <div className="mb-4">
-                <h4 className="font-semibold text-gray-800 mb-2 flex items-center">
-                  <div className="bg-green-100 p-1 rounded-full mr-2">
+              <div className="mb-3 sm:mb-4">
+                <h4 className="font-semibold text-gray-800 mb-2 flex items-center text-sm sm:text-base">
+                  <div className="bg-green-100 p-1 rounded-full mr-2 flex-shrink-0">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      className="h-4 w-4 text-green-600"
+                      className="h-3 w-3 sm:h-4 sm:w-4 text-green-600"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -116,11 +116,11 @@ export function HomePage() {
                   </div>
                   Para comprar productos:
                 </h4>
-                <div className="flex items-center ml-6">
-                  <div className="bg-green-100 p-2 rounded-full mr-3">
+                <div className="flex items-center ml-4 sm:ml-6">
+                  <div className="bg-green-100 p-1.5 sm:p-2 rounded-full mr-2 sm:mr-3 flex-shrink-0">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5 text-green-600"
+                      className="h-4 w-4 sm:h-5 sm:w-5 text-green-600"
                       fill="currentColor"
                       viewBox="0 0 24 24"
                     >
@@ -129,7 +129,7 @@ export function HomePage() {
                   </div>
                   <button
                     onClick={openWhatsApp}
-                    className="text-gray-700 hover:text-green-600 transition-colors underline"
+                    className="text-gray-700 hover:text-green-600 transition-colors underline text-sm sm:text-base break-all"
                   >
                     +54 9 261 598 7988
                   </button>
@@ -137,15 +137,15 @@ export function HomePage() {
               </div>
 
               {/* Línea divisoria */}
-              <div className="border-t border-gray-200 my-3"></div>
+              <div className="border-t border-gray-200 my-2 sm:my-3"></div>
 
               {/* Sección Para Sugerencias */}
               <div>
-                <h4 className="font-semibold text-gray-800 mb-2 flex items-center">
-                  <div className="bg-yellow-100 p-1 rounded-full mr-2">
+                <h4 className="font-semibold text-gray-800 mb-2 flex items-center text-sm sm:text-base">
+                  <div className="bg-yellow-100 p-1 rounded-full mr-2 flex-shrink-0">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      className="h-4 w-4 text-yellow-600"
+                      className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-600"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -160,11 +160,11 @@ export function HomePage() {
                   </div>
                   Para sugerencias de la página:
                 </h4>
-                <div className="flex items-center ml-6">
-                  <div className="bg-yellow-100 p-2 rounded-full mr-3">
+                <div className="flex items-center ml-4 sm:ml-6">
+                  <div className="bg-yellow-100 p-1.5 sm:p-2 rounded-full mr-2 sm:mr-3 flex-shrink-0">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5 text-yellow-600"
+                      className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -179,7 +179,7 @@ export function HomePage() {
                   </div>
                   <a
                     href="mailto:hernandezg.alvarez@gmail.com"
-                    className="text-gray-700 break-all underline"
+                    className="text-gray-700 break-all underline text-sm sm:text-base hover:text-yellow-600 transition-colors"
                   >
                     hernandezg.alvarez@gmail.com
                   </a>
@@ -190,7 +190,7 @@ export function HomePage() {
             <div className="flex justify-end">
               <button
                 onClick={closeModal}
-                className="px-6 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-700 transition duration-200 font-medium shadow-md"
+                className="px-4 sm:px-6 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-700 transition duration-200 font-medium shadow-md text-sm sm:text-base w-full sm:w-auto"
               >
                 Entendido
               </button>
