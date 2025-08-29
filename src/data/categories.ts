@@ -4,18 +4,18 @@ export const categories: Category[] = [
   {
     name: "Filamentos",
     id: "filamentos",
-    subcategories: [
+    /* subcategories: [
       { name: "PLA", id: "pla" },
-      { name: "Técnicos", id: "tecnicos" },
-    ],
+      { name: "Técnicos", id: "tecnicos" }, 
+    ], */
   },
   {
-    name: "IMPRESORAS FDM",
+    name: "Impresoras",
     id: "IMPRESORAS FDM",
-    subcategories: [
+    /* subcategories: [
       { name: "Filamento", id: "filamento" },
-      { name: "Resina", id: "resina" },
-    ],
+      { name: "Resina", id: "resina" }, 
+    ], */
   },
   {
     name: "Repuestos",
