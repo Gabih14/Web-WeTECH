@@ -10,8 +10,8 @@ export const categories: Category[] = [
     ],
   },
   {
-    name: "Impresoras 3D",
-    id: "impresoras",
+    name: "IMPRESORAS FDM",
+    id: "IMPRESORAS FDM",
     subcategories: [
       { name: "Filamento", id: "filamento" },
       { name: "Resina", id: "resina" },

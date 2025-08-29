@@ -3,8 +3,10 @@ import { colors } from "../data/colors";
 
 export const fetchProducts = async (): Promise<Product[]> => {
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
-  if (!API_URL || API_URL === "http://localhost:3000") {
+  if (!API_URL) {
     throw new Error("API URL is not defined");
+  } else if (API_URL === "http://localhost:3000") {
+    console.warn("Using local API URL");
   }
   try {
     // Petición
@@ -32,11 +34,15 @@ export const fetchProducts = async (): Promise<Product[]> => {
         return; // Salir de esta iteración
       }
 
+      if (item.precioVtaCotizado <= 0) {
+        return; // Salir de esta iteración
+      }
+
       if (!groupedProducts[familia]) {
         // Crear el producto principal
         groupedProducts[familia] = {
           id: item.id,
-          name: familia,//item.id, //item.familia ? item.familia : item.descripcion
+          name: familia, //item.id, //item.familia ? item.familia : item.descripcion
           description: item.descripcion,
           image: `/assets/filamentos/${item.id}.png`, // Generar la ruta dinámica de la imagen
           category: item.grupo,
