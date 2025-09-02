@@ -1,22 +1,21 @@
+import { apiFetch } from "../services/api";
 import { Product } from "../types";
 import { colors } from "../data/colors";
 
+
 export const fetchProducts = async (): Promise<Product[]> => {
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
-  if (!API_URL || API_URL === "http://localhost:3000") {
+  if (!API_URL) {
     throw new Error("API URL is not defined");
+  }
+  if (API_URL === "http://localhost:3000") {
+    console.warn("Using default API URL:", API_URL);
   }
   try {
     // Petición
-    const response = await fetch(`${API_URL}/stk-item`);
+    // Usando apiFetch con token incluido
+    const rawProducts = await apiFetch("/stk-item");
 
-    // Verificar si la respuesta es exitosa
-    if (!response.ok) {
-      throw new Error("Error al obtener los productos del servidor");
-    }
-
-    // Obtener los datos en formato JSON
-    const rawProducts = await response.json();
 
     // Transformar los datos
     const groupedProducts: { [key: string]: Product } = {};
