@@ -15,7 +15,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
     // Petición
     // Usando apiFetch con token incluido
     const rawProducts = await apiFetch("/stk-item");
-
+    console.log("Productos sin transformar:", rawProducts);
 
     // Transformar los datos
     const groupedProducts: { [key: string]: Product } = {};
@@ -28,6 +28,17 @@ export const fetchProducts = async (): Promise<Product[]> => {
 
       // Ignorar ítems del grupo "FILAMENTOS" sin familia
       if (item.grupo === "FILAMENTOS" && !item.familia) {
+        return; // Salir de esta iteración
+      }
+
+      // Ignorar productos no visibles
+      if (item.visible === false) {
+        return; // Salir de esta iteración
+      }
+
+      // Ignorar productos con precio 0
+      const precio = parseFloat(item.precioVtaCotizado || "0");
+      if (precio === 0) {
         return; // Salir de esta iteración
       }
 
