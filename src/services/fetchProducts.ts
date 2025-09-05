@@ -134,11 +134,37 @@ export const fetchProducts = async (): Promise<Product[]> => {
           existingColor.stock[weight] =
             (existingColor.stock[weight] || 0) + stock;
         } else {
+          // Función para normalizar nombres de colores para que coincidan con archivos
+          const normalizeColorName = (familia: string, color: string): string => {
+            // Mapeo específico para familias y colores que no coinciden con archivos
+            const colorMappings: { [key: string]: { [key: string]: string } } = {
+              '3N3 EPET': {
+                'Azul Traful': 'AZUL',
+                'Blanco': 'BLANCO', 
+                'Gris Espacial': 'GRIS ESPACIAL',
+                'Negro': 'NEGRO',
+                'Rojo Carmin': 'ROJO CARMIN',
+                'Verde Lima': 'VERDE LIMA'
+              }
+            };
+
+            const familiaMapping = colorMappings[familia];
+            if (familiaMapping && familiaMapping[color]) {
+              //console.log(`Color mapping: ${familia} ${color} -> ${familiaMapping[color]}`);
+              return familiaMapping[color];
+            }
+            
+            return color.toUpperCase();
+          };
+
           // Generar imágenes específicas para este color
           // Para filamentos: solo una imagen por color
+          const normalizedColor = normalizeColorName(familia, colorName);
           const colorImages = [
-            `/assets/filamentos/${familia} ${colorName.toUpperCase()}.png`,
+            `/assets/filamentos/${familia} ${normalizedColor}.png`,
           ];
+          
+          //console.log(`Generando imagen para ${familia} color ${colorName}:`, colorImages[0]);
           
           // Si el color no existe, agregarlo
           groupedProducts[familia].colors?.push({
@@ -164,11 +190,45 @@ export const fetchProducts = async (): Promise<Product[]> => {
     // Para filamentos, actualizar la imagen principal con la primera imagen de color
     transformedProducts.forEach(product => {
       if (product.category === "FILAMENTOS" && product.colors && product.colors.length > 0) {
-        // Usar la primera imagen del primer color como imagen principal
-        const firstColorImage = product.colors[0].images?.[0];
-        if (firstColorImage) {
-          product.image = firstColorImage;
+        /* console.log(`Procesando filamento: ${product.name}`);
+        console.log(`Colores disponibles:`, product.colors.map(c => c.name)); */
+        
+        // Ordenar colores alfabéticamente para consistencia
+        const sortedColors = product.colors.sort((a, b) => a.name.localeCompare(b.name));
+        
+        // Intentar con el primer color, si no funciona, buscar alternativas
+        let primaryImage = null;
+        
+        // Lista de colores prioritarios para buscar imagen
+        const priorityColors = ['AZUL', 'BLANCO', 'NEGRO', 'ROJO', 'VERDE'];
+        
+        // Intentar primero con colores prioritarios
+        for (const priorityColor of priorityColors) {
+          const foundColor = sortedColors.find(c => c.name.toUpperCase().includes(priorityColor));
+          if (foundColor && foundColor.images?.[0]) {
+            primaryImage = foundColor.images[0];
+            //console.log(`Usando imagen de color prioritario ${foundColor.name} para ${product.name}:`, primaryImage);
+            break;
+          }
         }
+        
+        // Si no encontró imagen con colores prioritarios, usar el primer color disponible
+        if (!primaryImage) {
+          const firstColorImage = sortedColors[0].images?.[0];
+          if (firstColorImage) {
+            primaryImage = firstColorImage;
+            //console.log(`Usando primera imagen disponible para ${product.name}:`, primaryImage);
+          }
+        }
+        
+        if (primaryImage) {
+          product.image = primaryImage;
+        } else {
+          console.warn(`No se pudo encontrar imagen para ${product.name}`);
+        }
+        
+        // Actualizar el array de colores con el orden alfabético
+        product.colors = sortedColors;
       }
     });
     
