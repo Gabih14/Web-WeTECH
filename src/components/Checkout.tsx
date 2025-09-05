@@ -6,6 +6,10 @@ import { Coupon, Product } from "../types";
 import { CheckoutPersonal } from "./CheckoutPersonal";
 import { CheckoutAdress } from "./CheckoutAdress";
 import { CheckoutBilling } from "./CheckoutBilling";
+import { 
+  calculateDiscountedPrice, 
+  getDiscountPercentage 
+} from "../utils/discounts";
 
 import { coupons } from "../data/coupon";
 
@@ -112,35 +116,18 @@ export default function Checkout() {
     const weightData = product.weights?.find((w) => w.weight === weight);
     return weightData ? weightData.promotionalPrice : product.promotionalPrice;
   };
-  const calculateDiscountedPrice = (
+  const calculateItemPriceWithDiscount = (
     product: Product,
     weight: number,
     quantity: number
   ): number | undefined => {
-    const price = getPrice(product, weight);
-    const promotionalPrice = getPromotionalPrice(product, weight);
-
-    if (product.discountQuantity) {
-      const discountThresholds = Object.keys(product.discountQuantity)
-        .map(Number)
-        .sort((a, b) => a - b);
-
-      const applicableDiscount = discountThresholds.reduce((acc, threshold) => {
-        return quantity >= threshold
-          ? product.discountQuantity![threshold]
-          : acc;
-      }, 0);
-
-      if (applicableDiscount > 0) {
-        return price ? price - price * applicableDiscount : undefined;
-      } else if (promotionalPrice) {
-        return promotionalPrice;
-      }
-    } else if (promotionalPrice) {
-      return promotionalPrice;
+    const originalPrice = getPrice(product, weight);
+    
+    if (originalPrice) {
+      return calculateDiscountedPrice(originalPrice, quantity);
     }
-
-    return price;
+    
+    return originalPrice;
   };
 
   if (items.length === 0) {
@@ -201,7 +188,7 @@ export default function Checkout() {
         nombre: item.product.id,
         cantidad: item.quantity,
         precio_unitario:
-          calculateDiscountedPrice(item.product, item.weight, item.quantity) ??
+          calculateItemPriceWithDiscount(item.product, item.weight, item.quantity) ??
           getPrice(item.product, item.weight) ??
           0,
       })),
@@ -390,7 +377,7 @@ export default function Checkout() {
                 <ul className="divide-y divide-gray-200">
                   {items.map((item) => {
                     const price = getPrice(item.product, item.weight);
-                    const discountedPrice = calculateDiscountedPrice(
+                    const discountedPrice = calculateItemPriceWithDiscount(
                       item.product,
                       item.weight,
                       item.quantity
@@ -407,9 +394,16 @@ export default function Checkout() {
                         </div>
                         <div className="ml-4 flex-1">
                           <div className="flex justify-between">
-                            <h3 className="text-sm font-medium text-gray-900">
-                              {item.product.name}
-                            </h3>
+                            <div>
+                              <h3 className="text-sm font-medium text-gray-900">
+                                {item.product.name}
+                              </h3>
+                              {discountedPrice && discountedPrice < (price ?? 0) && (
+                                <span className="inline-block bg-red-100 text-red-800 text-xs font-semibold px-2 py-1 rounded-full mt-1">
+                                  -{getDiscountPercentage(item.quantity)}% OFF
+                                </span>
+                              )}
+                            </div>
                             <div className="ml-4 text-sm font-medium text-gray-900">
                               {discountedPrice &&
                               discountedPrice < (price ?? 0) ? (
