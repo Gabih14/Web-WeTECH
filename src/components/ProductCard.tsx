@@ -132,11 +132,11 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-visible hover:shadow-lg transition-shadow flex flex-col">
-      <Link to={`/product/${product.id}`}>
+      <Link to={`/product/${product.id}`} className="aspect-square overflow-hidden rounded-t-lg">
         <img
           src={product.image}
           alt={product.name}
-          className="w-full h-32 sm:h-48 object-cover"
+          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
         />
       </Link>
       <div className="p-1 sm:p-4 flex flex-col flex-grow">

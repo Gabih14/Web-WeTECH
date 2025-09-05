@@ -23,6 +23,8 @@ export function ProductPage() {
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedWeight, setSelectedWeight] = useState<number | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [currentImages, setCurrentImages] = useState<string[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -40,8 +42,34 @@ export function ProductPage() {
       setCurrentPromotionalPrice(product.promotionalPrice);
       setSelectedColor(product.colors?.[0]?.name || null);
       setSelectedWeight(product.weights?.[0]?.weight || null);
+      
+      // Para filamentos, solo mostrar imagen principal (sin galería)
+      if (product.category === "FILAMENTOS") {
+        setCurrentImages([product.image]);
+      } else {
+        setCurrentImages(product.images || [product.image]);
+      }
+      setCurrentImageIndex(0);
     }
   }, [product]);
+
+  // Actualizar imágenes cuando cambia el color seleccionado
+  useEffect(() => {
+    if (product && selectedColor) {
+      const colorData = product.colors?.find((c) => c.name === selectedColor);
+      if (colorData && colorData.images) {
+        // Para filamentos, solo usar la primera imagen del color (sin galería)
+        if (product.category === "FILAMENTOS") {
+          setCurrentImages([colorData.images[0]]);
+        } else {
+          setCurrentImages(colorData.images);
+        }
+      } else {
+        setCurrentImages(product.images || [product.image]);
+      }
+      setCurrentImageIndex(0);
+    }
+  }, [product, selectedColor]);
 
   /* Si el producto no existe mostrar mensaje de error */
   if (!product) {
@@ -122,7 +150,44 @@ export function ProductPage() {
     <section className="container flex-grow mx-auto max-w-[1200px] border-b py-5 lg:grid lg:grid-cols-2 lg:py-10">
       {/* image gallery */}
       <div className="container mx-auto px-4">
-        <img src={product.image} alt={product.name} className="" />
+        <div className="mb-4">
+          <img 
+            src={currentImages[currentImageIndex]} 
+            alt={`${product.name} - imagen ${currentImageIndex + 1}`} 
+            className="w-full h-auto rounded-lg"
+            onError={(e) => {
+              // Si la imagen no carga, usar la imagen principal del producto
+              e.currentTarget.src = product.image;
+            }}
+          />
+        </div>
+        
+        {/* Thumbnails para navegar entre imágenes - Solo para productos que NO son filamentos */}
+        {currentImages.length > 1 && product.category !== "FILAMENTOS" && (
+          <div className="flex gap-2 overflow-x-auto">
+            {currentImages.map((img, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentImageIndex(index)}
+                className={`flex-shrink-0 w-16 h-16 border-2 rounded-md overflow-hidden ${
+                  currentImageIndex === index 
+                    ? 'border-yellow-500' 
+                    : 'border-gray-300 hover:border-gray-400'
+                }`}
+              >
+                <img
+                  src={img}
+                  alt={`${product.name} thumbnail ${index + 1}`}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    // Si la imagen no carga, usar la imagen principal del producto
+                    e.currentTarget.src = product.image;
+                  }}
+                />
+              </button>
+            ))}
+          </div>
+        )}
         {/* /image gallery  */}
       </div>
       {/* description  */}
