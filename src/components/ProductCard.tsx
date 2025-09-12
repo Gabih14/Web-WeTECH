@@ -16,6 +16,21 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const { addToCart, items } = useCart();
 
+  // Función para obtener el primer color con stock disponible
+  const getFirstColorWithStock = () => {
+    if (!product.colors || !product.weights) return product.colors?.[0]?.name || null;
+    
+    const defaultWeight = product.weights[0]?.weight || 0;
+    
+    // Buscar el primer color que tenga stock
+    const colorWithStock = product.colors.find(color => {
+      return (color.stock[defaultWeight.toString()] || 0) > 0;
+    });
+    
+    // Si encuentra un color con stock, usarlo, sino usar el primero disponible
+    return colorWithStock?.name || product.colors[0]?.name || null;
+  };
+
   const [currentPrice, setCurrentPrice] = useState<number | undefined>(
     product.price
   );
@@ -24,7 +39,7 @@ export function ProductCard({ product }: ProductCardProps) {
   >(product.promotionalPrice);
   const [isColorMenuOpen, setIsColorMenuOpen] = useState(false);
   const [selectedColor, setSelectedColor] = useState<string | null>(
-    product.colors?.[0]?.name || null
+    getFirstColorWithStock()
   );
   const [selectedWeight, setSelectedWeight] = useState<number | null>(
     product.weights?.[0]?.weight || null
@@ -153,15 +168,41 @@ export function ProductCard({ product }: ProductCardProps) {
 
               {isColorMenuOpen && (
                 <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-40 overflow-y-auto left-0 right-0">
-                  {product.colors.map((color) => (
-                    <button
-                      key={color.name}
-                      onClick={() => {
-                        setSelectedColor(color.name);
-                        setIsColorMenuOpen(false);
-                      }}
-                      className="w-full px-2 py-1.5 text-xs sm:text-sm text-left hover:bg-gray-50 flex items-center gap-1.5"
-                    >
+                  {product.colors
+                    .sort((a, b) => {
+                      // Obtener el stock para cada color
+                      const stockA = getStock(
+                        a.name,
+                        selectedWeight || product.weights?.[0]?.weight || 0
+                      );
+                      const stockB = getStock(
+                        b.name,
+                        selectedWeight || product.weights?.[0]?.weight || 0
+                      );
+                      
+                      // Primero ordenar por stock (con stock primero)
+                      if (stockA > 0 && stockB === 0) return -1;
+                      if (stockA === 0 && stockB > 0) return 1;
+                      
+                      // Si ambos tienen stock o ambos no tienen, ordenar alfabéticamente
+                      return a.name.localeCompare(b.name);
+                    })
+                    .map((color) => (
+                      <button
+                        key={color.name}
+                        onClick={() => {
+                          setSelectedColor(color.name);
+                          setIsColorMenuOpen(false);
+                        }}
+                        className={`w-full px-2 py-1.5 text-xs sm:text-sm text-left hover:bg-gray-50 flex items-center gap-1.5 ${
+                          getStock(
+                            color.name,
+                            selectedWeight || product.weights?.[0]?.weight || 0
+                          ) === 0
+                            ? "opacity-50"
+                            : ""
+                        }`}
+                      >
                       <span
                         className="w-3 h-3 sm:w-4 sm:h-4 rounded-full border border-gray-300 flex-shrink-0"
                         style={{ backgroundColor: color.hex }}
