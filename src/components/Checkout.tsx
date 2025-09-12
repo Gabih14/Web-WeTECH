@@ -109,13 +109,13 @@ export default function Checkout() {
     const weightData = product.weights?.find((w) => w.weight === weight);
     return weightData ? weightData.price : product.price;
   };
-  const getPromotionalPrice = (
+/*   const getPromotionalPrice = (
     product: Product,
     weight: number
   ): number | undefined => {
     const weightData = product.weights?.find((w) => w.weight === weight);
     return weightData ? weightData.promotionalPrice : product.promotionalPrice;
-  };
+  }; */
   const calculateItemPriceWithDiscount = (
     product: Product,
     weight: number,
