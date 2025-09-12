@@ -3,6 +3,11 @@ import { Product } from "../types";
 import { ChevronDown } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { Link } from "react-router-dom";
+import {
+  calculateDiscountedPrice,
+  getDiscountPercentage,
+  getNextDiscountLevel
+} from "../utils/discounts";
 
 interface ProductCardProps {
   product: Product;
@@ -46,39 +51,16 @@ export function ProductCard({ product }: ProductCardProps) {
         (w) => w.weight === selectedWeight
       );
       if (weightData) {
-        setCurrentPrice(weightData.price);
-        setCurrentPromotionalPrice(weightData.promotionalPrice);
+        const originalPrice = weightData.price;
+        const discountedPrice = calculateDiscountedPrice(originalPrice, quantity);
+        setCurrentPrice(originalPrice);
+        setCurrentPromotionalPrice(discountedPrice);
       }
-    } else {
-      setCurrentPrice(product.price);
-      setCurrentPromotionalPrice(product.promotionalPrice);
-    }
-  }, [selectedWeight, product]);
-  useEffect(() => {
-    if (selectedWeight !== null && product.weights) {
-      const weightData = product.weights.find(
-        (w) => w.weight === selectedWeight
-      );
-      if (weightData) {
-        let price = weightData.price;
-        if (product.discountQuantity && product.discountQuantity[quantity]) {
-          price = price - price * product.discountQuantity[quantity];
-          setCurrentPrice(weightData.price);
-          setCurrentPromotionalPrice(price);
-        } else {
-          setCurrentPrice(weightData.price);
-          setCurrentPromotionalPrice(weightData.promotionalPrice);
-        }
-      }
-    } else {
-      if (product.price) {
-        let price = product.price;
-        if (product.discountQuantity && product.discountQuantity[quantity]) {
-          price = price - price * product.discountQuantity[quantity];
-        }
-        setCurrentPrice(price);
-        setCurrentPromotionalPrice(product.promotionalPrice);
-      }
+    } else if (product.price) {
+      const originalPrice = product.price;
+      const discountedPrice = calculateDiscountedPrice(originalPrice, quantity);
+      setCurrentPrice(originalPrice);
+      setCurrentPromotionalPrice(discountedPrice);
     }
   }, [selectedWeight, quantity, product]);
 
@@ -238,7 +220,19 @@ export function ProductCard({ product }: ProductCardProps) {
                       maximumFractionDigits: 0,
                     })}
                   </span>
+                  <span className="text-xs bg-red-500 text-white px-1.5 py-0.5 rounded-full font-medium">
+                    -{getDiscountPercentage(quantity)}
+                  </span>
                 </div>
+                {/* Mostrar información del siguiente nivel de descuento */}
+                {(() => {
+                  const nextLevel = getNextDiscountLevel(quantity);
+                  return nextLevel ? (
+                    <div className="text-xs text-gray-600">
+                      Compra {nextLevel.quantity - quantity} más para obtener {nextLevel.discount} de descuento
+                    </div>
+                  ) : null;
+                })()}
               </>
             ) : (
               <div>

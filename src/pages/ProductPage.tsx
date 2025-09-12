@@ -5,6 +5,12 @@ import { useCart } from "../context/CartContext";
 import Isologo from "../assets/Isologo Fondo Negro SVG.svg";
 import { ShoppingCart, ChevronDown } from "lucide-react";
 import { Product } from "../types";
+import { 
+  calculateDiscountedPrice, 
+  getDiscountPercentage, 
+  getNextDiscountLevel,
+  calculateSavings 
+} from "../utils/discounts";
 
 export function ProductPage() {
   const { id } = useParams<{ id: string }>();
@@ -70,6 +76,28 @@ export function ProductPage() {
       setCurrentImageIndex(0);
     }
   }, [product, selectedColor]);
+
+  // Actualizar precios con descuentos por cantidad
+  useEffect(() => {
+    if (product) {
+      if (selectedWeight !== null && product.weights) {
+        const weightData = product.weights.find(
+          (w) => w.weight === selectedWeight
+        );
+        if (weightData) {
+          const originalPrice = weightData.price;
+          const discountedPrice = calculateDiscountedPrice(originalPrice, quantity);
+          setCurrentPrice(originalPrice);
+          setCurrentPromotionalPrice(discountedPrice);
+        }
+      } else if (product.price) {
+        const originalPrice = product.price;
+        const discountedPrice = calculateDiscountedPrice(originalPrice, quantity);
+        setCurrentPrice(originalPrice);
+        setCurrentPromotionalPrice(discountedPrice);
+      }
+    }
+  }, [product, selectedWeight, quantity]);
 
   /* Si el producto no existe mostrar mensaje de error */
   if (!product) {
@@ -212,31 +240,57 @@ export function ProductPage() {
           )}
         </p> */}
         {/* PRODUCT PRICE */}
-        <p className="mt-4 text-4xl font-bold">
-          {currentPromotionalPrice ? (
-            <>
+        <div className="mt-4">
+          <div className="text-4xl font-bold">
+            {currentPromotionalPrice ? (
+              <>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="text-base sm:text-2xl font-bold">
+                    ${currentPromotionalPrice.toLocaleString("es-ES", {
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0,
+                    })}
+                  </span>
+                  <span className="text-xs sm:text-lg text-gray-300 font-bold line-through">
+                    ${currentPrice?.toLocaleString("es-ES", {
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0,
+                    })}
+                  </span>
+                  <span className="text-sm bg-red-500 text-white px-2 py-1 rounded-full font-medium">
+                    -{getDiscountPercentage(quantity)} OFF
+                  </span>
+                </div>
+                <div className="mt-2 text-sm text-green-600 font-medium">
+                  Ahorras: ${calculateSavings(currentPrice || 0, quantity).toLocaleString("es-ES", {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0,
+                  })}
+                </div>
+                {/* Mostrar información del siguiente nivel de descuento */}
+                {(() => {
+                  const nextLevel = getNextDiscountLevel(quantity);
+                  return nextLevel ? (
+                    <div className="mt-1 text-sm text-blue-600">
+                      🎯 Compra {nextLevel.quantity - quantity} más para obtener {nextLevel.discount} de descuento
+                    </div>
+                  ) : (
+                    <div className="mt-1 text-sm text-purple-600">
+                      🎉 ¡Máximo descuento alcanzado!
+                    </div>
+                  );
+                })()}
+              </>
+            ) : (
               <span className="text-base sm:text-2xl font-bold">
-                ${currentPromotionalPrice.toLocaleString("es-ES", {
-                  minimumFractionDigits: 0,
-                  maximumFractionDigits: 0,
-                })}
-              </span>
-              <span className="text-xs sm:text-lg text-gray-300 font-bold line-through px-2">
                 ${currentPrice?.toLocaleString("es-ES", {
                   minimumFractionDigits: 0,
                   maximumFractionDigits: 0,
                 })}
               </span>
-            </>
-          ) : (
-            <span className="text-base sm:text-2xl font-bold">
-              ${currentPrice?.toLocaleString("es-ES", {
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0,
-              })}
-            </span>
-          )}
-        </p>
+            )}
+          </div>
+        </div>
         <p className="pt-5 text-sm leading-5 text-gray-500 mb-5">
           {product.description}
         </p>
