@@ -1,22 +1,21 @@
+import { apiFetch } from "../services/api";
 import { Product } from "../types";
 import { colors } from "../data/colors";
 
+
 export const fetchProducts = async (): Promise<Product[]> => {
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
-  if (!API_URL || API_URL === "http://localhost:3000") {
+  if (!API_URL) {
     throw new Error("API URL is not defined");
+  }
+  if (API_URL === "http://localhost:3000") {
+    console.warn("Using default API URL:", API_URL);
   }
   try {
     // Petición
-    const response = await fetch(`${API_URL}/stk-item`);
-
-    // Verificar si la respuesta es exitosa
-    if (!response.ok) {
-      throw new Error("Error al obtener los productos del servidor");
-    }
-
-    // Obtener los datos en formato JSON
-    const rawProducts = await response.json();
+    // Usando apiFetch con token incluido
+    const rawProducts = await apiFetch("/stk-item");
+    console.log("Raw products fetched:", rawProducts);
 
     // Transformar los datos
     const groupedProducts: { [key: string]: Product } = {};
@@ -32,6 +31,11 @@ export const fetchProducts = async (): Promise<Product[]> => {
         return; // Salir de esta iteración
       }
 
+      // Ignorar ítems con precio 0 o menor
+      if (!item.precioVtaCotizadoMin || parseFloat(item.precioVtaCotizadoMin) <= 0) {
+        return; // Salir de esta iteración
+      }
+
       if (!groupedProducts[familia]) {
         // Crear el producto principal
         groupedProducts[familia] = {
@@ -41,7 +45,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
           image: `/assets/filamentos/${item.id}.png`, // Generar la ruta dinámica de la imagen
           category: item.grupo,
           subcategory: item.subgrupo ? item.subgrupo.toUpperCase() : undefined,
-          price: parseFloat(item.precioVtaCotizado || "0"), // Guardar precioVtaCotizado en todos los productos
+          price: parseFloat(item.precioVtaCotizadoMin || "0"), // Guardar precioVtaCotizadoMin en todos los productos
           ...(item.grupo === "FILAMENTOS" && { colors: [] }), // Solo agregar `colors` si es "FILAMENTOS"
           ...(item.grupo !== "FILAMENTOS" && { stock: 0 }), // Solo agregar `stock` si no es "FILAMENTOS"
         };
@@ -65,7 +69,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
           // Convertir a kilogramos si es necesario
           weight = unit === "g" ? value / 1000 : value;
         }
-        const price = parseFloat(item.precioVtaCotizado || "0"); // Usar precioVtaCotizado como precio
+        const price = parseFloat(item.precioVtaCotizadoMin || "0"); // Usar precioVtaCotizadoMin como precio
         const promotionalPrice = price - price * 0.15; // Calcular el precio promocional (15% de descuento)
 
         // Verificar si el peso ya existe en `weights`
