@@ -2,6 +2,10 @@ import { X, Minus, Plus, ShoppingCart } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { Product } from "../types";
 import { useNavigate } from "react-router-dom";
+import {
+  calculateDiscountedPrice,
+  getDiscountPercentage
+} from "../utils/discounts";
 
 interface CartModalProps {
   isOpen: boolean;
@@ -37,43 +41,26 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
     return weightData ? weightData.price : product.price;
   };
 
-  const getPromotionalPrice = (
+/*   const getPromotionalPrice = (
     product: Product,
     weight: number
   ): number | undefined => {
     const weightData = product.weights?.find((w) => w.weight === weight);
     return weightData ? weightData.promotionalPrice : product.promotionalPrice;
   };
-
-  const calculateDiscountedPrice = (
+ */
+  const calculateItemDiscountedPrice = (
     product: Product,
     weight: number,
     quantity: number
   ): number | undefined => {
-    const price = getPrice(product, weight);
-    const promotionalPrice = getPromotionalPrice(product, weight);
-
-    if (product.discountQuantity) {
-      const discountThresholds = Object.keys(product.discountQuantity)
-        .map(Number)
-        .sort((a, b) => a - b);
-
-      const applicableDiscount = discountThresholds.reduce((acc, threshold) => {
-        return quantity >= threshold
-          ? product.discountQuantity![threshold]
-          : acc;
-      }, 0);
-
-      if (applicableDiscount > 0) {
-        return price ? price - price * applicableDiscount : undefined;
-      } else if (promotionalPrice) {
-        return promotionalPrice;
-      }
-    } else if (promotionalPrice) {
-      return promotionalPrice;
+    const originalPrice = getPrice(product, weight);
+    
+    if (originalPrice) {
+      return calculateDiscountedPrice(originalPrice, quantity);
     }
-
-    return price;
+    
+    return originalPrice;
   };
 
   const calculateOriginalTotal = () => {
@@ -130,7 +117,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                     item.weight
                   );
                   const price = getPrice(item.product, item.weight);
-                  const discountedPrice = calculateDiscountedPrice(
+                  const discountedPrice = calculateItemDiscountedPrice(
                     item.product,
                     item.weight,
                     item.quantity
@@ -153,20 +140,25 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                           <p className="text-black mt-1">
                             {discountedPrice ? (
                               <>
-                                <span className="text-base sm:text-lg font-bold mr-2">
-                                  $
-                                  {discountedPrice.toLocaleString("es-ES", {
-                                    minimumFractionDigits: 0,
-                                    maximumFractionDigits: 0,
-                                  })}
-                                </span>
-                                <span className="text-base sm:text-lg text-gray-300 font-bold line-through">
-                                  $
-                                  {price?.toLocaleString("es-ES", {
-                                    minimumFractionDigits: 0,
-                                    maximumFractionDigits: 0,
-                                  })}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-base sm:text-lg font-bold">
+                                    $
+                                    {discountedPrice.toLocaleString("es-ES", {
+                                      minimumFractionDigits: 0,
+                                      maximumFractionDigits: 0,
+                                    })}
+                                  </span>
+                                  <span className="text-base sm:text-lg text-gray-300 font-bold line-through">
+                                    $
+                                    {price?.toLocaleString("es-ES", {
+                                      minimumFractionDigits: 0,
+                                      maximumFractionDigits: 0,
+                                    })}
+                                  </span>
+                                  <span className="text-xs bg-red-500 text-white px-2 py-1 rounded-full font-medium">
+                                    -{getDiscountPercentage(item.quantity)}
+                                  </span>
+                                </div>
                               </>
                             ) : (
                               <span className="text-base sm:text-lg font-bold">

@@ -3,6 +3,11 @@ import { Product } from "../types";
 import { ChevronDown } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { Link } from "react-router-dom";
+import {
+  calculateDiscountedPrice,
+  getDiscountPercentage,
+  getNextDiscountLevel
+} from "../utils/discounts";
 
 interface ProductCardProps {
   product: Product;
@@ -10,6 +15,21 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { addToCart, items } = useCart();
+
+  // Función para obtener el primer color con stock disponible
+  const getFirstColorWithStock = () => {
+    if (!product.colors || !product.weights) return product.colors?.[0]?.name || null;
+    
+    const defaultWeight = product.weights[0]?.weight || 0;
+    
+    // Buscar el primer color que tenga stock
+    const colorWithStock = product.colors.find(color => {
+      return (color.stock[defaultWeight.toString()] || 0) > 0;
+    });
+    
+    // Si encuentra un color con stock, usarlo, sino usar el primero disponible
+    return colorWithStock?.name || product.colors[0]?.name || null;
+  };
 
   const [currentPrice, setCurrentPrice] = useState<number | undefined>(
     product.price
@@ -19,7 +39,7 @@ export function ProductCard({ product }: ProductCardProps) {
   >(product.promotionalPrice);
   const [isColorMenuOpen, setIsColorMenuOpen] = useState(false);
   const [selectedColor, setSelectedColor] = useState<string | null>(
-    product.colors?.[0]?.name || null
+    getFirstColorWithStock()
   );
   const [selectedWeight, setSelectedWeight] = useState<number | null>(
     product.weights?.[0]?.weight || null
@@ -46,39 +66,16 @@ export function ProductCard({ product }: ProductCardProps) {
         (w) => w.weight === selectedWeight
       );
       if (weightData) {
-        setCurrentPrice(weightData.price);
-        setCurrentPromotionalPrice(weightData.promotionalPrice);
+        const originalPrice = weightData.price;
+        const discountedPrice = calculateDiscountedPrice(originalPrice, quantity);
+        setCurrentPrice(originalPrice);
+        setCurrentPromotionalPrice(discountedPrice);
       }
-    } else {
-      setCurrentPrice(product.price);
-      setCurrentPromotionalPrice(product.promotionalPrice);
-    }
-  }, [selectedWeight, product]);
-  useEffect(() => {
-    if (selectedWeight !== null && product.weights) {
-      const weightData = product.weights.find(
-        (w) => w.weight === selectedWeight
-      );
-      if (weightData) {
-        let price = weightData.price;
-        if (product.discountQuantity && product.discountQuantity[quantity]) {
-          price = price - price * product.discountQuantity[quantity];
-          setCurrentPrice(weightData.price);
-          setCurrentPromotionalPrice(price);
-        } else {
-          setCurrentPrice(weightData.price);
-          setCurrentPromotionalPrice(weightData.promotionalPrice);
-        }
-      }
-    } else {
-      if (product.price) {
-        let price = product.price;
-        if (product.discountQuantity && product.discountQuantity[quantity]) {
-          price = price - price * product.discountQuantity[quantity];
-        }
-        setCurrentPrice(price);
-        setCurrentPromotionalPrice(product.promotionalPrice);
-      }
+    } else if (product.price) {
+      const originalPrice = product.price;
+      const discountedPrice = calculateDiscountedPrice(originalPrice, quantity);
+      setCurrentPrice(originalPrice);
+      setCurrentPromotionalPrice(discountedPrice);
     }
   }, [selectedWeight, quantity, product]);
 
@@ -132,31 +129,31 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-visible hover:shadow-lg transition-shadow flex flex-col">
-      <Link to={`/product/${product.id}`}>
+      <Link to={`/product/${product.id}`} className="aspect-square overflow-hidden rounded-t-lg">
         <img
           src={product.image}
           alt={product.name}
-          className="w-full h-32 sm:h-48 object-cover"
+          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
         />
       </Link>
-      <div className="p-1 sm:p-4 flex flex-col flex-grow">
+      <div className="p-1.5 sm:p-3 flex flex-col flex-grow space-y-1.5 sm:space-y-2">
         <Link to={`/product/${product.id}`}>
-          <h3 className="text-base sm:text-lg font-semibold mb-1 sm:mb-2 line-clamp-2">
+          <h3 className="text-xs sm:text-sm lg:text-base font-semibold line-clamp-2 hover:text-yellow-600 transition-colors leading-tight">
             {product.name}
           </h3>
         </Link>
 
         {product.colors && (
-          <div className="mb-3">
+          <div className="mb-2">
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setIsColorMenuOpen(!isColorMenuOpen)}
-                className="w-full px-3 py-2 text-sm border rounded-md bg-white flex items-center justify-between"
+                className="w-full px-2 py-1.5 text-xs sm:text-sm border rounded-md bg-white flex items-center justify-between hover:border-gray-400 transition-colors"
               >
-                <span className="flex items-center gap-2">
+                <span className="flex items-center gap-1.5 truncate">
                   {selectedColor && (
                     <span
-                      className="w-4 h-4 rounded-full border border-gray-300"
+                      className="w-3 h-3 sm:w-4 sm:h-4 rounded-full border border-gray-300 flex-shrink-0"
                       style={{
                         backgroundColor: product.colors.find(
                           (c) => c.name === selectedColor
@@ -164,34 +161,58 @@ export function ProductCard({ product }: ProductCardProps) {
                       }}
                     />
                   )}
-                  {selectedColor || "Seleccionar color"}
+                  <span className="truncate">{selectedColor || "Color"}</span>
                 </span>
-                <ChevronDown className="w-4 h-4" />
+                <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
               </button>
 
               {isColorMenuOpen && (
-                <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto left-0 right-0">
-                  {product.colors.map((color) => (
-                    <button
-                      key={color.name}
-                      onClick={() => {
-                        setSelectedColor(color.name);
-                        setIsColorMenuOpen(false);
-                      }}
-                      className="w-full px-3 py-2 text-sm text-left hover:bg-gray-50 flex items-center gap-2"
-                    >
+                <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-40 overflow-y-auto left-0 right-0">
+                  {product.colors
+                    .sort((a, b) => {
+                      // Obtener el stock para cada color
+                      const stockA = getStock(
+                        a.name,
+                        selectedWeight || product.weights?.[0]?.weight || 0
+                      );
+                      const stockB = getStock(
+                        b.name,
+                        selectedWeight || product.weights?.[0]?.weight || 0
+                      );
+                      
+                      // Primero ordenar por stock (con stock primero)
+                      if (stockA > 0 && stockB === 0) return -1;
+                      if (stockA === 0 && stockB > 0) return 1;
+                      
+                      // Si ambos tienen stock o ambos no tienen, ordenar alfabéticamente
+                      return a.name.localeCompare(b.name);
+                    })
+                    .map((color) => (
+                      <button
+                        key={color.name}
+                        onClick={() => {
+                          setSelectedColor(color.name);
+                          setIsColorMenuOpen(false);
+                        }}
+                        className={`w-full px-2 py-1.5 text-xs sm:text-sm text-left hover:bg-gray-50 flex items-center gap-1.5 ${
+                          getStock(
+                            color.name,
+                            selectedWeight || product.weights?.[0]?.weight || 0
+                          ) === 0
+                            ? "opacity-50"
+                            : ""
+                        }`}
+                      >
                       <span
-                        className="w-4 h-4 rounded-full border border-gray-300"
+                        className="w-3 h-3 sm:w-4 sm:h-4 rounded-full border border-gray-300 flex-shrink-0"
                         style={{ backgroundColor: color.hex }}
                       />
-                      {color.name}{" "}
-                      <span className="text-xs text-gray-500">
-                        (stock{" "}
-                        {getStock(
+                      <span className="truncate">{color.name}</span>
+                      <span className="text-xs text-gray-500 ml-auto flex-shrink-0">
+                        ({getStock(
                           color.name,
                           selectedWeight || product.weights?.[0]?.weight || 0
-                        )}
-                        )
+                        )})
                       </span>
                     </button>
                   ))}
@@ -202,17 +223,17 @@ export function ProductCard({ product }: ProductCardProps) {
         )}
 
         {product.weights && (
-          <div className="mb-3">
-            <div className="flex flex-wrap gap-2 mt-1">
+          <div className="mb-2">
+            <div className="flex flex-wrap gap-1">
               {product.weights.map((weight) => (
                 <button
                   key={weight.weight}
                   onClick={() => setSelectedWeight(weight.weight)}
-                  className={`px-2 py-1.5 text-sm border rounded-md ${
+                  className={`px-2 py-1 text-xs border rounded ${
                     selectedWeight === weight.weight
-                      ? "bg-black text-white"
-                      : "bg-white text-black"
-                  } sm:px-3 sm:py-2 sm:text-base`}
+                      ? "bg-black text-white border-black"
+                      : "bg-white text-black border-gray-300 hover:border-gray-400"
+                  } transition-colors`}
                 >
                   {weight.weight}kg
                 </button>
@@ -222,32 +243,41 @@ export function ProductCard({ product }: ProductCardProps) {
         )}
 
         <div className="mt-auto">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-0 sm:gap-2">
+          <div className="flex flex-col gap-1 mb-1.5 sm:mb-3">
             {currentPromotionalPrice ? (
               <>
-                <div className="mb-0 sm:mb-3">
-                  <span className="text-lg sm:text-2xl font-bold">
+                <div className="flex items-baseline gap-1 flex-wrap">
+                  <span className="text-base sm:text-lg lg:text-xl font-bold ">
                     $
                     {currentPromotionalPrice.toLocaleString("es-ES", {
                       minimumFractionDigits: 0,
                       maximumFractionDigits: 0,
                     })}
                   </span>
-                </div>
-                <div className="mb-1 sm:mb-3">
-                  {/* Precio tachado */}
-                  <span className="text-lg sm:text-2xl text-gray-400 font-bold line-through">
+                  <span className="text-xs sm:text-sm lg:text-base text-gray-400 font-medium line-through">
                     $
                     {currentPrice?.toLocaleString("es-ES", {
                       minimumFractionDigits: 0,
                       maximumFractionDigits: 0,
                     })}
                   </span>
+                  <span className="text-xs bg-red-500 text-white px-1.5 py-0.5 rounded-full font-medium">
+                    -{getDiscountPercentage(quantity)}
+                  </span>
                 </div>
+                {/* Mostrar información del siguiente nivel de descuento */}
+                {(() => {
+                  const nextLevel = getNextDiscountLevel(quantity);
+                  return nextLevel ? (
+                    <div className="text-xs text-gray-600">
+                      Compra {nextLevel.quantity - quantity} más para obtener {nextLevel.discount} de descuento
+                    </div>
+                  ) : null;
+                })()}
               </>
             ) : (
-              <div className="mb-3">
-                <span className="text-lg sm:text-2xl font-bold">
+              <div>
+                <span className="text-base sm:text-lg lg:text-xl font-bold">
                   $
                   {currentPrice?.toLocaleString("es-ES", {
                     minimumFractionDigits: 0,
@@ -258,43 +288,47 @@ export function ProductCard({ product }: ProductCardProps) {
             )}
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+        <div className="space-y-2">
+          {/* Botón principal */}
           <button
             onClick={handleAddToCart}
             disabled={!canAddToCart || quantity + cartQuantity > availableStock}
-            className={`px-4 py-2 rounded-md text-black
+            className={`w-full px-2 py-1.5 sm:px-3 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors
                 ${
                   canAddToCart && quantity + cartQuantity <= availableStock
-                    ? "bg-yellow-400 hover:bg-yellow-700"
-                    : "bg-gray-400 cursor-not-allowed"
-                } transition-colors`}
+                    ? "bg-yellow-400 hover:bg-yellow-500 text-black"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                }`}
           >
             {canAddToCart && quantity + cartQuantity <= availableStock
               ? "Agregar"
               : "Sin stock"}
           </button>
-          {/* QUANTITY */}
+          
+          {/* Selector de cantidad - Solo para productos con colores y pesos */}
           {canAddToCart && product.colors && product.weights && (
-            <div className="flex flex-wrap items-center gap-1 sm:gap-2 pt-2">
-            {[1, 5, 10, 50].map((qty) => (
-              <button
-                key={qty}
-                className={`px-2 py-1.5 text-xs sm:text-sm border rounded-md ${
-                  quantity === qty
-                    ? "bg-black text-white"
-                    : qty + cartQuantity > availableStock
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : "bg-white text-black"
-                }`}
-                onClick={() => setQuantity(qty)}
-                disabled={qty + cartQuantity > availableStock}
-              >
-                x{qty}
-              </button>
-            ))}
-          </div>
+            <div className="flex justify-center">
+              <div className="flex items-center gap-0.5 sm:gap-1">
+                <span className="text-xs text-gray-600 mr-1 hidden sm:inline">Cant:</span>
+                {[1, 5, 10, 50].map((qty) => (
+                  <button
+                    key={qty}
+                    className={`px-1.5 py-0.5 sm:px-2 sm:py-1 text-xs border rounded ${
+                      quantity === qty
+                        ? "bg-black text-white border-black"
+                        : qty + cartQuantity > availableStock
+                        ? "bg-gray-200 text-gray-400 cursor-not-allowed border-gray-200"
+                        : "bg-white text-black border-gray-300 hover:border-gray-400"
+                    } transition-colors`}
+                    onClick={() => setQuantity(qty)}
+                    disabled={qty + cartQuantity > availableStock}
+                  >
+                    {qty}
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
-          {/* QUANTITY */}
         </div>
       </div>
     </div>
