@@ -5,6 +5,12 @@ import { useCart } from "../context/CartContext";
 import Isologo from "../assets/Isologo Fondo Negro SVG.svg";
 import { ShoppingCart, ChevronDown } from "lucide-react";
 import { Product } from "../types";
+import { 
+  calculateDiscountedPrice, 
+  getDiscountPercentage, 
+  getNextDiscountLevel,
+  calculateSavings 
+} from "../utils/discounts";
 
 export function ProductPage() {
   const { id } = useParams<{ id: string }>();
@@ -23,6 +29,8 @@ export function ProductPage() {
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedWeight, setSelectedWeight] = useState<number | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [currentImages, setCurrentImages] = useState<string[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -38,10 +46,74 @@ export function ProductPage() {
     if (product) {
       setCurrentPrice(product.price);
       setCurrentPromotionalPrice(product.promotionalPrice);
-      setSelectedColor(product.colors?.[0]?.name || null);
+      
+      // Función para obtener el primer color con stock disponible
+      const getFirstColorWithStock = () => {
+        if (!product.colors || !product.weights) return product.colors?.[0]?.name || null;
+        
+        const defaultWeight = product.weights[0]?.weight || 0;
+        
+        // Buscar el primer color que tenga stock
+        const colorWithStock = product.colors.find(color => {
+          return (color.stock[defaultWeight.toString()] || 0) > 0;
+        });
+        
+        // Si encuentra un color con stock, usarlo, sino usar el primero disponible
+        return colorWithStock?.name || product.colors[0]?.name || null;
+      };
+      
+      setSelectedColor(getFirstColorWithStock());
       setSelectedWeight(product.weights?.[0]?.weight || null);
+      
+      // Para filamentos, solo mostrar imagen principal (sin galería)
+      if (product.category === "FILAMENTOS") {
+        setCurrentImages([product.image]);
+      } else {
+        setCurrentImages(product.images || [product.image]);
+      }
+      setCurrentImageIndex(0);
     }
   }, [product]);
+
+  // Actualizar imágenes cuando cambia el color seleccionado
+  useEffect(() => {
+    if (product && selectedColor) {
+      const colorData = product.colors?.find((c) => c.name === selectedColor);
+      if (colorData && colorData.images) {
+        // Para filamentos, solo usar la primera imagen del color (sin galería)
+        if (product.category === "FILAMENTOS") {
+          setCurrentImages([colorData.images[0]]);
+        } else {
+          setCurrentImages(colorData.images);
+        }
+      } else {
+        setCurrentImages(product.images || [product.image]);
+      }
+      setCurrentImageIndex(0);
+    }
+  }, [product, selectedColor]);
+
+  // Actualizar precios con descuentos por cantidad
+  useEffect(() => {
+    if (product) {
+      if (selectedWeight !== null && product.weights) {
+        const weightData = product.weights.find(
+          (w) => w.weight === selectedWeight
+        );
+        if (weightData) {
+          const originalPrice = weightData.price;
+          const discountedPrice = calculateDiscountedPrice(originalPrice, quantity);
+          setCurrentPrice(originalPrice);
+          setCurrentPromotionalPrice(discountedPrice);
+        }
+      } else if (product.price) {
+        const originalPrice = product.price;
+        const discountedPrice = calculateDiscountedPrice(originalPrice, quantity);
+        setCurrentPrice(originalPrice);
+        setCurrentPromotionalPrice(discountedPrice);
+      }
+    }
+  }, [product, selectedWeight, quantity]);
 
   /* Si el producto no existe mostrar mensaje de error */
   if (!product) {
@@ -122,7 +194,44 @@ export function ProductPage() {
     <section className="container flex-grow mx-auto max-w-[1200px] border-b py-5 lg:grid lg:grid-cols-2 lg:py-10">
       {/* image gallery */}
       <div className="container mx-auto px-4">
-        <img src={product.image} alt={product.name} className="" />
+        <div className="mb-4">
+          <img 
+            src={currentImages[currentImageIndex]} 
+            alt={`${product.name} - imagen ${currentImageIndex + 1}`} 
+            className="w-full h-auto rounded-lg"
+            onError={(e) => {
+              // Si la imagen no carga, usar la imagen principal del producto
+              e.currentTarget.src = product.image;
+            }}
+          />
+        </div>
+        
+        {/* Thumbnails para navegar entre imágenes - Solo para productos que NO son filamentos */}
+        {currentImages.length > 1 && product.category !== "FILAMENTOS" && (
+          <div className="flex gap-2 overflow-x-auto">
+            {currentImages.map((img, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentImageIndex(index)}
+                className={`flex-shrink-0 w-16 h-16 border-2 rounded-md overflow-hidden ${
+                  currentImageIndex === index 
+                    ? 'border-yellow-500' 
+                    : 'border-gray-300 hover:border-gray-400'
+                }`}
+              >
+                <img
+                  src={img}
+                  alt={`${product.name} thumbnail ${index + 1}`}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    // Si la imagen no carga, usar la imagen principal del producto
+                    e.currentTarget.src = product.image;
+                  }}
+                />
+              </button>
+            ))}
+          </div>
+        )}
         {/* /image gallery  */}
       </div>
       {/* description  */}
@@ -147,31 +256,57 @@ export function ProductPage() {
           )}
         </p> */}
         {/* PRODUCT PRICE */}
-        <p className="mt-4 text-4xl font-bold">
-          {currentPromotionalPrice ? (
-            <>
+        <div className="mt-4">
+          <div className="text-4xl font-bold">
+            {currentPromotionalPrice ? (
+              <>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="text-base sm:text-2xl font-bold">
+                    ${currentPromotionalPrice.toLocaleString("es-ES", {
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0,
+                    })}
+                  </span>
+                  <span className="text-xs sm:text-lg text-gray-300 font-bold line-through">
+                    ${currentPrice?.toLocaleString("es-ES", {
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0,
+                    })}
+                  </span>
+                  <span className="text-sm bg-red-500 text-white px-2 py-1 rounded-full font-medium">
+                    -{getDiscountPercentage(quantity)} OFF
+                  </span>
+                </div>
+                <div className="mt-2 text-sm text-green-600 font-medium">
+                  Ahorras: ${calculateSavings(currentPrice || 0, quantity).toLocaleString("es-ES", {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0,
+                  })}
+                </div>
+                {/* Mostrar información del siguiente nivel de descuento */}
+                {(() => {
+                  const nextLevel = getNextDiscountLevel(quantity);
+                  return nextLevel ? (
+                    <div className="mt-1 text-sm text-blue-600">
+                      🎯 Compra {nextLevel.quantity - quantity} más para obtener {nextLevel.discount} de descuento
+                    </div>
+                  ) : (
+                    <div className="mt-1 text-sm text-purple-600">
+                      🎉 ¡Máximo descuento alcanzado!
+                    </div>
+                  );
+                })()}
+              </>
+            ) : (
               <span className="text-base sm:text-2xl font-bold">
-                ${currentPromotionalPrice.toLocaleString("es-ES", {
-                  minimumFractionDigits: 0,
-                  maximumFractionDigits: 0,
-                })}
-              </span>
-              <span className="text-xs sm:text-lg text-gray-300 font-bold line-through px-2">
                 ${currentPrice?.toLocaleString("es-ES", {
                   minimumFractionDigits: 0,
                   maximumFractionDigits: 0,
                 })}
               </span>
-            </>
-          ) : (
-            <span className="text-base sm:text-2xl font-bold">
-              ${currentPrice?.toLocaleString("es-ES", {
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0,
-              })}
-            </span>
-          )}
-        </p>
+            )}
+          </div>
+        </div>
         <p className="pt-5 text-sm leading-5 text-gray-500 mb-5">
           {product.description}
         </p>
@@ -220,15 +355,41 @@ export function ProductPage() {
 
               {isColorMenuOpen && (
                 <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto left-0 right-0">
-                  {product.colors.map((color) => (
-                    <button
-                      key={color.name}
-                      onClick={() => {
-                        setSelectedColor(color.name);
-                        setIsColorMenuOpen(false);
-                      }}
-                      className="w-full px-3 py-2 text-sm text-left hover:bg-gray-50 flex items-center gap-2"
-                    >
+                  {product.colors
+                    .sort((a, b) => {
+                      // Obtener el stock para cada color
+                      const stockA = getStock(
+                        a.name,
+                        selectedWeight || product.weights?.[0]?.weight || 0
+                      );
+                      const stockB = getStock(
+                        b.name,
+                        selectedWeight || product.weights?.[0]?.weight || 0
+                      );
+                      
+                      // Primero ordenar por stock (con stock primero)
+                      if (stockA > 0 && stockB === 0) return -1;
+                      if (stockA === 0 && stockB > 0) return 1;
+                      
+                      // Si ambos tienen stock o ambos no tienen, ordenar alfabéticamente
+                      return a.name.localeCompare(b.name);
+                    })
+                    .map((color) => (
+                      <button
+                        key={color.name}
+                        onClick={() => {
+                          setSelectedColor(color.name);
+                          setIsColorMenuOpen(false);
+                        }}
+                        className={`w-full px-3 py-2 text-sm text-left hover:bg-gray-50 flex items-center gap-2 ${
+                          getStock(
+                            color.name,
+                            selectedWeight || product.weights?.[0]?.weight || 0
+                          ) === 0
+                            ? "opacity-50"
+                            : ""
+                        }`}
+                      >
                       <span
                         className="w-4 h-4 rounded-full border border-gray-300"
                         style={{ backgroundColor: color.hex }}

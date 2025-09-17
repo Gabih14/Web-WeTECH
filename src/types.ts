@@ -2,7 +2,8 @@ export interface Product {
   id: string;
   name: string;
   description: string;
-  image: string;
+  image: string; // Imagen principal (primera del array)
+  images?: string[]; // Array de todas las imágenes
   category: string;
   subcategory?: string;
   weights?: {
@@ -17,6 +18,7 @@ export interface Product {
     name: string;
     hex: string;
     stock: { [weight: string]: number };
+    images?: string[]; // Imágenes específicas por color
   }[];
   stock?: number;
 }
