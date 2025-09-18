@@ -25,7 +25,7 @@ function App() {
             <Route path="/search" element={<SearchResultsPage />} />
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/product/:id" element={<ProductPage />} />
-           {/*  <Route path="/checkout" element={<Checkout />} /> */}
+            <Route path="/checkout" element={<Checkout />} />
             <Route
               path="/checkout/callback"
               element={<PaymentCallback />}

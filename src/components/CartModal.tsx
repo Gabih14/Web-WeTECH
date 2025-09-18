@@ -21,7 +21,8 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
 
   const handleCheckout = () => {
     onClose();
-    navigate("/under-development");
+    navigate("/checkout");
+    //navigate("/under-development");
   };
 
   const getStock = (
