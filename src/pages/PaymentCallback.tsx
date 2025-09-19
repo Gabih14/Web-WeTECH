@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { CheckCircle, XCircle, Loader, PartyPopper } from "lucide-react";
+import { CheckCircle, XCircle, Loader, PartyPopper, RefreshCw } from "lucide-react";
 import { apiFetch } from "../services/api";
 
 // Enum para los posibles estados del pago
@@ -39,9 +39,38 @@ const PaymentCallback = () => {
   // Datos del pedido obtenidos de la API
   const [pedidoData, setPedidoData] = useState<PedidoData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Obtener el external_id de los parámetros de la URL
   const externalId = searchParams.get('external_id') || searchParams.get('id') || searchParams.get('payment_id');
+
+  // Función para refrescar manualmente el estado del pedido
+  const refreshPedidoStatus = async () => {
+    if (!externalId || isRefreshing) return;
+
+    try {
+      setIsRefreshing(true);
+      const data: PedidoData = await apiFetch(`/pedido/${externalId}`);
+      setPedidoData(data);
+
+      // Actualizar el estado basado en el nuevo estado del pedido
+      if (data.estado === "APROBADO") {
+        setStatus(PaymentStatus.SUCCESS);
+      } else if (data.estado === "RECHAZADO" || data.estado === "CANCELADO") {
+        setStatus(PaymentStatus.FAIL);
+      } else {
+        setStatus(PaymentStatus.LOADING);
+      }
+      
+      // Limpiar errores previos si la petición fue exitosa
+      setError(null);
+    } catch (error) {
+      console.error("Error al refrescar el pedido:", error);
+      setError(error instanceof Error ? error.message : "Error al refrescar");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   // Añadimos estilos CSS para animaciones personalizadas
   useEffect(() => {
@@ -167,6 +196,16 @@ const PaymentCallback = () => {
                 </div>
               </div>
             )}
+            
+            {/* Botón para refrescar manualmente */}
+            <button
+              onClick={refreshPedidoStatus}
+              disabled={isRefreshing}
+              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors transform hover:scale-105 hover:shadow-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+            >
+              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {isRefreshing ? 'Verificando...' : 'Verificar estado ahora'}
+            </button>
           </div>
         );
 
@@ -263,12 +302,14 @@ const PaymentCallback = () => {
               )}
             </div>
 
-            <button 
-              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors transform hover:scale-105 hover:shadow-lg"
-              onClick={() => window.location.href = '/'}
-            >
-              Volver al inicio
-            </button>
+            <div className="flex gap-3 mt-4">
+              <button 
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors transform hover:scale-105 hover:shadow-lg"
+                onClick={() => window.location.href = '/'}
+              >
+                Volver al inicio
+              </button>
+            </div>
 
             <div className="fixed top-0 left-0 w-full h-full pointer-events-none">
               {[...Array(20)].map((_, i) => (
@@ -345,10 +386,12 @@ const PaymentCallback = () => {
                 Contactar soporte
               </button>
               <button 
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                onClick={() => window.location.reload()}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={refreshPedidoStatus}
+                disabled={isRefreshing}
               >
-                Actualizar estado
+                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                {isRefreshing ? 'Verificando...' : 'Verificar estado'}
               </button>
             </div>
           </div>
