@@ -2,6 +2,14 @@ import { useEffect, useState } from "react";
 import emailjs from "@emailjs/browser";
 
 export const Franquicias = () => {
+  // Scroll suave al formulario
+  const handleScrollToForm = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    const formSection = document.getElementById("formulario-franquicia");
+    if (formSection) {
+      formSection.scrollIntoView({ behavior: "smooth" });
+    }
+  };
   const [formData, setFormData] = useState({
     nombre: "",
     celular: "",
@@ -130,17 +138,18 @@ export const Franquicias = () => {
             Franquicias <span className="text-yellow-700">WeTECH</span>
           </h1>
           <h2 className="text-2xl md:text-3xl font-medium mb-6 text-yellow-800 text-center max-w-2xl">
-            Comenzá un negocio que va a cambiar el mundo
+            Comenzá tu negocio con nosotros
           </h2>
           <p className="text-lg md:text-xl text-yellow-900 text-center max-w-2xl mb-8">
             Sumate a la red de franquicias tecnológicas líderes en impresión 3D y sé parte de la innovación en tu provincia.
           </p>
-        {/*   <a
+          <a
             href="#formulario-franquicia"
+            onClick={handleScrollToForm}
             className="inline-block bg-yellow-500 hover:bg-yellow-600 text-white font-semibold px-8 py-3 rounded-full shadow-lg transition-colors text-lg mt-2"
           >
             Quiero más información
-          </a> */}
+          </a>
         </div>
         {/* Elementos decorativos */}
         <div className="absolute top-0 left-0 w-40 h-40 bg-yellow-200 rounded-full opacity-30 blur-2xl -z-1 animate-pulse" style={{filter:'blur(32px)'}}></div>
@@ -258,26 +267,36 @@ export const Franquicias = () => {
         </div>
       </div>
 
-      {/* Gallery Section */}
-      <div className="container mx-auto px-4 py-16">
-        <h2 className="text-3xl font-bold mb-8 text-center text-yellow-800">
-          Galería
+      {/* Gallery Section Mejorada */}
+      <section className="container mx-auto px-4 py-20">
+        {/* <h2 className="text-4xl font-extrabold mb-10 text-center text-yellow-800 tracking-tight drop-shadow-lg">
+          Galería de Locales WeTECH
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <p className="text-lg text-yellow-900 text-center max-w-2xl mx-auto mb-8">
+          Descubrí cómo lucen nuestras franquicias en diferentes puntos del país. Espacios modernos, tecnológicos y pensados para inspirar.
+        </p> */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
           {galleryImages.map((src, index) => (
-            <div key={index} className="overflow-hidden rounded-lg shadow">
+            <div
+              key={index}
+              className="relative group rounded-2xl shadow-lg overflow-hidden border border-yellow-100 bg-white"
+            >
               <img
                 src={src}
-                alt={`WeTECH Gallery ${index + 1}`}
-                className="w-full h-64 object-cover transition-transform duration-300 hover:scale-105"
+                alt={`Local WeTECH ${index + 1}`}
+                className="w-full h-64 object-cover transition-transform duration-500 group-hover:scale-110 group-hover:brightness-90"
+                loading="lazy"
               />
+              <div className="absolute inset-0 bg-yellow-900 bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-300 flex items-center justify-center">
+                
+              </div>
             </div>
           ))}
         </div>
-      </div>
+      </section>
 
       {/* Contact Form Section */}
-      <div className="bg-yellow-100 py-16">
+      <div className="bg-yellow-100 py-16" id="formulario-franquicia">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold mb-8 text-center text-yellow-800">
             ¿Interesado en nuestra franquicia?
