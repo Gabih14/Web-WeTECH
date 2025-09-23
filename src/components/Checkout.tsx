@@ -6,9 +6,9 @@ import { Coupon, Product } from "../types";
 import { CheckoutPersonal } from "./CheckoutPersonal";
 import { CheckoutAdress } from "./CheckoutAdress";
 import { CheckoutBilling } from "./CheckoutBilling";
-import { 
-  calculateDiscountedPrice, 
-  getDiscountPercentage 
+import {
+  calculateDiscountedPrice,
+  getDiscountPercentage,
 } from "../utils/discounts";
 
 import { coupons } from "../data/coupon";
@@ -54,7 +54,8 @@ export default function Checkout() {
     billingCity: "",
     billingPostalCode: "",
   });
-
+  const BEARER_TOKEN = import.meta.env.VITE_API_BEARER_TOKEN;
+  
   // Sincroniza billing con envío si el check está marcado
   useEffect(() => {
     if (sameBillingAddress) {
@@ -109,7 +110,7 @@ export default function Checkout() {
     const weightData = product.weights?.find((w) => w.weight === weight);
     return weightData ? weightData.price : product.price;
   };
-/*   const getPromotionalPrice = (
+  /*   const getPromotionalPrice = (
     product: Product,
     weight: number
   ): number | undefined => {
@@ -122,11 +123,11 @@ export default function Checkout() {
     quantity: number
   ): number | undefined => {
     const originalPrice = getPrice(product, weight);
-    
+
     if (originalPrice) {
       return calculateDiscountedPrice(originalPrice, quantity);
     }
-    
+
     return originalPrice;
   };
 
@@ -188,7 +189,11 @@ export default function Checkout() {
         nombre: item.product.id,
         cantidad: item.quantity,
         precio_unitario:
-          calculateItemPriceWithDiscount(item.product, item.weight, item.quantity) ??
+          calculateItemPriceWithDiscount(
+            item.product,
+            item.weight,
+            item.quantity
+          ) ??
           getPrice(item.product, item.weight) ??
           0,
       })),
@@ -201,6 +206,7 @@ export default function Checkout() {
       const res = await fetch(`${API_URL}/pedido`, {
         method: "POST",
         headers: {
+          Authorization: `Bearer ${BEARER_TOKEN}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify(body),
@@ -240,19 +246,18 @@ export default function Checkout() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    navigate("/under-development");
     // Forzar redibujado
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    /* await new Promise((resolve) => setTimeout(resolve, 100));
     const checkoutUrl = await createPaymentRequest();
 
     if (checkoutUrl) {
-      window.location.href = checkoutUrl; // Redirecciona al checkout externo
-      /* setTimeout(() => {
-        window.location.href = checkoutUrl; // Redirecciona al checkout externo
-      }, 500); // Agrega un retraso de 500ms */
+      window.location.href = checkoutUrl; // Redirecciona al checkout externo (Agregar timeout si es necesario)
+
     } else {
       setIsLoading(false);
       alert("Error al generar el pago");
-    }
+    } */
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -398,11 +403,12 @@ export default function Checkout() {
                               <h3 className="text-sm font-medium text-gray-900">
                                 {item.product.name}
                               </h3>
-                              {discountedPrice && discountedPrice < (price ?? 0) && (
-                                <span className="inline-block bg-red-100 text-red-800 text-xs font-semibold px-2 py-1 rounded-full mt-1">
-                                  -{getDiscountPercentage(item.quantity)}% OFF
-                                </span>
-                              )}
+                              {discountedPrice &&
+                                discountedPrice < (price ?? 0) && (
+                                  <span className="inline-block bg-red-100 text-red-800 text-xs font-semibold px-2 py-1 rounded-full mt-1">
+                                    -{getDiscountPercentage(item.quantity)}% OFF
+                                  </span>
+                                )}
                             </div>
                             <div className="ml-4 text-sm font-medium text-gray-900">
                               {discountedPrice &&

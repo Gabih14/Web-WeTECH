@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
-import { CheckCircle, XCircle, Loader, PartyPopper } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
+import { CheckCircle, XCircle, Loader, PartyPopper, RefreshCw } from "lucide-react";
+import { apiFetch } from "../services/api";
 
 // Enum para los posibles estados del pago
 const PaymentStatus = {
@@ -8,18 +10,67 @@ const PaymentStatus = {
   FAIL: "fail",
 };
 
+// Tipo para los datos del pedido
+interface Producto {
+  id: number;
+  nombre: string;
+  cantidad: number;
+  precio_unitario: number;
+}
+
+interface PedidoData {
+  id: number;
+  cliente_cuit: string;
+  cliente_nombre: string;
+  external_id: string;
+  total: number;
+  estado: string;
+  productos: Producto[];
+  creado: string;
+  aprobado: string | null;
+}
+
 // Componente principal de la página de pago
 const PaymentCallback = () => {
   // Estado para controlar el estado del pago
   const [status, setStatus] = useState(PaymentStatus.LOADING);
+  const [searchParams] = useSearchParams();
 
-  // Datos simulados del pago
-  const [paymentData, setPaymentData] = useState({
-    id: "",
-    amount: 0,
-    currency: "",
-    date: "",
-  });
+  // Datos del pedido obtenidos de la API
+  const [pedidoData, setPedidoData] = useState<PedidoData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Obtener el external_id de los parámetros de la URL
+  const externalId = searchParams.get('external_id') || searchParams.get('id') || searchParams.get('payment_id');
+
+  // Función para refrescar manualmente el estado del pedido
+  const refreshPedidoStatus = async () => {
+    if (!externalId || isRefreshing) return;
+
+    try {
+      setIsRefreshing(true);
+      const data: PedidoData = await apiFetch(`/pedido/${externalId}`);
+      setPedidoData(data);
+
+      // Actualizar el estado basado en el nuevo estado del pedido
+      if (data.estado === "APROBADO") {
+        setStatus(PaymentStatus.SUCCESS);
+      } else if (data.estado === "RECHAZADO" || data.estado === "CANCELADO") {
+        setStatus(PaymentStatus.FAIL);
+      } else {
+        setStatus(PaymentStatus.LOADING);
+      }
+      
+      // Limpiar errores previos si la petición fue exitosa
+      setError(null);
+    } catch (error) {
+      console.error("Error al refrescar el pedido:", error);
+      setError(error instanceof Error ? error.message : "Error al refrescar");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   // Añadimos estilos CSS para animaciones personalizadas
   useEffect(() => {
@@ -50,38 +101,69 @@ const PaymentCallback = () => {
     };
   }, []);
 
-  // Simulamos la verificación del pago al cargar el componente
+  // Verificamos el estado del pedido al cargar el componente
   useEffect(() => {
-    // Simulación de una llamada a API para verificar el estado del pago
-    const verifyPayment = async () => {
-      try {
-        // Simulamos un tiempo de espera para la verificación
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-
-        // Simulamos una respuesta aleatoria (éxito o fallo)
-        const isSuccess = Math.random() > 0.5;
-
-        if (isSuccess) {
-          setStatus(PaymentStatus.SUCCESS);
-          setPaymentData({
-            id:
-              "PAY-" +
-              Math.random().toString(36).substring(2, 10).toUpperCase(),
-            amount: parseFloat((Math.random() * 1000).toFixed(2)),
-            currency: "USD",
-            date: new Date().toISOString(),
-          });
-        } else {
-          setStatus(PaymentStatus.FAIL);
-        }
-      } catch (error) {
+    const fetchPedido = async () => {
+      if (!externalId) {
+        setError("No se proporcionó ID del pedido");
         setStatus(PaymentStatus.FAIL);
-        console.error("Error al verificar el pago:", error);
+        return;
+      }
+
+      try {
+        setStatus(PaymentStatus.LOADING);
+        
+        // Hacer petición al endpoint usando apiFetch
+        const data: PedidoData = await apiFetch(`/pedido/${externalId}`);
+        setPedidoData(data);
+
+        // Determinar el estado basado en el estado del pedido
+        if (data.estado === "APROBADO") {
+          setStatus(PaymentStatus.SUCCESS);
+        } else if (data.estado === "RECHAZADO" || data.estado === "CANCELADO") {
+          setStatus(PaymentStatus.FAIL);
+        } else {
+          // Para estados como "PENDIENTE", mantener como loading y verificar periódicamente
+          setStatus(PaymentStatus.LOADING);
+        }
+        
+      } catch (error) {
+        console.error("Error al obtener el pedido:", error);
+        setError(error instanceof Error ? error.message : "Error desconocido");
+        setStatus(PaymentStatus.FAIL);
       }
     };
 
-    verifyPayment();
-  }, []);
+    fetchPedido();
+  }, [externalId]);
+
+  // Efecto para verificar periódicamente el estado si está pendiente
+  useEffect(() => {
+    let interval: number;
+
+    if (pedidoData && pedidoData.estado === "PENDIENTE") {
+      interval = setInterval(async () => {
+        try {
+          const data: PedidoData = await apiFetch(`/pedido/${externalId}`);
+          setPedidoData(data);
+          
+          if (data.estado === "APROBADO") {
+            setStatus(PaymentStatus.SUCCESS);
+          } else if (data.estado === "RECHAZADO" || data.estado === "CANCELADO") {
+            setStatus(PaymentStatus.FAIL);
+          }
+        } catch (error) {
+          console.error("Error en verificación periódica:", error);
+        }
+      }, 5000); // Verificar cada 5 segundos
+    }
+
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [pedidoData, externalId]);
 
   // Función para renderizar el contenido según el estado
   const renderContent = () => {
@@ -90,10 +172,40 @@ const PaymentCallback = () => {
         return (
           <div className="flex flex-col items-center justify-center space-y-4">
             <Loader className="animate-spin text-blue-500" size={64} />
-            <h2 className="text-xl font-semibold">Procesando su pago</h2>
-            <p className="text-gray-600">
-              Por favor espere mientras verificamos su transacción...
+            <h2 className="text-xl font-semibold">
+              {pedidoData ? 'Verificando estado del pedido' : 'Cargando información del pedido'}
+            </h2>
+            <p className="text-gray-600 text-center">
+              {pedidoData ? (
+                <>
+                  Su pedido está en estado <span className="font-medium">{pedidoData.estado}</span>.
+                  <br />
+                  Por favor espere mientras verificamos el pago...
+                </>
+              ) : (
+                'Por favor espere mientras obtenemos la información de su pedido...'
+              )}
             </p>
+            {pedidoData && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 w-full max-w-md">
+                <p className="font-medium text-sm">Información del pedido:</p>
+                <div className="mt-2 space-y-1 text-sm">
+                  <p>ID: {pedidoData.id}</p>
+                  <p>Cliente: {pedidoData.cliente_nombre}</p>
+                  <p>Total: ${pedidoData.total.toLocaleString('es-AR')} ARS</p>
+                </div>
+              </div>
+            )}
+            
+            {/* Botón para refrescar manualmente */}
+            <button
+              onClick={refreshPedidoStatus}
+              disabled={isRefreshing}
+              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors transform hover:scale-105 hover:shadow-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+            >
+              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {isRefreshing ? 'Verificando...' : 'Verificar estado ahora'}
+            </button>
           </div>
         );
 
@@ -119,7 +231,7 @@ const PaymentCallback = () => {
             <div className="bg-green-50 border border-green-200 rounded-lg p-4 w-full max-w-md transform transition-all duration-500 hover:scale-105">
               <div className="flex items-center">
                 <div className="w-2 h-2 rounded-full bg-green-500 mr-2 animate-ping"></div>
-                <p className="font-medium">Detalles de la transacción:</p>
+                <p className="font-medium">Detalles del pedido:</p>
               </div>
               <div className="mt-2 space-y-2">
                 <p
@@ -129,8 +241,18 @@ const PaymentCallback = () => {
                     animationFillMode: "forwards",
                   }}
                 >
-                  ID de transacción:{" "}
-                  <span className="font-mono">{paymentData.id}</span>
+                  ID del pedido:{" "}
+                  <span className="font-mono">{pedidoData?.id}</span>
+                </p>
+                <p
+                  className="text-sm opacity-0 animate-fadeIn"
+                  style={{
+                    animationDelay: "0.3s",
+                    animationFillMode: "forwards",
+                  }}
+                >
+                  Cliente:{" "}
+                  <span className="font-medium">{pedidoData?.cliente_nombre}</span>
                 </p>
                 <p
                   className="text-sm opacity-0 animate-fadeIn"
@@ -139,7 +261,16 @@ const PaymentCallback = () => {
                     animationFillMode: "forwards",
                   }}
                 >
-                  Monto: {paymentData.amount} {paymentData.currency}
+                  Total: ${pedidoData?.total?.toLocaleString('es-AR')} ARS
+                </p>
+                <p
+                  className="text-sm opacity-0 animate-fadeIn"
+                  style={{
+                    animationDelay: "0.5s",
+                    animationFillMode: "forwards",
+                  }}
+                >
+                  Estado: <span className="font-medium text-green-600">{pedidoData?.estado}</span>
                 </p>
                 <p
                   className="text-sm opacity-0 animate-fadeIn"
@@ -148,14 +279,37 @@ const PaymentCallback = () => {
                     animationFillMode: "forwards",
                   }}
                 >
-                  Fecha: {new Date(paymentData.date).toLocaleString()}
+                  Fecha: {pedidoData?.creado ? new Date(pedidoData.creado).toLocaleString('es-AR') : 'N/A'}
                 </p>
               </div>
+              
+              {/* Mostrar productos */}
+              {pedidoData?.productos && pedidoData.productos.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-green-200">
+                  <p className="font-medium text-sm mb-2">Productos:</p>
+                  <div className="space-y-2">
+                    {pedidoData.productos.map((producto) => (
+                      <div key={producto.id} className="text-xs bg-white p-2 rounded border">
+                        <p className="font-medium">{producto.nombre}</p>
+                        <p className="text-gray-600">
+                          Cantidad: {producto.cantidad} | 
+                          Precio: ${producto.precio_unitario.toLocaleString('es-AR')}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
-            <button className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors transform hover:scale-105 hover:shadow-lg">
-              Volver al inicio
-            </button>
+            <div className="flex gap-3 mt-4">
+              <button 
+                className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors transform hover:scale-105 hover:shadow-lg"
+                onClick={() => window.location.href = '/'}
+              >
+                Volver al inicio
+              </button>
+            </div>
 
             <div className="fixed top-0 left-0 w-full h-full pointer-events-none">
               {[...Array(20)].map((_, i) => (
@@ -183,11 +337,40 @@ const PaymentCallback = () => {
         return (
           <div className="flex flex-col items-center justify-center space-y-4">
             <XCircle className="text-red-500" size={64} />
-            <h2 className="text-xl font-semibold">El pago ha fallado</h2>
-            <p className="text-gray-600">
-              Lo sentimos, no pudimos procesar su pago. Por favor, inténtelo
-              nuevamente.
+            <h2 className="text-xl font-semibold">
+              {pedidoData ? 'Pago rechazado o cancelado' : 'Error al obtener el pedido'}
+            </h2>
+            <p className="text-gray-600 text-center">
+              {pedidoData ? (
+                <>
+                  Su pedido está en estado <span className="font-medium text-red-600">{pedidoData.estado}</span>.
+                  <br />
+                  Por favor contacte con soporte para más información.
+                </>
+              ) : (
+                'No pudimos obtener la información de su pedido. Por favor, inténtelo nuevamente.'
+              )}
             </p>
+            
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 w-full max-w-md">
+                <p className="font-medium text-red-800">Error técnico:</p>
+                <p className="mt-1 text-sm text-red-700">{error}</p>
+              </div>
+            )}
+            
+            {pedidoData && (
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 w-full max-w-md">
+                <p className="font-medium text-sm">Información del pedido:</p>
+                <div className="mt-2 space-y-1 text-sm">
+                  <p>ID: {pedidoData.id}</p>
+                  <p>Cliente: {pedidoData.cliente_nombre}</p>
+                  <p>Total: ${pedidoData.total.toLocaleString('es-AR')} ARS</p>
+                  <p>Estado: <span className="font-medium text-red-600">{pedidoData.estado}</span></p>
+                </div>
+              </div>
+            )}
+            
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 w-full max-w-md">
               <p className="font-medium">Posibles razones:</p>
               <ul className="mt-2 text-sm space-y-1">
@@ -195,14 +378,20 @@ const PaymentCallback = () => {
                 <li>• Información de pago incorrecta</li>
                 <li>• Problemas con su entidad bancaria</li>
                 <li>• Error de conexión</li>
+                <li>• Pedido cancelado manualmente</li>
               </ul>
             </div>
             <div className="flex space-x-4 mt-4">
               <button className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">
                 Contactar soporte
               </button>
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                Intentar nuevamente
+              <button 
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={refreshPedidoStatus}
+                disabled={isRefreshing}
+              >
+                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                {isRefreshing ? 'Verificando...' : 'Verificar estado'}
               </button>
             </div>
           </div>

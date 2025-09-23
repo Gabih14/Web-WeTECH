@@ -2,6 +2,14 @@ import { useEffect, useState } from "react";
 import emailjs from "@emailjs/browser";
 
 export const Franquicias = () => {
+  // Scroll suave al formulario
+  const handleScrollToForm = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    const formSection = document.getElementById("formulario-franquicia");
+    if (formSection) {
+      formSection.scrollIntoView({ behavior: "smooth" });
+    }
+  };
   const [formData, setFormData] = useState({
     nombre: "",
     celular: "",
@@ -107,17 +115,46 @@ export const Franquicias = () => {
   );
   return (
     <div className="bg-white">
-      {/* Header Section */}
-      <div className="bg-yellow-400 text-black py-16">
-        <div className="container mx-auto px-4">
-          <h1 className="text-4xl font-bold mb-6 text-yellow-800">
-            Franquicias WeTECH
-          </h1>
-          <h2 className="text-2xl">
-            Comenzá un negocio que va a cambiar el mundo
-          </h2>
+      {/* Invitación a leer la nota */}
+      <div className="bg-yellow-50 border-b border-yellow-200 py-8">
+        <div className="container mx-auto px-4 text-center">
+          <a
+            href="https://canudas.com.ar/wetech-se-expande-a-todo-el-pais-llega-su-franquicia-de-impresoras-3d/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block text-lg sm:text-xl font-semibold text-yellow-800 underline hover:text-yellow-600 transition-colors mb-2"
+          >
+            Leé la nota: WeTECH se expande a todo el país: llega su franquicia de impresoras 3D
+          </a>
+          <blockquote className="mt-4 text-yellow-900 italic text-lg max-w-2xl mx-auto">
+            “Quisiera que hubiera algo como WeTECH en mi provincia”
+          </blockquote>
         </div>
       </div>
+      {/* Header Section Mejorado */}
+      <header className="relative bg-gradient-to-br from-yellow-400 via-yellow-300 to-yellow-100 text-black py-20 overflow-hidden shadow-md">
+        <div className="container mx-auto px-4 flex flex-col items-center justify-center relative z-10">
+          <h1 className="text-5xl md:text-6xl font-extrabold mb-4 text-yellow-900 drop-shadow-lg text-center">
+            Franquicias <span className="text-yellow-700">WeTECH</span>
+          </h1>
+          <h2 className="text-2xl md:text-3xl font-medium mb-6 text-yellow-800 text-center max-w-2xl">
+            Comenzá tu negocio con nosotros
+          </h2>
+          <p className="text-lg md:text-xl text-yellow-900 text-center max-w-2xl mb-8">
+            Sumate a la red de franquicias tecnológicas líderes en impresión 3D y sé parte de la innovación en tu provincia.
+          </p>
+          <a
+            href="#formulario-franquicia"
+            onClick={handleScrollToForm}
+            className="inline-block bg-yellow-500 hover:bg-yellow-600 text-white font-semibold px-8 py-3 rounded-full shadow-lg transition-colors text-lg mt-2"
+          >
+            Quiero más información
+          </a>
+        </div>
+        {/* Elementos decorativos */}
+        <div className="absolute top-0 left-0 w-40 h-40 bg-yellow-200 rounded-full opacity-30 blur-2xl -z-1 animate-pulse" style={{filter:'blur(32px)'}}></div>
+        <div className="absolute bottom-0 right-0 w-56 h-56 bg-yellow-300 rounded-full opacity-20 blur-2xl -z-1 animate-pulse" style={{filter:'blur(40px)'}}></div>
+      </header>
 
       {/* Reasons to Choose Us Section */}
       <div className="container mx-auto px-4 py-16">
@@ -230,26 +267,36 @@ export const Franquicias = () => {
         </div>
       </div>
 
-      {/* Gallery Section */}
-      <div className="container mx-auto px-4 py-16">
-        <h2 className="text-3xl font-bold mb-8 text-center text-yellow-800">
-          Galería
+      {/* Gallery Section Mejorada */}
+      <section className="container mx-auto px-4 py-20">
+        {/* <h2 className="text-4xl font-extrabold mb-10 text-center text-yellow-800 tracking-tight drop-shadow-lg">
+          Galería de Locales WeTECH
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <p className="text-lg text-yellow-900 text-center max-w-2xl mx-auto mb-8">
+          Descubrí cómo lucen nuestras franquicias en diferentes puntos del país. Espacios modernos, tecnológicos y pensados para inspirar.
+        </p> */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
           {galleryImages.map((src, index) => (
-            <div key={index} className="overflow-hidden rounded-lg shadow">
+            <div
+              key={index}
+              className="relative group rounded-2xl shadow-lg overflow-hidden border border-yellow-100 bg-white"
+            >
               <img
                 src={src}
-                alt={`WeTECH Gallery ${index + 1}`}
-                className="w-full h-64 object-cover transition-transform duration-300 hover:scale-105"
+                alt={`Local WeTECH ${index + 1}`}
+                className="w-full h-64 object-cover transition-transform duration-500 group-hover:scale-110 group-hover:brightness-90"
+                loading="lazy"
               />
+              <div className="absolute inset-0 bg-yellow-900 bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-300 flex items-center justify-center">
+                
+              </div>
             </div>
           ))}
         </div>
-      </div>
+      </section>
 
       {/* Contact Form Section */}
-      <div className="bg-yellow-100 py-16">
+      <div className="bg-yellow-100 py-16" id="formulario-franquicia">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold mb-8 text-center text-yellow-800">
             ¿Interesado en nuestra franquicia?
