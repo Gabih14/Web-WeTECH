@@ -1,7 +1,7 @@
 import { MapPin, Store, Truck } from "lucide-react"; //MapPin,
-import { shippingCosts } from "../data/shippingCost";
 import { useState } from "react";
 import { ShippingInfoModal } from "./ShippingInfoModal";
+import { apiFetch } from "../services/api";
 
 type Props = {
   formData: {
@@ -33,12 +33,16 @@ export const CheckoutAdress = ({
   const [showShippingInfo, setShowShippingInfo] = useState(false);
   const [shippingInfoChecked, setShippingInfoChecked] = useState(false);
   // Función para calcular el costo de envío
-  const calculateShippingCost = (distance: number) => {
-    const costEntry = shippingCosts.find(
-      (entry) =>
-        distance >= entry.distances[0] && distance <= entry.distances[1]
-    );
-    return costEntry ? costEntry.cost : 0;
+  const calculateShippingCost = async (distance: number): Promise<number> => {
+    try {
+      // Redondear la distancia al entero más cercano para el endpoint
+      const roundedDistance = Math.round(distance);
+      const response = await apiFetch(`/stk-item/costo/${roundedDistance}`);
+      return response.costo || 0;
+    } catch (error) {
+      console.error("Error al obtener costo de envío:", error);
+      return 0;
+    }
   };
   const [calculatingShipping, setCalculatingShipping] = useState(false);
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
@@ -75,7 +79,7 @@ export const CheckoutAdress = ({
           alert("La distancia supera los 20 km. El envío no está permitido.");
           setShippingCost(0);
         } else {
-          const cost = calculateShippingCost(distanceValue);
+          const cost = await calculateShippingCost(distanceValue);
           setShippingCost(cost);
         }
       } else {
