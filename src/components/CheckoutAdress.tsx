@@ -38,7 +38,7 @@ export const CheckoutAdress = ({
       // Redondear la distancia al entero más cercano para el endpoint
       const roundedDistance = Math.round(distance);
       const response = await apiFetch(`/stk-item/costo/${roundedDistance}`);
-      return response.costo || 0;
+      return response.costoTotal;
     } catch (error) {
       console.error("Error al obtener costo de envío:", error);
       return 0;
@@ -46,13 +46,14 @@ export const CheckoutAdress = ({
   };
   const [calculatingShipping, setCalculatingShipping] = useState(false);
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+  const BEARER_TOKEN = import.meta.env.VITE_API_BEARER_TOKEN;
   // Función para obtener la distancia desde la API de Google
   const fetchDistance = async () => {
     setCalculatingShipping(true);
     try {
       const response = await fetch(`${API_URL}/maps/distance`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Authorization": `Bearer ${BEARER_TOKEN}`,"Content-Type": "application/json" },
         body: JSON.stringify({
           address: `${formData.street} ${formData.number}`,
           city: formData.city,
