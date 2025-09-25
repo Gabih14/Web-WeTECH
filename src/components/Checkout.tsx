@@ -117,6 +117,7 @@ export default function Checkout() {
     const weightData = product.weights?.find((w) => w.weight === weight);
     return weightData ? weightData.promotionalPrice : product.promotionalPrice;
   }; */
+  
   const calculateItemPriceWithDiscount = (
     product: Product,
     weight: number,
