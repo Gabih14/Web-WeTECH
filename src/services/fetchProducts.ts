@@ -1,6 +1,7 @@
 import { apiFetch } from "../services/api";
 import { Product } from "../types";
 import { colors } from "../data/colors";
+import { shouldExcludeFamily } from "../data/excludedFamilies";
 
 
 export const fetchProducts = async (): Promise<Product[]> => {
@@ -25,6 +26,11 @@ export const fetchProducts = async (): Promise<Product[]> => {
       const familia = item.familia || item.id;
       // const [marca, ...modeloArr] = familia.split(" ");
       // const modelo = modeloArr.join(" ");
+
+      // Ignorar familias en la lista de exclusión
+      if (shouldExcludeFamily(familia)) {
+        return; // Salir de esta iteración
+      }
 
       // Ignorar ítems del grupo "FILAMENTOS" sin familia
       if (item.grupo === "FILAMENTOS" && !item.familia) {
