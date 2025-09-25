@@ -1,7 +1,7 @@
 import { MapPin, Store, Truck } from "lucide-react"; //MapPin,
-import { shippingCosts } from "../data/shippingCost";
 import { useState } from "react";
 import { ShippingInfoModal } from "./ShippingInfoModal";
+import { apiFetch } from "../services/api";
 
 type Props = {
   formData: {
@@ -33,22 +33,27 @@ export const CheckoutAdress = ({
   const [showShippingInfo, setShowShippingInfo] = useState(false);
   const [shippingInfoChecked, setShippingInfoChecked] = useState(false);
   // Función para calcular el costo de envío
-  const calculateShippingCost = (distance: number) => {
-    const costEntry = shippingCosts.find(
-      (entry) =>
-        distance >= entry.distances[0] && distance <= entry.distances[1]
-    );
-    return costEntry ? costEntry.cost : 0;
+  const calculateShippingCost = async (distance: number): Promise<number> => {
+    try {
+      // Redondear la distancia al entero más cercano para el endpoint
+      const roundedDistance = Math.round(distance);
+      const response = await apiFetch(`/stk-item/costo/${roundedDistance}`);
+      return response.costoTotal;
+    } catch (error) {
+      console.error("Error al obtener costo de envío:", error);
+      return 0;
+    }
   };
   const [calculatingShipping, setCalculatingShipping] = useState(false);
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+  const BEARER_TOKEN = import.meta.env.VITE_API_BEARER_TOKEN;
   // Función para obtener la distancia desde la API de Google
   const fetchDistance = async () => {
     setCalculatingShipping(true);
     try {
       const response = await fetch(`${API_URL}/maps/distance`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Authorization": `Bearer ${BEARER_TOKEN}`,"Content-Type": "application/json" },
         body: JSON.stringify({
           address: `${formData.street} ${formData.number}`,
           city: formData.city,
@@ -75,7 +80,7 @@ export const CheckoutAdress = ({
           alert("La distancia supera los 20 km. El envío no está permitido.");
           setShippingCost(0);
         } else {
-          const cost = calculateShippingCost(distanceValue);
+          const cost = await calculateShippingCost(distanceValue);
           setShippingCost(cost);
         }
       } else {
