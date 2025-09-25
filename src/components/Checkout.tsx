@@ -84,6 +84,21 @@ export default function Checkout() {
       (c) => c.code === couponCode.toUpperCase()
     );
     if (foundCoupon) {
+      // Calcular el descuento temporal para validar
+      let tempDiscount = 0;
+      if (foundCoupon.type === 'percentage') {
+        tempDiscount = (total * foundCoupon.discount) / 100;
+      } else {
+        tempDiscount = foundCoupon.discount;
+      }
+      
+      // Validar que el descuento no sea mayor al total
+      if (tempDiscount >= total) {
+        setCouponError("El descuento no puede ser mayor al total de la compra");
+        setAppliedCoupon(null);
+        return;
+      }
+      
       setAppliedCoupon(foundCoupon);
       setCouponError("");
     } else {
@@ -98,13 +113,13 @@ export default function Checkout() {
     setCouponError("");
   };
 
-  /*  const calculateCoupounDiscount = () => {
+  const calculateCouponDiscount = () => {
     if (!appliedCoupon) return 0;
     if (appliedCoupon.type === 'percentage') {
       return (total * appliedCoupon.discount) / 100;
     }
     return appliedCoupon.discount;
-  }; */
+  };
 
   const getPrice = (product: Product, weight: number): number | undefined => {
     const weightData = product.weights?.find((w) => w.weight === weight);
@@ -177,7 +192,7 @@ export default function Checkout() {
     const body = {
       cliente_nombre: formData.name,
       cliente_cuit: formData.cuit,
-      total: Number(total.toFixed(2)),
+      total: Number(finalTotal.toFixed(2)),
       email: formData.email,
       telefono: formData.phone,
       calle,
@@ -198,6 +213,11 @@ export default function Checkout() {
           getPrice(item.product, item.weight) ??
           0,
       })),
+      ...(appliedCoupon && {
+        cupon_codigo: appliedCoupon.code,
+        cupon_descuento: couponDiscount,
+        cupon_tipo: appliedCoupon.type,
+      }),
       billing_address,
     };
 
@@ -276,6 +296,8 @@ export default function Checkout() {
 
   const originalTotal = calculateOriginalTotal();
   const discount = originalTotal - total;
+  const couponDiscount = calculateCouponDiscount();
+  const finalTotal = total - couponDiscount;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
@@ -480,17 +502,18 @@ export default function Checkout() {
                   {appliedCoupon && (
                     <div className="mt-2 flex items-center justify-between bg-green-50 p-2 rounded-md">
                       <span className="text-green-700 text-sm">
-                        Cupón aplicado: {appliedCoupon.code}(
-                        {appliedCoupon.type === "percentage"
-                          ? `${appliedCoupon.discount}%`
-                          : `$${appliedCoupon.discount}`}
-                        )
+                        Cupón aplicado: {appliedCoupon.code} - Ahorrás $
+                        {couponDiscount.toLocaleString("es-ES", {
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0,
+                        })}
+                        {appliedCoupon.type === "percentage" && ` (${appliedCoupon.discount}%)`}
                       </span>
                       <button
                         onClick={removeCoupon}
-                        className="text-green-700 hover:text-green-800 text-sm"
+                        className="text-green-700 hover:text-green-800 text-sm font-medium"
                       >
-                        Eliminar
+                        ✕
                       </button>
                     </div>
                   )}
@@ -516,23 +539,37 @@ export default function Checkout() {
                       })}
                     </dd>
                   </div>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-lg font-medium">Descuento:</span>
-                    <span className="text-lg font-bold text-red-500">
-                      -$
-                      {discount.toLocaleString("es-ES", {
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
-                      })}
-                    </span>
-                  </div>
+                  {discount > 0 && (
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm text-gray-600">Descuento por cantidad:</span>
+                      <span className="text-sm font-medium text-red-500">
+                        -$
+                        {discount.toLocaleString("es-ES", {
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0,
+                        })}
+                      </span>
+                    </div>
+                  )}
+                  {couponDiscount > 0 && (
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm text-gray-600">Descuento cupón ({appliedCoupon?.code}):</span>
+                      <span className="text-sm font-medium text-red-500">
+                        -$
+                        {couponDiscount.toLocaleString("es-ES", {
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0,
+                        })}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between border-t border-gray-200 pt-4">
                     <dt className="text-base font-medium text-gray-900">
                       Total
                     </dt>
                     <dd className="text-xl font-bold text-black">
                       $
-                      {(total + shippingCost).toLocaleString("es-ES", {
+                      {(finalTotal + shippingCost).toLocaleString("es-ES", {
                         minimumFractionDigits: 0,
                         maximumFractionDigits: 0,
                       })}
