@@ -117,6 +117,7 @@ export default function Checkout() {
     const weightData = product.weights?.find((w) => w.weight === weight);
     return weightData ? weightData.promotionalPrice : product.promotionalPrice;
   }; */
+  
   const calculateItemPriceWithDiscount = (
     product: Product,
     weight: number,
@@ -246,9 +247,9 @@ export default function Checkout() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    //navigate("/under-development");
+    navigate("/under-development");
     // Forzar redibujado
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    /* await new Promise((resolve) => setTimeout(resolve, 100));
     const checkoutUrl = await createPaymentRequest();
 
     if (checkoutUrl) {
@@ -257,7 +258,7 @@ export default function Checkout() {
     } else {
       setIsLoading(false);
       alert("Error al generar el pago");
-    }
+    } */
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
