@@ -6,10 +6,11 @@ import Isologo from "../assets/Isologo Fondo Negro SVG.svg";
 import { ShoppingCart, ChevronDown } from "lucide-react";
 import { Product } from "../types";
 import { 
-  calculateDiscountedPrice, 
-  getDiscountPercentage, 
-  getNextDiscountLevel,
-  calculateSavings 
+  shouldApplyDiscount,
+  calculateDiscountedPriceForProduct,
+  getDiscountPercentageForProduct,
+  getNextDiscountLevelForProduct,
+  calculateSavingsForProduct
 } from "../utils/discounts";
 
 export function ProductPage() {
@@ -45,7 +46,10 @@ export function ProductPage() {
   useEffect(() => {
     if (product) {
       setCurrentPrice(product.price);
-      setCurrentPromotionalPrice(product.promotionalPrice);
+      // Solo aplicar precio promocional inicial si es FILAMENTOS
+      setCurrentPromotionalPrice(
+        product.category === "FILAMENTOS" ? product.promotionalPrice : undefined
+      );
       
       // Función para obtener el primer color con stock disponible
       const getFirstColorWithStock = () => {
@@ -96,21 +100,36 @@ export function ProductPage() {
   // Actualizar precios con descuentos por cantidad
   useEffect(() => {
     if (product) {
-      if (selectedWeight !== null && product.weights) {
-        const weightData = product.weights.find(
-          (w) => w.weight === selectedWeight
-        );
-        if (weightData) {
-          const originalPrice = weightData.price;
-          const discountedPrice = calculateDiscountedPrice(originalPrice, quantity);
+      if (shouldApplyDiscount(product)) {
+        if (selectedWeight !== null && product.weights) {
+          const weightData = product.weights.find(
+            (w) => w.weight === selectedWeight
+          );
+          if (weightData) {
+            const originalPrice = weightData.price;
+            const discountedPrice = calculateDiscountedPriceForProduct(product, originalPrice, quantity);
+            setCurrentPrice(originalPrice);
+            setCurrentPromotionalPrice(discountedPrice);
+          }
+        } else if (product.price) {
+          const originalPrice = product.price;
+          const discountedPrice = calculateDiscountedPriceForProduct(product, originalPrice, quantity);
           setCurrentPrice(originalPrice);
           setCurrentPromotionalPrice(discountedPrice);
         }
-      } else if (product.price) {
-        const originalPrice = product.price;
-        const discountedPrice = calculateDiscountedPrice(originalPrice, quantity);
-        setCurrentPrice(originalPrice);
-        setCurrentPromotionalPrice(discountedPrice);
+      } else {
+        // No aplicar descuentos para productos que no son FILAMENTOS
+        if (selectedWeight !== null && product.weights) {
+          const weightData = product.weights.find(
+            (w) => w.weight === selectedWeight
+          );
+          if (weightData) {
+            setCurrentPrice(weightData.price);
+          }
+        } else if (product.price) {
+          setCurrentPrice(product.price);
+        }
+        setCurrentPromotionalPrice(undefined);
       }
     }
   }, [product, selectedWeight, quantity]);
@@ -274,18 +293,18 @@ export function ProductPage() {
                     })}
                   </span>
                   <span className="text-sm bg-red-500 text-white px-2 py-1 rounded-full font-medium">
-                    -{getDiscountPercentage(quantity)} OFF
+                    -{getDiscountPercentageForProduct(product, quantity)} OFF
                   </span>
                 </div>
                 <div className="mt-2 text-sm text-green-600 font-medium">
-                  Ahorras: ${calculateSavings(currentPrice || 0, quantity).toLocaleString("es-ES", {
+                  Ahorras: ${calculateSavingsForProduct(product, currentPrice || 0, quantity).toLocaleString("es-ES", {
                     minimumFractionDigits: 0,
                     maximumFractionDigits: 0,
                   })}
                 </div>
                 {/* Mostrar información del siguiente nivel de descuento */}
                 {(() => {
-                  const nextLevel = getNextDiscountLevel(quantity);
+                  const nextLevel = getNextDiscountLevelForProduct(product, quantity);
                   return nextLevel ? (
                     <div className="mt-1 text-sm text-blue-600">
                       🎯 Compra {nextLevel.quantity - quantity} más para obtener {nextLevel.discount} de descuento

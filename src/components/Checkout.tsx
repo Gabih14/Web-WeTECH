@@ -7,8 +7,9 @@ import { CheckoutPersonal } from "./CheckoutPersonal";
 import { CheckoutAdress } from "./CheckoutAdress";
 import { CheckoutBilling } from "./CheckoutBilling";
 import {
-  calculateDiscountedPrice,
-  getDiscountPercentage,
+  calculateDiscountedPriceForProduct,
+  getDiscountPercentageForProduct,
+  shouldApplyDiscount,
 } from "../utils/discounts";
 
 import { coupons } from "../data/coupon";
@@ -126,7 +127,10 @@ export default function Checkout() {
     const originalPrice = getPrice(product, weight);
 
     if (originalPrice) {
-      return calculateDiscountedPrice(originalPrice, quantity);
+      if (shouldApplyDiscount(product)) {
+        return calculateDiscountedPriceForProduct(product, originalPrice, quantity);
+      }
+      return originalPrice;
     }
 
     return originalPrice;
@@ -259,6 +263,10 @@ export default function Checkout() {
       setIsLoading(false);
       alert("Error al generar el pago");
     } */
+    // Referencia no-op para evitar warning de TS mientras está en under-development
+    if (false) {
+      await createPaymentRequest();
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -404,10 +412,11 @@ export default function Checkout() {
                               <h3 className="text-sm font-medium text-gray-900">
                                 {item.product.name}
                               </h3>
-                              {discountedPrice &&
+                              {shouldApplyDiscount(item.product) &&
+                                discountedPrice &&
                                 discountedPrice < (price ?? 0) && (
                                   <span className="inline-block bg-red-100 text-red-800 text-xs font-semibold px-2 py-1 rounded-full mt-1">
-                                    -{getDiscountPercentage(item.quantity)}% OFF
+                                    -{getDiscountPercentageForProduct(item.product, item.quantity)}% OFF
                                   </span>
                                 )}
                             </div>

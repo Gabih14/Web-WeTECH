@@ -7,7 +7,7 @@ import React, {
   useEffect,
 } from "react";
 import { Product, CartItem, CartContextType } from "../types";
-import { calculateDiscountedPrice } from "../utils/discounts";
+import { calculateDiscountedPriceForProduct } from "../utils/discounts";
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
@@ -102,7 +102,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const originalPrice = weightData ? weightData.price : item.product.price;
     
     if (originalPrice) {
-      return calculateDiscountedPrice(originalPrice, item.quantity);
+      return calculateDiscountedPriceForProduct(item.product, originalPrice, item.quantity);
     }
     
     return 0;

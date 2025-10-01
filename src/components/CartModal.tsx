@@ -3,8 +3,9 @@ import { useCart } from "../context/CartContext";
 import { Product } from "../types";
 import { useNavigate } from "react-router-dom";
 import {
-  calculateDiscountedPrice,
-  getDiscountPercentage
+  calculateDiscountedPriceForProduct,
+  getDiscountPercentageForProduct,
+  shouldApplyDiscount
 } from "../utils/discounts";
 
 interface CartModalProps {
@@ -58,7 +59,10 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
     const originalPrice = getPrice(product, weight);
     
     if (originalPrice) {
-      return calculateDiscountedPrice(originalPrice, quantity);
+      if (shouldApplyDiscount(product)) {
+        return calculateDiscountedPriceForProduct(product, originalPrice, quantity);
+      }
+      return originalPrice;
     }
     
     return originalPrice;
@@ -139,7 +143,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                             {item.product.name}
                           </h3>
                           <p className="text-black mt-1">
-                            {discountedPrice ? (
+                            {shouldApplyDiscount(item.product) && price !== undefined && discountedPrice !== undefined && discountedPrice < price ? (
                               <>
                                 <div className="flex items-center gap-2">
                                   <span className="text-base sm:text-lg font-bold">
@@ -156,8 +160,8 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                                       maximumFractionDigits: 0,
                                     })}
                                   </span>
-                                  <span className="text-xs bg-red-500 text-white px-2 py-1 rounded-full font-medium">
-                                    -{getDiscountPercentage(item.quantity)}
+                                   <span className="text-xs bg-red-500 text-white px-2 py-1 rounded-full font-medium">
+                                     -{getDiscountPercentageForProduct(item.product, item.quantity)}
                                   </span>
                                 </div>
                               </>
