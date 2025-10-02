@@ -19,7 +19,7 @@ const categories = [
     image: filamentoCategoria,
   },
   {
-    id: "impresoras",
+    id: "IMPRESORAS FDM",
     name: "Impresoras 3D",
     description:
       "Encuentra la impresora perfecta. Incluye curso de uso y armado gratuito.",

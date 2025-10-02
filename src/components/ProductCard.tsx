@@ -4,9 +4,10 @@ import { ChevronDown } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { Link } from "react-router-dom";
 import {
-  calculateDiscountedPrice,
-  getDiscountPercentage,
-  getNextDiscountLevel
+  shouldApplyDiscount,
+  calculateDiscountedPriceForProduct,
+  getDiscountPercentageForProduct,
+  getNextDiscountLevelForProduct
 } from "../utils/discounts";
 
 interface ProductCardProps {
@@ -36,7 +37,7 @@ export function ProductCard({ product }: ProductCardProps) {
   );
   const [currentPromotionalPrice, setCurrentPromotionalPrice] = useState<
     number | undefined
-  >(product.promotionalPrice);
+  >(product.category === "FILAMENTOS" ? product.promotionalPrice : undefined);
   const [isColorMenuOpen, setIsColorMenuOpen] = useState(false);
   const [selectedColor, setSelectedColor] = useState<string | null>(
     getFirstColorWithStock()
@@ -61,21 +62,30 @@ export function ProductCard({ product }: ProductCardProps) {
   }, []);
 
   useEffect(() => {
-    if (selectedWeight !== null && product.weights) {
+    if (shouldApplyDiscount(product) && selectedWeight !== null && product.weights) {
       const weightData = product.weights.find(
         (w) => w.weight === selectedWeight
       );
       if (weightData) {
         const originalPrice = weightData.price;
-        const discountedPrice = calculateDiscountedPrice(originalPrice, quantity);
+        const discountedPrice = calculateDiscountedPriceForProduct(product, originalPrice, quantity);
         setCurrentPrice(originalPrice);
         setCurrentPromotionalPrice(discountedPrice);
       }
-    } else if (product.price) {
+    } else if (shouldApplyDiscount(product) && product.price) {
       const originalPrice = product.price;
-      const discountedPrice = calculateDiscountedPrice(originalPrice, quantity);
+      const discountedPrice = calculateDiscountedPriceForProduct(product, originalPrice, quantity);
       setCurrentPrice(originalPrice);
       setCurrentPromotionalPrice(discountedPrice);
+    } else {
+      // No aplicar descuentos para no FILAMENTOS
+      if (selectedWeight !== null && product.weights) {
+        const weightData = product.weights.find((w) => w.weight === selectedWeight);
+        if (weightData) setCurrentPrice(weightData.price);
+      } else if (product.price) {
+        setCurrentPrice(product.price);
+      }
+      setCurrentPromotionalPrice(undefined);
     }
   }, [selectedWeight, quantity, product]);
 
@@ -244,7 +254,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
         <div className="mt-auto">
           <div className="flex flex-col gap-1 mb-1.5 sm:mb-3">
-            {currentPromotionalPrice ? (
+            {shouldApplyDiscount(product) && currentPromotionalPrice ? (
               <>
                 <div className="flex items-baseline gap-1 flex-wrap">
                   <span className="text-base sm:text-lg lg:text-xl font-bold ">
@@ -262,12 +272,12 @@ export function ProductCard({ product }: ProductCardProps) {
                     })}
                   </span>
                   <span className="text-xs bg-red-500 text-white px-1.5 py-0.5 rounded-full font-medium">
-                    -{getDiscountPercentage(quantity)}
+                    -{getDiscountPercentageForProduct(product, quantity)}
                   </span>
                 </div>
                 {/* Mostrar información del siguiente nivel de descuento */}
                 {(() => {
-                  const nextLevel = getNextDiscountLevel(quantity);
+                  const nextLevel = getNextDiscountLevelForProduct(product, quantity);
                   return nextLevel ? (
                     <div className="text-xs text-gray-600">
                       Compra {nextLevel.quantity - quantity} más para obtener {nextLevel.discount} de descuento

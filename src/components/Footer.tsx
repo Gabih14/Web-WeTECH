@@ -149,7 +149,7 @@ export const Footer = () => {
 
               <li>
                 <a
-                  href="/products?category=impresoras"
+                  href="/products?category=IMPRESORAS+FDM"
                   title=""
                   className="flex text-base text-black transition-all duration-200 hover:text-blue-600 focus:text-blue-600"
                 >
