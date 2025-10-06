@@ -156,116 +156,142 @@ export const Franquicias = () => {
         <div className="absolute bottom-0 right-0 w-56 h-56 bg-yellow-300 rounded-full opacity-20 blur-2xl -z-1 animate-pulse" style={{filter:'blur(40px)'}}></div>
       </header>
 
-      {/* Reasons to Choose Us Section */}
-      <div className="container mx-auto px-4 py-16">
-        <h2 className="text-3xl font-bold mb-8 text-center text-yellow-800">
-          Razones para elegirnos
-        </h2>
-        <div className="grid md:grid-cols-2 gap-8">
-          <div className="bg-yellow-100 p-6 rounded-lg shadow">
-            <h3 className="text-xl font-semibold mb-4">
-              1. Liderazgo en el mercado
-            </h3>
-            <p>Somos líderes en el mercado tecnológico de impresión 3D.</p>
-          </div>
-          <div className="bg-yellow-100 p-6 rounded-lg shadow">
-            <h3 className="text-xl font-semibold mb-4">
-              2. Alianzas estratégicas
-            </h3>
-            <p>
-              Contamos con alianzas estratégicas para lograr acuerdos de
-              economía de escala y brindar los precios más competitivos.
-              Altamente rentable por sus margenes.
-            </p>
-          </div>
-          <div className="bg-yellow-100 p-6 rounded-lg shadow">
-            <h3 className="text-xl font-semibold mb-4">
-              3. Conocimiento del mercado
-            </h3>
-            <p>Amplio conocimiento del mercado y del consumidor.</p>
-          </div>
-          <div className="bg-yellow-100 p-6 rounded-lg shadow">
-            <h3 className="text-xl font-semibold mb-4">4. Negocio probado</h3>
-            <p>Wetech es un negocio probado, tecnológico y disruptivo.</p>
-          </div>
-          <div className="bg-yellow-100 p-6 rounded-lg shadow">
-            <h3 className="text-xl font-semibold mb-4">
-              5. Servicio técnico oficial
-            </h3>
-            <p>
-              Brindamos servicio técnico oficial y garantía directa de fábrica,
-              lo que genera confianza en nuestros consumidores.
-            </p>
-          </div>
-          <div className="bg-yellow-100 p-6 rounded-lg shadow">
-            <h3 className="text-xl font-semibold mb-4">
-              6. Fidelización de clientes
-            </h3>
-            <p>
-              Logramos una fidelización con nuestros clientes a través del
-              conocimiento, el apoyo y el acompañamiento constante.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Benefits Section */}
-      <div className="bg-yellow-100 py-16">
+      {/* Razones para elegirnos */}
+      <section className="bg-gray-50 py-20">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-8 text-center text-yellow-800">
-            Beneficios de elegirnos: La fórmula perfecta para emprender sin
-            complicaciones
+          <h2 className="text-4xl font-bold mb-16 text-center text-gray-800">
+            Razones para elegirnos
           </h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-white p-6 rounded-lg shadow">
-              <div className="bg-yellow-500 text-white w-12 h-12 rounded-full flex items-center justify-center mb-4 text-xl font-bold">
-                1
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-20">
+            {/* Liderazgo en el mercado */}
+            <div className="text-center">
+              <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
               </div>
-              <p>
-                Armado de los locales, acompañamiento y supervisión del mismo.
-              </p>
+              <h3 className="text-xl font-semibold mb-2 text-gray-800">Liderazgo en el mercado</h3>
+              <p className="text-gray-600">Somos referentes en tecnología de impresión 3D</p>
             </div>
-            <div className="bg-white p-6 rounded-lg shadow">
-              <div className="bg-yellow-500 text-white w-12 h-12 rounded-full flex items-center justify-center mb-4 text-xl font-bold">
-                2
+
+            {/* Alianzas estratégicas */}
+            <div className="text-center">
+              <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                </svg>
               </div>
-              <p>Exclusividad de la zona delimitada por contrato.</p>
+              <h3 className="text-xl font-semibold mb-2 text-gray-800">Alianzas estratégicas</h3>
+              <p className="text-gray-600">Red de proveedores y partners tecnológicos</p>
             </div>
-            <div className="bg-white p-6 rounded-lg shadow">
-              <div className="bg-yellow-500 text-white w-12 h-12 rounded-full flex items-center justify-center mb-4 text-xl font-bold">
-                3
+
+            {/* Modelo de negocios probado */}
+            <div className="text-center">
+              <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
               </div>
-              <p>
-                Sistema de gestión único que permitirá la organización completa
-                del negocio.
-              </p>
+              <h3 className="text-xl font-semibold mb-2 text-gray-800">Modelo de negocios probado</h3>
+              <p className="text-gray-600">Sistema exitoso y rentable comprobado</p>
             </div>
-            <div className="bg-white p-6 rounded-lg shadow">
-              <div className="bg-yellow-500 text-white w-12 h-12 rounded-full flex items-center justify-center mb-4 text-xl font-bold">
-                4
+
+            {/* Alta demanda del producto */}
+            <div className="text-center">
+              <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
               </div>
-              <p>
-                Capacitaciones constantes para el equipo, acompañadas de
-                manuales operativos que estandarizan tu gestión.
-              </p>
+              <h3 className="text-xl font-semibold mb-2 text-gray-800">Alta demanda del producto</h3>
+              <p className="text-gray-600">Mercado en crecimiento constante</p>
             </div>
-            <div className="bg-white p-6 rounded-lg shadow">
-              <div className="bg-yellow-500 text-white w-12 h-12 rounded-full flex items-center justify-center mb-4 text-xl font-bold">
-                5
+
+            {/* Soporte de marketing */}
+            <div className="text-center">
+              <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                </svg>
               </div>
-              <p>Una inversión sólida y accesible.</p>
+              <h3 className="text-xl font-semibold mb-2 text-gray-800">Soporte de marketing</h3>
+              <p className="text-gray-600">Estrategias promocionales y publicitarias</p>
             </div>
-            <div className="bg-white p-6 rounded-lg shadow">
-              <div className="bg-yellow-500 text-white w-12 h-12 rounded-full flex items-center justify-center mb-4 text-xl font-bold">
-                6
+
+            {/* Formación y capacitación */}
+            <div className="text-center">
+              <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
               </div>
-              <p>
-                Evolución constante en productos novedosos para nuestro rubro.
-              </p>
+              <h3 className="text-xl font-semibold mb-2 text-gray-800">Formación y capacitación</h3>
+              <p className="text-gray-600">Entrenamiento completo y apoyo continuo</p>
+            </div>
+          </div>
+
+          {/* Datos clave */}
+          <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 lg:p-8">
+            <h3 className="text-2xl sm:text-3xl font-bold mb-8 sm:mb-12 text-center text-gray-800">
+              Datos clave
+            </h3>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 text-center mb-8 sm:mb-12">
+              <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
+                <h4 className="text-sm sm:text-base lg:text-lg font-medium text-gray-600 mb-2 sm:mb-3">Inversión inicial</h4>
+                <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800">$40.000</p>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
+                <h4 className="text-sm sm:text-base lg:text-lg font-medium text-gray-600 mb-2 sm:mb-3">Royalty</h4>
+                <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800">7%</p>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
+                <h4 className="text-sm sm:text-base lg:text-lg font-medium text-gray-600 mb-2 sm:mb-3">Recupero en meses</h4>
+                <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800">12</p>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
+                <h4 className="text-sm sm:text-base lg:text-lg font-medium text-gray-600 mb-2 sm:mb-3">Duración del contrato</h4>
+                <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800">5 años</p>
+              </div>
+            </div>
+
+            {/* Testimonial */}
+            <div className="flex flex-col lg:flex-row items-center gap-6 lg:gap-8 bg-yellow-50 rounded-xl p-4 sm:p-6 lg:p-8">
+              <div className="flex-shrink-0">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 bg-yellow-400 rounded-full flex items-center justify-center">
+                  <span className="text-lg sm:text-xl lg:text-2xl font-bold text-white">F</span>
+                </div>
+              </div>
+              <div className="flex-1 text-center lg:text-left">
+                <blockquote className="text-lg sm:text-xl text-gray-700 mb-3 sm:mb-4 italic">
+                  "Esto es como una juguetería para grandes, hay de todo"
+                </blockquote>
+                <cite className="text-sm sm:text-base text-gray-600 font-medium">
+                  Fernanda, franquiciada WeTECH
+                </cite>
+              </div>
+              
+            </div>
+
+            {/* Botones de contacto */}
+            <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mt-6 sm:mt-8">
+              <button className="bg-yellow-400 hover:bg-yellow-500 text-black px-4 sm:px-6 py-2 sm:py-3 rounded-full text-sm sm:text-base font-medium transition-colors">
+                Folleto digital
+              </button>
+              <button className="bg-yellow-400 hover:bg-yellow-500 text-black px-4 sm:px-6 py-2 sm:py-3 rounded-full text-sm sm:text-base font-medium transition-colors">
+                Entrevista
+              </button>
+              <button className="bg-yellow-400 hover:bg-yellow-500 text-black px-4 sm:px-6 py-2 sm:py-3 rounded-full text-sm sm:text-base font-medium transition-colors">
+                Email
+              </button>
+              <button className="bg-yellow-400 hover:bg-yellow-500 text-black px-4 sm:px-6 py-2 sm:py-3 rounded-full text-sm sm:text-base font-medium transition-colors">
+                WhatsApp
+              </button>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Gallery Section Mejorada */}
       <section className="container mx-auto px-4 py-20">

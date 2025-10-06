@@ -5,7 +5,7 @@ import { useCart } from "../context/CartContext";
 //import { useAuth } from "../context/AuthContext";
 import CartModal from "../components/CartModal";
 import LoginModal from "../components/LoginModal";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import Isologo from "../assets/Isologo Fondo Negro SVG.svg";
 
 export default function Navbar() {
@@ -16,8 +16,12 @@ export default function Navbar() {
   const { items } = useCart();
   //const { isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+
+  // Verificar si estamos en la página de franquicias
+  const isInFranquiciasPage = location.pathname === '/franquicias';
 
   const openWhatsApp = () => {
     const phoneNumber = "5492615987988";
@@ -178,15 +182,17 @@ export default function Navbar() {
       <CartModal isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
       <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
 
-      {/* WhatsApp Floating Button */}
-      <button
-        onClick={openWhatsApp}
-        className="fixed bottom-6 right-6 bg-green-500 text-white p-4 rounded-full shadow-lg hover:bg-green-600 transition-colors z-50 flex items-center gap-2"
-        aria-label="Contactar por WhatsApp"
-      >
-        <FaWhatsapp className="h-6 w-6" />
-        <span className="hidden md:inline">Te ayudamos?</span>
-      </button>
+      {/* WhatsApp Floating Button - Solo mostrar si NO estamos en franquicias */}
+      {!isInFranquiciasPage && (
+        <button
+          onClick={openWhatsApp}
+          className="fixed bottom-6 right-6 bg-green-500 text-white p-4 rounded-full shadow-lg hover:bg-green-600 transition-colors z-50 flex items-center gap-2"
+          aria-label="Contactar por WhatsApp"
+        >
+          <FaWhatsapp className="h-6 w-6" />
+          <span className="hidden md:inline">Te ayudamos?</span>
+        </button>
+      )}
     </>
   );
 }
