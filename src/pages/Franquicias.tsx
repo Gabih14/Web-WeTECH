@@ -268,15 +268,15 @@ export const Franquicias = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 text-center mb-8 sm:mb-12">
               <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
                 <h4 className="text-sm sm:text-base lg:text-lg font-medium text-gray-600 mb-2 sm:mb-3">Inversión inicial</h4>
-                <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800">$40.000</p>
+                <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800">$49.000 USD</p>
               </div>
               <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
-                <h4 className="text-sm sm:text-base lg:text-lg font-medium text-gray-600 mb-2 sm:mb-3">Royalty</h4>
-                <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800">7%</p>
+                <h4 className="text-sm sm:text-base lg:text-lg font-medium text-gray-600 mb-2 sm:mb-3">STOCK INICIAL</h4>
+                <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800">$19.000 USD</p>
               </div>
               <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
-                <h4 className="text-sm sm:text-base lg:text-lg font-medium text-gray-600 mb-2 sm:mb-3">Recupero en meses</h4>
-                <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800">12</p>
+                <h4 className="text-sm sm:text-base lg:text-lg font-medium text-gray-600 mb-2 sm:mb-3">FEE DE INGRESO</h4>
+                <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800">$10.000 USD</p>
               </div>
               <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
                 <h4 className="text-sm sm:text-base lg:text-lg font-medium text-gray-600 mb-2 sm:mb-3">Duración del contrato</h4>
@@ -316,7 +316,7 @@ export const Franquicias = () => {
                 Nota con Canudas
               </a>
               <a 
-                href="mailto:mendoza@wetech.ar?subject=Consulta sobre Franquicias WeTECH&body=Hola, me interesa conocer más sobre las franquicias WeTECH. Me gustaría recibir más información."
+                href="mailto:franquicias@wetech.ar?subject=Consulta sobre Franquicias WeTECH&body=Hola, me interesa conocer más sobre las franquicias WeTECH. Me gustaría recibir más información."
                 className="bg-yellow-400 hover:bg-yellow-500 text-black px-4 sm:px-6 py-2 sm:py-3 rounded-full text-sm sm:text-base font-medium transition-colors inline-block text-center"
               >
                 Email
