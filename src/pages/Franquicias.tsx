@@ -10,6 +10,22 @@ export const Franquicias = () => {
       formSection.scrollIntoView({ behavior: "smooth" });
     }
   };
+
+  // Función para abrir WhatsApp
+  const openWhatsApp = () => {
+    const phoneNumber = "5492615987988";
+    const message = "¡Hola! Tengo una consulta sobre las franquicias WeTECH";
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(
+      message
+    )}`;
+    window.open(whatsappUrl, "_blank");
+  };
+
+  // Función para abrir el folleto PDF
+  const openFolleto = () => {
+    window.open('/assets/folleto/WeTECH - Folleto Expo Franquicias Mobile.pdf', '_blank');
+  };
+
   const [formData, setFormData] = useState({
     nombre: "",
     celular: "",
@@ -288,16 +304,27 @@ export const Franquicias = () => {
 
             {/* Botones de contacto */}
             <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mt-6 sm:mt-8">
-              <button className="bg-yellow-400 hover:bg-yellow-500 text-black px-4 sm:px-6 py-2 sm:py-3 rounded-full text-sm sm:text-base font-medium transition-colors">
+              <button 
+                onClick={openFolleto}
+                className="bg-yellow-400 hover:bg-yellow-500 text-black px-4 sm:px-6 py-2 sm:py-3 rounded-full text-sm sm:text-base font-medium transition-colors"
+              >
                 Folleto digital
               </button>
-              <button className="bg-yellow-400 hover:bg-yellow-500 text-black px-4 sm:px-6 py-2 sm:py-3 rounded-full text-sm sm:text-base font-medium transition-colors">
-                Entrevista
-              </button>
-              <button className="bg-yellow-400 hover:bg-yellow-500 text-black px-4 sm:px-6 py-2 sm:py-3 rounded-full text-sm sm:text-base font-medium transition-colors">
+              <a 
+              href="https://canudas.com.ar/wetech-se-expande-a-todo-el-pais-llega-su-franquicia-de-impresoras-3d/"
+              className="bg-yellow-400 hover:bg-yellow-500 text-black px-4 sm:px-6 py-2 sm:py-3 rounded-full text-sm sm:text-base font-medium transition-colors">
+                Nota con Canudas
+              </a>
+              <a 
+                href="mailto:mendoza@wetech.ar?subject=Consulta sobre Franquicias WeTECH&body=Hola, me interesa conocer más sobre las franquicias WeTECH. Me gustaría recibir más información."
+                className="bg-yellow-400 hover:bg-yellow-500 text-black px-4 sm:px-6 py-2 sm:py-3 rounded-full text-sm sm:text-base font-medium transition-colors inline-block text-center"
+              >
                 Email
-              </button>
-              <button className="bg-yellow-400 hover:bg-yellow-500 text-black px-4 sm:px-6 py-2 sm:py-3 rounded-full text-sm sm:text-base font-medium transition-colors">
+              </a>
+              <button 
+                onClick={openWhatsApp}
+                className="bg-yellow-400 hover:bg-yellow-500 text-black px-4 sm:px-6 py-2 sm:py-3 rounded-full text-sm sm:text-base font-medium transition-colors"
+              >
                 WhatsApp
               </button>
             </div>
