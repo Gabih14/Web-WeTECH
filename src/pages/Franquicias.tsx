@@ -10,6 +10,22 @@ export const Franquicias = () => {
       formSection.scrollIntoView({ behavior: "smooth" });
     }
   };
+
+  // Función para abrir WhatsApp
+  const openWhatsApp = () => {
+    const phoneNumber = "5492615987988";
+    const message = "¡Hola! Tengo una consulta sobre las franquicias WeTECH";
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(
+      message
+    )}`;
+    window.open(whatsappUrl, "_blank");
+  };
+
+  // Función para abrir el folleto PDF
+  const openFolleto = () => {
+    window.open('/assets/folleto/WeTECH - Folleto Expo Franquicias Mobile.pdf', '_blank');
+  };
+
   const [formData, setFormData] = useState({
     nombre: "",
     celular: "",
@@ -156,116 +172,165 @@ export const Franquicias = () => {
         <div className="absolute bottom-0 right-0 w-56 h-56 bg-yellow-300 rounded-full opacity-20 blur-2xl -z-1 animate-pulse" style={{filter:'blur(40px)'}}></div>
       </header>
 
-      {/* Reasons to Choose Us Section */}
-      <div className="container mx-auto px-4 py-16">
-        <h2 className="text-3xl font-bold mb-8 text-center text-yellow-800">
-          Razones para elegirnos
-        </h2>
-        <div className="grid md:grid-cols-2 gap-8">
-          <div className="bg-yellow-100 p-6 rounded-lg shadow">
-            <h3 className="text-xl font-semibold mb-4">
-              1. Liderazgo en el mercado
-            </h3>
-            <p>Somos líderes en el mercado tecnológico de impresión 3D.</p>
-          </div>
-          <div className="bg-yellow-100 p-6 rounded-lg shadow">
-            <h3 className="text-xl font-semibold mb-4">
-              2. Alianzas estratégicas
-            </h3>
-            <p>
-              Contamos con alianzas estratégicas para lograr acuerdos de
-              economía de escala y brindar los precios más competitivos.
-              Altamente rentable por sus margenes.
-            </p>
-          </div>
-          <div className="bg-yellow-100 p-6 rounded-lg shadow">
-            <h3 className="text-xl font-semibold mb-4">
-              3. Conocimiento del mercado
-            </h3>
-            <p>Amplio conocimiento del mercado y del consumidor.</p>
-          </div>
-          <div className="bg-yellow-100 p-6 rounded-lg shadow">
-            <h3 className="text-xl font-semibold mb-4">4. Negocio probado</h3>
-            <p>Wetech es un negocio probado, tecnológico y disruptivo.</p>
-          </div>
-          <div className="bg-yellow-100 p-6 rounded-lg shadow">
-            <h3 className="text-xl font-semibold mb-4">
-              5. Servicio técnico oficial
-            </h3>
-            <p>
-              Brindamos servicio técnico oficial y garantía directa de fábrica,
-              lo que genera confianza en nuestros consumidores.
-            </p>
-          </div>
-          <div className="bg-yellow-100 p-6 rounded-lg shadow">
-            <h3 className="text-xl font-semibold mb-4">
-              6. Fidelización de clientes
-            </h3>
-            <p>
-              Logramos una fidelización con nuestros clientes a través del
-              conocimiento, el apoyo y el acompañamiento constante.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Benefits Section */}
-      <div className="bg-yellow-100 py-16">
+      {/* Razones para elegirnos */}
+      <section className="bg-gray-50 py-20">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-8 text-center text-yellow-800">
-            Beneficios de elegirnos: La fórmula perfecta para emprender sin
-            complicaciones
+          <h2 className="text-4xl font-bold mb-16 text-center text-gray-800">
+            Razones para elegirnos
           </h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-white p-6 rounded-lg shadow">
-              <div className="bg-yellow-500 text-white w-12 h-12 rounded-full flex items-center justify-center mb-4 text-xl font-bold">
-                1
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-20">
+            {/* Liderazgo en el mercado */}
+            <div className="text-center">
+              <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <img 
+                  src="/assets/franquicias/iconos folleto expo franquicias-01.svg" 
+                  alt="Liderazgo en el mercado"
+                  className="w-16 h-16"
+                />
               </div>
-              <p>
-                Armado de los locales, acompañamiento y supervisión del mismo.
-              </p>
+              <h3 className="text-xl font-semibold mb-2 text-gray-800">Liderazgo en el mercado</h3>
+              <p className="text-gray-600">Somos referentes en tecnología de impresión 3D</p>
             </div>
-            <div className="bg-white p-6 rounded-lg shadow">
-              <div className="bg-yellow-500 text-white w-12 h-12 rounded-full flex items-center justify-center mb-4 text-xl font-bold">
-                2
+
+            {/* Alianzas estratégicas */}
+            <div className="text-center">
+              <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <img 
+                  src="/assets/franquicias/iconos folleto expo franquicias-02.svg" 
+                  alt="Alianzas estratégicas"
+                  className="w-16 h-16"
+                />
               </div>
-              <p>Exclusividad de la zona delimitada por contrato.</p>
+              <h3 className="text-xl font-semibold mb-2 text-gray-800">Alianzas estratégicas</h3>
+              <p className="text-gray-600">Red de proveedores y partners tecnológicos</p>
             </div>
-            <div className="bg-white p-6 rounded-lg shadow">
-              <div className="bg-yellow-500 text-white w-12 h-12 rounded-full flex items-center justify-center mb-4 text-xl font-bold">
-                3
+
+            {/* Modelo de negocios probado */}
+            <div className="text-center">
+              <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <img 
+                  src="/assets/franquicias/iconos folleto expo franquicias-03.svg" 
+                  alt="Modelo de negocios probado"
+                  className="w-16 h-16"
+                />
               </div>
-              <p>
-                Sistema de gestión único que permitirá la organización completa
-                del negocio.
-              </p>
+              <h3 className="text-xl font-semibold mb-2 text-gray-800">Modelo de negocios probado</h3>
+              <p className="text-gray-600">Sistema exitoso y rentable comprobado</p>
             </div>
-            <div className="bg-white p-6 rounded-lg shadow">
-              <div className="bg-yellow-500 text-white w-12 h-12 rounded-full flex items-center justify-center mb-4 text-xl font-bold">
-                4
+
+            {/* Alta demanda del producto */}
+            <div className="text-center">
+              <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <img 
+                  src="/assets/franquicias/iconos folleto expo franquicias-04.svg" 
+                  alt="Alta demanda del producto"
+                  className="w-16 h-16"
+                />
               </div>
-              <p>
-                Capacitaciones constantes para el equipo, acompañadas de
-                manuales operativos que estandarizan tu gestión.
-              </p>
+              <h3 className="text-xl font-semibold mb-2 text-gray-800">Alta demanda del producto</h3>
+              <p className="text-gray-600">Mercado en crecimiento constante</p>
             </div>
-            <div className="bg-white p-6 rounded-lg shadow">
-              <div className="bg-yellow-500 text-white w-12 h-12 rounded-full flex items-center justify-center mb-4 text-xl font-bold">
-                5
+
+            {/* Soporte de marketing */}
+            <div className="text-center">
+              <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <img 
+                  src="/assets/franquicias/iconos folleto expo franquicias-05.svg" 
+                  alt="Soporte de marketing"
+                  className="w-16 h-16"
+                />
               </div>
-              <p>Una inversión sólida y accesible.</p>
+              <h3 className="text-xl font-semibold mb-2 text-gray-800">Soporte de marketing</h3>
+              <p className="text-gray-600">Estrategias promocionales y publicitarias</p>
             </div>
-            <div className="bg-white p-6 rounded-lg shadow">
-              <div className="bg-yellow-500 text-white w-12 h-12 rounded-full flex items-center justify-center mb-4 text-xl font-bold">
-                6
+
+            {/* Formación y capacitación */}
+            <div className="text-center">
+              <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <img 
+                  src="/assets/franquicias/iconos folleto expo franquicias-06.svg" 
+                  alt="Liderazgo en el mercado"
+                  className="w-16 h-16"
+                />
               </div>
-              <p>
-                Evolución constante en productos novedosos para nuestro rubro.
-              </p>
+              <h3 className="text-xl font-semibold mb-2 text-gray-800">Formación y capacitación</h3>
+              <p className="text-gray-600">Entrenamiento completo y apoyo continuo</p>
+            </div>
+          </div>
+
+          {/* Datos clave */}
+          <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 lg:p-8">
+            <h3 className="text-2xl sm:text-3xl font-bold mb-8 sm:mb-12 text-center text-gray-800">
+              Datos clave
+            </h3>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 text-center mb-8 sm:mb-12">
+              <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
+                <h4 className="text-sm sm:text-base lg:text-lg font-medium text-gray-600 mb-2 sm:mb-3">Inversión inicial</h4>
+                <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800">$49.000 USD</p>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
+                <h4 className="text-sm sm:text-base lg:text-lg font-medium text-gray-600 mb-2 sm:mb-3">STOCK INICIAL</h4>
+                <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800">$19.000 USD</p>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
+                <h4 className="text-sm sm:text-base lg:text-lg font-medium text-gray-600 mb-2 sm:mb-3">FEE DE INGRESO</h4>
+                <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800">$10.000 USD</p>
+              </div>
+              <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
+                <h4 className="text-sm sm:text-base lg:text-lg font-medium text-gray-600 mb-2 sm:mb-3">Duración del contrato</h4>
+                <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800">5 años</p>
+              </div>
+            </div>
+
+            {/* Testimonial */}
+            <div className="flex flex-col lg:flex-row items-center gap-6 lg:gap-8 bg-yellow-50 rounded-xl p-4 sm:p-6 lg:p-8">
+              <div className="flex-shrink-0">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 bg-yellow-400 rounded-full flex items-center justify-center">
+                  <span className="text-lg sm:text-xl lg:text-2xl font-bold text-white">F</span>
+                </div>
+              </div>
+              <div className="flex-1 text-center lg:text-left">
+                <blockquote className="text-lg sm:text-xl text-gray-700 mb-3 sm:mb-4 italic">
+                  "Esto es como una juguetería para grandes, hay de todo"
+                </blockquote>
+                <cite className="text-sm sm:text-base text-gray-600 font-medium">
+                  Fernanda, franquiciada WeTECH
+                </cite>
+              </div>
+              
+            </div>
+
+            {/* Botones de contacto */}
+            <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mt-6 sm:mt-8">
+              <button 
+                onClick={openFolleto}
+                className="bg-yellow-400 hover:bg-yellow-500 text-black px-4 sm:px-6 py-2 sm:py-3 rounded-full text-sm sm:text-base font-medium transition-colors"
+              >
+                Folleto digital
+              </button>
+              <a 
+              href="https://canudas.com.ar/wetech-se-expande-a-todo-el-pais-llega-su-franquicia-de-impresoras-3d/"
+              className="bg-yellow-400 hover:bg-yellow-500 text-black px-4 sm:px-6 py-2 sm:py-3 rounded-full text-sm sm:text-base font-medium transition-colors">
+                Nota con Canudas
+              </a>
+              <a 
+                href="mailto:franquicias@wetech.ar?subject=Consulta sobre Franquicias WeTECH&body=Hola, me interesa conocer más sobre las franquicias WeTECH. Me gustaría recibir más información."
+                className="bg-yellow-400 hover:bg-yellow-500 text-black px-4 sm:px-6 py-2 sm:py-3 rounded-full text-sm sm:text-base font-medium transition-colors inline-block text-center"
+              >
+                Email
+              </a>
+              <button 
+                onClick={openWhatsApp}
+                className="bg-yellow-400 hover:bg-yellow-500 text-black px-4 sm:px-6 py-2 sm:py-3 rounded-full text-sm sm:text-base font-medium transition-colors"
+              >
+                WhatsApp
+              </button>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Gallery Section Mejorada */}
       <section className="container mx-auto px-4 py-20">
