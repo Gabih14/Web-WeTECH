@@ -250,6 +250,14 @@ export default function Checkout() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Advertencia y confirmación antes de continuar
+    const proceed = window.confirm(
+      "Advertencia: esta es una simulación. La compra que estás por realizar no es real. Al presionar Aceptar confirmás que entendés y aceptás esta condición. ¿Deseás continuar?"
+    );
+    if (!proceed) {
+      return; // Aborta el flujo si el usuario no acepta
+    }
+
     setIsLoading(true);
     navigate("/under-development");
     // Forzar redibujado
