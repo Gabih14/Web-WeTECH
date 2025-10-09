@@ -259,9 +259,9 @@ export default function Checkout() {
     }
 
     setIsLoading(true);
-    navigate("/under-development");
+    //navigate("/under-development");
     // Forzar redibujado
-    /* await new Promise((resolve) => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
     const checkoutUrl = await createPaymentRequest();
 
     if (checkoutUrl) {
@@ -270,7 +270,7 @@ export default function Checkout() {
     } else {
       setIsLoading(false);
       alert("Error al generar el pago");
-    } */
+    }
     // Referencia no-op para evitar warning de TS mientras está en under-development
     if (false) {
       await createPaymentRequest();
