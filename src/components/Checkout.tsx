@@ -5,7 +5,7 @@ import { useCart } from "../context/CartContext";
 import { Coupon, Product } from "../types";
 import { CheckoutPersonal } from "./CheckoutPersonal";
 import { CheckoutAdress } from "./CheckoutAdress";
-import { CheckoutBilling } from "./CheckoutBilling";
+
 import {
   calculateDiscountedPriceForProduct,
   getDiscountPercentageForProduct,
@@ -37,7 +37,7 @@ export default function Checkout() {
   const [deliveryMethod, setDeliveryMethod] = useState<"pickup" | "shipping">(
     "pickup"
   );
-  const [sameBillingAddress, setSameBillingAddress] = useState(true); // por defecto sí
+  const [sameBillingAddress] = useState(true); // por defecto sí
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     cuit: "",
@@ -233,7 +233,7 @@ export default function Checkout() {
 
   /* END PAYMENT REQUEST */
 
-  const handleSameBillingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  /* const handleSameBillingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const checked = e.target.checked;
     setSameBillingAddress(checked);
 
@@ -246,7 +246,7 @@ export default function Checkout() {
         billingPostalCode: prev.postalCode,
       }));
     }
-  };
+  }; */
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -323,7 +323,7 @@ export default function Checkout() {
             />
 
             {/* Mostrar checkbox y form de facturación si es envío */}
-            {deliveryMethod === "shipping" && (
+            {/* {deliveryMethod === "shipping" && (
               <>
                 <div className="mt-4">
                   <label className="flex items-center">
@@ -344,15 +344,15 @@ export default function Checkout() {
                   />
                 )}
               </>
-            )}
+            )} */}
 
             {/* Mostrar facturación obligatoria si es retiro */}
-            {deliveryMethod === "pickup" && (
+            {/* {deliveryMethod === "pickup" && (
               <CheckoutBilling
                 formData={formData}
                 handleInputChange={handleInputChange}
               />
-            )}
+            )} */}
 
             <button
               type="submit"
