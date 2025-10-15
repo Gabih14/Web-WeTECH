@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import emailjs from "@emailjs/browser";
+import { User as UserIcon } from "lucide-react";
 
 export const Franquicias = () => {
   // Scroll suave al formulario
@@ -57,7 +58,7 @@ export const Franquicias = () => {
     mensaje: string;
   }
 
-  interface FormEvent extends React.FormEvent<HTMLFormElement> {}
+  interface FormEvent extends React.FormEvent<HTMLFormElement> { }
 
   const handleSubmit = (e: FormEvent): void => {
     e.preventDefault();
@@ -131,60 +132,35 @@ export const Franquicias = () => {
   );
   return (
     <div className="bg-white">
-      {/* Invitación a leer la nota */}
-      <div className="bg-yellow-50 border-b border-yellow-200 py-8">
-        <div className="container mx-auto px-4 text-center">
-          <a
-            href="https://canudas.com.ar/wetech-se-expande-a-todo-el-pais-llega-su-franquicia-de-impresoras-3d/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block text-lg sm:text-xl font-semibold text-yellow-800 underline hover:text-yellow-600 transition-colors mb-2"
-          >
-            Leé la nota: WeTECH se expande a todo el país: llega su franquicia de impresoras 3D
-          </a>
-          <blockquote className="mt-4 text-yellow-900 italic text-lg max-w-2xl mx-auto">
-            “Quisiera que hubiera algo como WeTECH en mi provincia”
-          </blockquote>
-        </div>
-      </div>
+
       {/* Header Section Mejorado */}
-      <header className="relative bg-gradient-to-br from-yellow-400 via-yellow-300 to-yellow-100 text-black py-20 overflow-hidden shadow-md">
+  <header className="relative bg-gradient-to-br from-black via-gray-800 to-gray-700 text-white py-10 md:py-14 overflow-hidden shadow-md">
         <div className="container mx-auto px-4 flex flex-col items-center justify-center relative z-10">
-          <h1 className="text-5xl md:text-6xl font-extrabold mb-4 text-yellow-900 drop-shadow-lg text-center">
-            Franquicias <span className="text-yellow-700">WeTECH</span>
-          </h1>
-          <h2 className="text-2xl md:text-3xl font-medium mb-6 text-yellow-800 text-center max-w-2xl">
-            Comenzá tu negocio con nosotros
-          </h2>
-          <p className="text-lg md:text-xl text-yellow-900 text-center max-w-2xl mb-8">
-            Sumate a la red de franquicias tecnológicas líderes en impresión 3D y sé parte de la innovación en tu provincia.
-          </p>
-          <a
-            href="#formulario-franquicia"
-            onClick={handleScrollToForm}
-            className="inline-block bg-yellow-500 hover:bg-yellow-600 text-white font-semibold px-8 py-3 rounded-full shadow-lg transition-colors text-lg mt-2"
-          >
-            Quiero más información
-          </a>
+          <img
+            src="/assets/franquicias/wetech-franquicias-logo.webp"
+            alt="Logo Franquicias WeTECH"
+            className="mx-auto mb-4 w-64 md:w-80 lg:w-96 h-auto"
+          />
+
         </div>
         {/* Elementos decorativos */}
-        <div className="absolute top-0 left-0 w-40 h-40 bg-yellow-200 rounded-full opacity-30 blur-2xl -z-1 animate-pulse" style={{filter:'blur(32px)'}}></div>
-        <div className="absolute bottom-0 right-0 w-56 h-56 bg-yellow-300 rounded-full opacity-20 blur-2xl -z-1 animate-pulse" style={{filter:'blur(40px)'}}></div>
+        <div className="absolute top-0 left-0 w-40 h-40 bg-yellow-200 rounded-full opacity-30 blur-2xl -z-1 animate-pulse" style={{ filter: 'blur(32px)' }}></div>
+        <div className="absolute bottom-0 right-0 w-56 h-56 bg-yellow-300 rounded-full opacity-20 blur-2xl -z-1 animate-pulse" style={{ filter: 'blur(40px)' }}></div>
       </header>
 
       {/* Razones para elegirnos */}
-      <section className="bg-gray-50 py-20">
+      <section className="bg-gray-50 py-10">
         <div className="container mx-auto px-4">
           <h2 className="text-4xl font-bold mb-16 text-center text-gray-800">
             Razones para elegirnos
           </h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-20">
             {/* Liderazgo en el mercado */}
             <div className="text-center">
               <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <img 
-                  src="/assets/franquicias/iconos folleto expo franquicias-01.svg" 
+                <img
+                  src="/assets/franquicias/iconos folleto expo franquicias-01.svg"
                   alt="Liderazgo en el mercado"
                   className="w-16 h-16"
                 />
@@ -196,8 +172,8 @@ export const Franquicias = () => {
             {/* Alianzas estratégicas */}
             <div className="text-center">
               <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <img 
-                  src="/assets/franquicias/iconos folleto expo franquicias-02.svg" 
+                <img
+                  src="/assets/franquicias/iconos folleto expo franquicias-02.svg"
                   alt="Alianzas estratégicas"
                   className="w-16 h-16"
                 />
@@ -209,8 +185,8 @@ export const Franquicias = () => {
             {/* Modelo de negocios probado */}
             <div className="text-center">
               <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <img 
-                  src="/assets/franquicias/iconos folleto expo franquicias-03.svg" 
+                <img
+                  src="/assets/franquicias/iconos folleto expo franquicias-03.svg"
                   alt="Modelo de negocios probado"
                   className="w-16 h-16"
                 />
@@ -222,8 +198,8 @@ export const Franquicias = () => {
             {/* Alta demanda del producto */}
             <div className="text-center">
               <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <img 
-                  src="/assets/franquicias/iconos folleto expo franquicias-04.svg" 
+                <img
+                  src="/assets/franquicias/iconos folleto expo franquicias-04.svg"
                   alt="Alta demanda del producto"
                   className="w-16 h-16"
                 />
@@ -235,8 +211,8 @@ export const Franquicias = () => {
             {/* Soporte de marketing */}
             <div className="text-center">
               <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <img 
-                  src="/assets/franquicias/iconos folleto expo franquicias-05.svg" 
+                <img
+                  src="/assets/franquicias/iconos folleto expo franquicias-05.svg"
                   alt="Soporte de marketing"
                   className="w-16 h-16"
                 />
@@ -248,8 +224,8 @@ export const Franquicias = () => {
             {/* Formación y capacitación */}
             <div className="text-center">
               <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <img 
-                  src="/assets/franquicias/iconos folleto expo franquicias-06.svg" 
+                <img
+                  src="/assets/franquicias/iconos folleto expo franquicias-06.svg"
                   alt="Liderazgo en el mercado"
                   className="w-16 h-16"
                 />
@@ -264,11 +240,11 @@ export const Franquicias = () => {
             <h3 className="text-2xl sm:text-3xl font-bold mb-8 sm:mb-12 text-center text-gray-800">
               Datos clave
             </h3>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 text-center mb-8 sm:mb-12">
               <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
-                <h4 className="text-sm sm:text-base lg:text-lg font-medium text-gray-600 mb-2 sm:mb-3">Inversión inicial</h4>
-                <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800">$49.000 USD</p>
+                <h4 className="text-sm sm:text-base lg:text-lg font-medium text-gray-600 mb-2 sm:mb-3">INVERSIÓN TOTAL</h4>
+                <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800">$9.000 USD</p>
               </div>
               <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
                 <h4 className="text-sm sm:text-base lg:text-lg font-medium text-gray-600 mb-2 sm:mb-3">STOCK INICIAL</h4>
@@ -280,44 +256,47 @@ export const Franquicias = () => {
               </div>
             </div>
 
-            {/* Testimonial */}
+            {/* Testimonial placeholder */}
             <div className="flex flex-col lg:flex-row items-center gap-6 lg:gap-8 bg-yellow-50 rounded-xl p-4 sm:p-6 lg:p-8">
               <div className="flex-shrink-0">
                 <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 bg-yellow-400 rounded-full flex items-center justify-center">
-                  <span className="text-lg sm:text-xl lg:text-2xl font-bold text-white">F</span>
+                  <UserIcon className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 text-white" />
                 </div>
               </div>
               <div className="flex-1 text-center lg:text-left">
-                <blockquote className="text-lg sm:text-xl text-gray-700 mb-3 sm:mb-4 italic">
-                  "Esto es como una juguetería para grandes, hay de todo"
+                <blockquote className="text-2xl sm:text-3xl lg:text-4xl text-gray-900 italic">
+                  Acá podés estar vos!
                 </blockquote>
-                <cite className="text-sm sm:text-base text-gray-600 font-medium">
-                  Fernanda, franquiciada WeTECH
-                </cite>
               </div>
-              
             </div>
 
             {/* Botones de contacto */}
             <div className="flex flex-wrap justify-center gap-3 sm:gap-4 mt-6 sm:mt-8">
-              <button 
+              <a
+                href="#formulario-franquicia"
+                onClick={handleScrollToForm}
+                className="bg-yellow-400 hover:bg-yellow-500 text-black px-4 sm:px-6 py-2 sm:py-3 rounded-full text-sm sm:text-base font-medium transition-colors"
+              >
+                Formulario
+              </a>
+              <button
                 onClick={openFolleto}
                 className="bg-yellow-400 hover:bg-yellow-500 text-black px-4 sm:px-6 py-2 sm:py-3 rounded-full text-sm sm:text-base font-medium transition-colors"
               >
                 Folleto digital
               </button>
-              <a 
-              href="https://canudas.com.ar/wetech-se-expande-a-todo-el-pais-llega-su-franquicia-de-impresoras-3d/"
-              className="bg-yellow-400 hover:bg-yellow-500 text-black px-4 sm:px-6 py-2 sm:py-3 rounded-full text-sm sm:text-base font-medium transition-colors">
+              <a
+                href="https://canudas.com.ar/wetech-se-expande-a-todo-el-pais-llega-su-franquicia-de-impresoras-3d/"
+                className="bg-yellow-400 hover:bg-yellow-500 text-black px-4 sm:px-6 py-2 sm:py-3 rounded-full text-sm sm:text-base font-medium transition-colors">
                 Nota con Canudas
               </a>
-              <a 
+              <a
                 href="mailto:franquicias@wetech.ar?subject=Consulta sobre Franquicias WeTECH&body=Hola, me interesa conocer más sobre las franquicias WeTECH. Me gustaría recibir más información."
                 className="bg-yellow-400 hover:bg-yellow-500 text-black px-4 sm:px-6 py-2 sm:py-3 rounded-full text-sm sm:text-base font-medium transition-colors inline-block text-center"
               >
                 Email
               </a>
-              <button 
+              <button
                 onClick={openWhatsApp}
                 className="bg-yellow-400 hover:bg-yellow-500 text-black px-4 sm:px-6 py-2 sm:py-3 rounded-full text-sm sm:text-base font-medium transition-colors"
               >
@@ -342,14 +321,16 @@ export const Franquicias = () => {
               key={index}
               className="relative group rounded-2xl shadow-lg overflow-hidden border border-yellow-100 bg-white"
             >
+              {/* Blur placeholder */}
+              <div className="absolute inset-0 bg-yellow-200 blur-xl scale-105 z-0"></div>
               <img
                 src={src}
                 alt={`Local WeTECH ${index + 1}`}
-                className="w-full h-64 object-cover transition-transform duration-500 group-hover:scale-110 group-hover:brightness-90"
+                className="w-full h-64 object-cover transition-transform duration-500 group-hover:scale-110 group-hover:brightness-90 relative z-10"
                 loading="lazy"
               />
-              <div className="absolute inset-0 bg-yellow-900 bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-300 flex items-center justify-center">
-                
+              <div className="absolute inset-0 bg-yellow-900 bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-300 flex items-center justify-center z-20">
+                {/* Puedes agregar overlay o ícono aquí si quieres */}
               </div>
             </div>
           ))}
