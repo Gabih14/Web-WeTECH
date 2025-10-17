@@ -12,6 +12,7 @@ import {
   shouldApplyDiscount,
 } from "../utils/discounts";
 
+import { fetchClienteByCuit } from "../services/api";
 import { coupons } from "../data/coupon";
 
 function useMediaQuery(query: string): boolean {
@@ -55,6 +56,7 @@ export default function Checkout() {
     billingCity: "",
     billingPostalCode: "",
   });
+  
   const BEARER_TOKEN = import.meta.env.VITE_API_BEARER_TOKEN;
   
   // Sincroniza billing con envío si el check está marcado
@@ -281,6 +283,32 @@ export default function Checkout() {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+  
+  const handleCuitBlur = async () => {
+    const cuit = formData.cuit.trim();
+    if (!cuit) return;
+
+    const clienteData = await fetchClienteByCuit(cuit);
+
+    if (clienteData) {
+      setFormData((prev) => ({
+        ...prev,
+        name: clienteData.nombre ? clienteData.nombre : prev.name,
+        email: clienteData.email ? clienteData.email : prev.email,
+        phone: clienteData.telefono ? clienteData.telefono : prev.phone,
+        // Autocompletar dirección SIEMPRE
+        street: clienteData.calle ? clienteData.calle : prev.street,
+        number: clienteData.numero ? clienteData.numero : prev.number,
+        city: clienteData.ciudad ? clienteData.ciudad : prev.city,
+        postalCode: clienteData.codigo_postal ? clienteData.codigo_postal : prev.postalCode,
+        // Facturación se autocompleta siempre
+        billingStreet: clienteData.calle ? clienteData.calle : prev.billingStreet,
+        billingNumber: clienteData.numero ? clienteData.numero : prev.billingNumber,
+        billingCity: clienteData.ciudad ? clienteData.ciudad : prev.billingCity,
+        billingPostalCode: clienteData.codigo_postal ? clienteData.codigo_postal : prev.billingPostalCode,
+      }));
+    }
+  };
 
   const calculateOriginalTotal = () => {
     return items.reduce((sum, item) => {
@@ -309,6 +337,7 @@ export default function Checkout() {
             <CheckoutPersonal
               formData={formData}
               handleInputChange={handleInputChange}
+              handleCuitBlur={handleCuitBlur}
             />
 
             {/* Mostrar método de entrega y dirección de envío */}
