@@ -6,9 +6,10 @@ type Props = {
     cuit: string; // Agregado el campo cuit
   };
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleCuitBlur?: () => void;
 };
 
-export const CheckoutPersonal = ({ formData, handleInputChange }: Props) => {
+export const CheckoutPersonal = ({ formData, handleInputChange, handleCuitBlur }: Props) => {
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
       <h2 className="text-lg font-medium text-gray-900 mb-4">
@@ -28,6 +29,7 @@ export const CheckoutPersonal = ({ formData, handleInputChange }: Props) => {
             name="cuit"
             value={formData.cuit}
             onChange={handleInputChange}
+            onBlur={handleCuitBlur}
             required
             className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
             placeholder="Ej: 20-12345678-9"
