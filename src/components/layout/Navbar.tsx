@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { ShoppingCart } from "lucide-react"; // UserCircle
 import { FaWhatsapp } from "react-icons/fa"; // FaMapMarkerAlt
-import { useCart } from "../context/CartContext";
+import { useCart } from "../../context/CartContext";
 //import { useAuth } from "../context/AuthContext";
-import CartModal from "../components/CartModal";
-import LoginModal from "../components/LoginModal";
+import CartModal from "../cart/CartModal";
+import LoginModal from "../../components/LoginModal";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import Isologo from "../assets/Isologo Fondo Negro SVG.svg";
+import Isologo from "../../assets/Isologo Fondo Negro SVG.svg";
 
 export default function Navbar() {
   const [isCartOpen, setIsCartOpen] = useState(false);
