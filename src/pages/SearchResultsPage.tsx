@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { ProductCard } from "../components/ProductCard";
+import { ProductCard } from "../components/products/ProductCard";
 import { fetchProducts } from "../services/fetchProducts";
 import type { Product } from "../types";
 

@@ -1,14 +1,14 @@
 import { useState, useRef, useEffect } from "react";
-import { Product } from "../types";
+import { Product } from "../../types";
 import { ChevronDown } from "lucide-react";
-import { useCart } from "../context/CartContext";
+import { useCart } from "../../context/CartContext";
 import { Link } from "react-router-dom";
 import {
   shouldApplyDiscount,
   calculateDiscountedPriceForProduct,
   getDiscountPercentageForProduct,
   getNextDiscountLevelForProduct
-} from "../utils/discounts";
+} from "../../utils/discounts";
 
 interface ProductCardProps {
   product: Product;

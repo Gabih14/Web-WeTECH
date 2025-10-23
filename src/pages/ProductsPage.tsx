@@ -3,8 +3,8 @@ import { Filter, X, AlertCircle } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa";
 import { useSearchParams } from "react-router-dom";
 import { categories } from "../data/categories";
-import { ProductCard } from "../components/ProductCard";
-import { CategoryFilter } from "../components/CategoryFilter";
+import { ProductCard } from "../components/products/ProductCard";
+import { CategoryFilter } from "../components/products/CategoryFilter";
 import { Product } from "../types";
 import { fetchProducts } from "../services/fetchProducts";
 

@@ -1,13 +1,13 @@
 import { Link } from "react-router-dom";
 import { Printer as Printer3D, Shapes, Wrench, X } from "lucide-react";
-import { ContactInfo } from "../components/ContactInfo";
+import { ContactInfo } from "../components/home/ContactInfo";
 import Logo from "../assets/Logo WeTECH Negro PNG.png";
 import Slogan from "../assets/filamentso-removebg-preview.webp";
 import filamentoCategoria from "../assets/Grilon_pla_piel.jpeg";
 import impresoraCategoria from "../assets/CR6 S.png";
 import repuestoCategoria from "../assets/racor 6mm plastico web2_Impresora 3D Creality CR-10 SMART Mendoza v2.jpg";
 import { useState } from "react";
-import { Reviews } from "../components/ReviewSection";
+import { Reviews } from "../components/home/ReviewSection";
 
 const categories = [
   {
