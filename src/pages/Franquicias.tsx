@@ -244,7 +244,7 @@ export const Franquicias = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 text-center mb-8 sm:mb-12">
               <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
                 <h4 className="text-sm sm:text-base lg:text-lg font-medium text-gray-600 mb-2 sm:mb-3">INVERSIÓN TOTAL</h4>
-                <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800">$9.000 USD</p>
+                <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800">$39.000 USD</p>
               </div>
               <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
                 <h4 className="text-sm sm:text-base lg:text-lg font-medium text-gray-600 mb-2 sm:mb-3">STOCK INICIAL</h4>

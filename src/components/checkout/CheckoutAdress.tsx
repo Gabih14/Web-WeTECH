@@ -1,7 +1,7 @@
 import { MapPin, Store, Truck } from "lucide-react"; //MapPin,
 import { useState } from "react";
 import { ShippingInfoModal } from "./ShippingInfoModal";
-import { apiFetch } from "../services/api";
+import { apiFetch } from "../../services/api";
 
 type Props = {
   formData: {

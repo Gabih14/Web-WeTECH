@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Tag } from "lucide-react";
-import { useCart } from "../context/CartContext";
-import { Coupon, Product } from "../types";
+import { useCart } from "../../context/CartContext";
+import { Coupon, Product } from "../../types";
 import { CheckoutPersonal } from "./CheckoutPersonal";
 import { CheckoutAdress } from "./CheckoutAdress";
 
@@ -10,10 +10,10 @@ import {
   calculateDiscountedPriceForProduct,
   getDiscountPercentageForProduct,
   shouldApplyDiscount,
-} from "../utils/discounts";
+} from "../../utils/discounts";
 
-import { fetchClienteByCuit } from "../services/api";
-import { coupons } from "../data/coupon";
+import { fetchClienteByCuit } from "../../services/api";
+import { coupons } from "../../data/coupon";
 
 function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(window.matchMedia(query).matches);

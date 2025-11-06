@@ -1,12 +1,12 @@
 import { X, Minus, Plus, ShoppingCart } from "lucide-react";
-import { useCart } from "../context/CartContext";
-import { Product } from "../types";
+import { useCart } from "../../context/CartContext";
+import { Product } from "../../types";
 import { useNavigate } from "react-router-dom";
 import {
   calculateDiscountedPriceForProduct,
   getDiscountPercentageForProduct,
   shouldApplyDiscount
-} from "../utils/discounts";
+} from "../../utils/discounts";
 
 interface CartModalProps {
   isOpen: boolean;
