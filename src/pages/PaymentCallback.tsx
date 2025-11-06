@@ -41,8 +41,30 @@ const PaymentCallback = () => {
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Obtener el external_id de los parámetros de la URL
-  const externalId = searchParams.get('external_id') || searchParams.get('id') || searchParams.get('payment_id');
+  // Obtener el external_id de los parámetros de la URL (compatibilidad con distintos gateways)
+  const externalId =
+    searchParams.get('external_id') ||
+    searchParams.get('order_id') ||
+    searchParams.get('id') ||
+    searchParams.get('payment_id') ||
+    searchParams.get('preference_id') ||
+    searchParams.get('collection_id');
+
+  // Log de diagnóstico si no se encuentra ningún ID en la URL
+  useEffect(() => {
+    if (!externalId) {
+      try {
+        // Mostrar todos los parámetros presentes para facilitar el diagnóstico
+        // Object.fromEntries puede lanzar en navegadores antiguos, por eso el try/catch
+        // pero en entornos modernos (y React) es seguro.
+        // eslint-disable-next-line no-console
+        console.warn('No se encontró un identificador de pedido en la URL. Params:', Object.fromEntries(searchParams.entries()));
+      } catch {
+        // eslint-disable-next-line no-console
+        console.warn('No se encontró un identificador de pedido en la URL.');
+      }
+    }
+  }, [externalId, searchParams]);
 
   // Función para refrescar manualmente el estado del pedido
   const refreshPedidoStatus = async () => {
