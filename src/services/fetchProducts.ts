@@ -139,6 +139,10 @@ export const fetchProducts = async (): Promise<Product[]> => {
           // Si el color ya existe, sumar el stock para el peso específico
           existingColor.stock[weight] =
             (existingColor.stock[weight] || 0) + stock;
+          // Asegurar que conservamos el ID original del ítem
+          if (!existingColor.itemId) {
+            existingColor.itemId = item.id;
+          }
         } else {
           // Función para normalizar nombres de colores para que coincidan con archivos
           const normalizeColorName = (familia: string, color: string): string => {
@@ -180,6 +184,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
               [weight]: stock, // Manejar el stock por peso
             },
             images: colorImages, // Solo una imagen por color para filamentos
+            itemId: item.id, // Guardar el ID original del item para la variante de color
           });
         }
       } else {

@@ -95,6 +95,7 @@ export function ProductCard({ product }: ProductCardProps) {
       selectedWeight !== null &&
       quantity + cartQuantity <= availableStock
     ) {
+      console.log("Adding to cart:", { product, selectedColor, selectedWeight, quantity });
       addToCart(product, selectedColor, selectedWeight, quantity);
     } else if (
       !product.colors &&
