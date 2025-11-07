@@ -127,6 +127,11 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                     item.weight,
                     item.quantity
                   );
+                  const colorImage = item.color
+                    ? item.product.colors?.find(
+                        (c) => c.name.toLowerCase() === item.color.toLowerCase()
+                      )?.images?.[0] || item.product.image
+                    : item.product.image;
                   return (
                     <div
                       key={`${item.product.id}-${item.color}-${item.weight}`}
@@ -134,7 +139,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                     >
                       <div className="flex items-center space-x-4">
                         <img
-                          src={item.product.image}
+                          src={colorImage}
                           alt={item.product.name}
                           className="w-16 h-16 object-cover rounded"
                         />
@@ -142,7 +147,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                           <h3 className="font-medium text-gray-900">
                             {item.product.name}
                           </h3>
-                          <p className="text-black mt-1">
+                          <div className="text-black mt-1">
                             {shouldApplyDiscount(item.product) && price !== undefined && discountedPrice !== undefined && discountedPrice < price ? (
                               <>
                                 <div className="flex items-center gap-2">
@@ -174,7 +179,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                                 })}
                               </span>
                             )}
-                          </p>
+                          </div>
                           {item.color && item.weight > 0 && (
                             <p className="text-gray-600 mt-1">
                               Color: {item.color}, Peso: {item.weight}kg

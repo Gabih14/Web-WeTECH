@@ -56,9 +56,9 @@ export default function Checkout() {
     billingCity: "",
     billingPostalCode: "",
   });
-  
-  const BEARER_TOKEN = import.meta.env.VITE_API_BEARER_TOKEN;
-  
+
+const BEARER_TOKEN = import.meta.env.VITE_API_BEARER_TOKEN; // Se usará cuando el pago esté activo
+
   // Sincroniza billing con envío si el check está marcado
   useEffect(() => {
     if (sameBillingAddress) {
@@ -120,7 +120,7 @@ export default function Checkout() {
     const weightData = product.weights?.find((w) => w.weight === weight);
     return weightData ? weightData.promotionalPrice : product.promotionalPrice;
   }; */
-  
+
   const calculateItemPriceWithDiscount = (
     product: Product,
     weight: number,
@@ -130,7 +130,11 @@ export default function Checkout() {
 
     if (originalPrice) {
       if (shouldApplyDiscount(product)) {
-        return calculateDiscountedPriceForProduct(product, originalPrice, quantity);
+        return calculateDiscountedPriceForProduct(
+          product,
+          originalPrice,
+          quantity
+        );
       }
       return originalPrice;
     }
@@ -192,23 +196,33 @@ export default function Checkout() {
       pais,
       codigo_postal,
       mobile: isMobile,
-      productos: items.map((item) => ({
-        nombre: item.product.id,
-        cantidad: item.quantity,
-        precio_unitario:
-          calculateItemPriceWithDiscount(
-            item.product,
-            item.weight,
-            item.quantity
-          ) ??
-          getPrice(item.product, item.weight) ??
-          0,
-      })),
+      productos: items.map((item) => {
+        // Buscar el ID original del ítem según el color seleccionado (si aplica)
+        const colorData = item.color
+          ? item.product.colors?.find(
+              (c) => c.name.toLowerCase() === item.color.toLowerCase()
+            )
+          : undefined;
+
+        const nombre = colorData?.itemId || item.product.id;
+
+        return {
+          nombre,
+          cantidad: item.quantity,
+          precio_unitario:
+            calculateItemPriceWithDiscount(
+              item.product,
+              item.weight,
+              item.quantity
+            ) ??
+            getPrice(item.product, item.weight) ??
+            0,
+        };
+      }),
       billing_address,
     };
 
-    const API_URL = import.meta.env.VITE_API_URL;
-
+  const API_URL = import.meta.env.VITE_API_URL; // Se usará cuando el pago esté activo
     try {
       const res = await fetch(`${API_URL}/pedido`, {
         method: "POST",
@@ -231,6 +245,7 @@ export default function Checkout() {
       alert("Hubo un problema al generar el pago.");
       return null;
     }
+    
   };
 
   /* END PAYMENT REQUEST */
@@ -264,11 +279,10 @@ export default function Checkout() {
     //navigate("/under-development");
     // Forzar redibujado
     await new Promise((resolve) => setTimeout(resolve, 100));
-    const checkoutUrl = await createPaymentRequest();
+  const checkoutUrl = await createPaymentRequest();
 
     if (checkoutUrl) {
       window.location.href = checkoutUrl; // Redirecciona al checkout externo (Agregar timeout si es necesario)
-
     } else {
       setIsLoading(false);
       alert("Error al generar el pago");
@@ -283,7 +297,7 @@ export default function Checkout() {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
-  
+
   const handleCuitBlur = async () => {
     const cuit = formData.cuit.trim();
     if (!cuit) return;
@@ -300,12 +314,20 @@ export default function Checkout() {
         street: clienteData.calle ? clienteData.calle : prev.street,
         number: clienteData.numero ? clienteData.numero : prev.number,
         city: clienteData.ciudad ? clienteData.ciudad : prev.city,
-        postalCode: clienteData.codigo_postal ? clienteData.codigo_postal : prev.postalCode,
+        postalCode: clienteData.codigo_postal
+          ? clienteData.codigo_postal
+          : prev.postalCode,
         // Facturación se autocompleta siempre
-        billingStreet: clienteData.calle ? clienteData.calle : prev.billingStreet,
-        billingNumber: clienteData.numero ? clienteData.numero : prev.billingNumber,
+        billingStreet: clienteData.calle
+          ? clienteData.calle
+          : prev.billingStreet,
+        billingNumber: clienteData.numero
+          ? clienteData.numero
+          : prev.billingNumber,
         billingCity: clienteData.ciudad ? clienteData.ciudad : prev.billingCity,
-        billingPostalCode: clienteData.codigo_postal ? clienteData.codigo_postal : prev.billingPostalCode,
+        billingPostalCode: clienteData.codigo_postal
+          ? clienteData.codigo_postal
+          : prev.billingPostalCode,
       }));
     }
   };
@@ -426,19 +448,33 @@ export default function Checkout() {
             {items.length > 0 ? (
               <div className="flow-root">
                 <ul className="divide-y divide-gray-200">
-                  {items.map((item) => {
+                  {items.map((item, index) => {
                     const price = getPrice(item.product, item.weight);
                     const discountedPrice = calculateItemPriceWithDiscount(
                       item.product,
                       item.weight,
                       item.quantity
                     );
+                    const colorHex = item.color
+                      ? item.product.colors?.find(
+                          (c) =>
+                            c.name.toLowerCase() === item.color.toLowerCase()
+                        )?.hex
+                      : undefined;
+
+                    const itemImage = item.color
+                      ? item.product.colors?.find(
+                          (c) => c.name.toLowerCase() === item.color.toLowerCase()
+                        )?.images?.[0] || item.product.image
+                      : item.product.image;
+
+                    const uniqueKey = `${item.product.id}-${item.color || 'default'}-${item.weight}-${index}`;
 
                     return (
-                      <li key={item.product.id} className="py-4 flex">
+                      <li key={uniqueKey} className="py-4 flex">
                         <div className="flex-shrink-0 w-24 h-24">
                           <img
-                            src={item.product.image}
+                            src={itemImage}
                             alt={item.product.name}
                             className="w-full h-full rounded-md object-center object-cover"
                           />
@@ -449,11 +485,30 @@ export default function Checkout() {
                               <h3 className="text-sm font-medium text-gray-900">
                                 {item.product.name}
                               </h3>
+                              {item.color && item.color.trim() !== "" && (
+                                <div className="mt-1 flex items-center text-xs text-gray-600">
+                                  <span className="mr-1">Color:</span>
+                                  {colorHex && (
+                                    <span
+                                      className="inline-block w-3 h-3 rounded-full mr-1 border border-gray-300"
+                                      style={{ backgroundColor: colorHex }}
+                                    ></span>
+                                  )}
+                                  <span className="font-medium">
+                                    {item.color}
+                                  </span>
+                                </div>
+                              )}
                               {shouldApplyDiscount(item.product) &&
                                 discountedPrice &&
                                 discountedPrice < (price ?? 0) && (
                                   <span className="inline-block bg-red-100 text-red-800 text-xs font-semibold px-2 py-1 rounded-full mt-1">
-                                    -{getDiscountPercentageForProduct(item.product, item.quantity)}% OFF
+                                    -
+                                    {getDiscountPercentageForProduct(
+                                      item.product,
+                                      item.quantity
+                                    )}
+                                    % OFF
                                   </span>
                                 )}
                             </div>
