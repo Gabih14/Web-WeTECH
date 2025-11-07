@@ -19,6 +19,7 @@ export interface Product {
     hex: string;
     stock: { [weight: string]: number };
     images?: string[]; // Imágenes específicas por color
+    itemId?: string; // ID original del ítem para este color (variante)
   }[];
   stock?: number;
 }
