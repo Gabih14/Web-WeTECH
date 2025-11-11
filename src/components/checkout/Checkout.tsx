@@ -57,7 +57,7 @@ export default function Checkout() {
     billingPostalCode: "",
   });
 
-const BEARER_TOKEN = import.meta.env.VITE_API_BEARER_TOKEN; // Se usará cuando el pago esté activo
+  const BEARER_TOKEN = import.meta.env.VITE_API_BEARER_TOKEN; // Se usará cuando el pago esté activo
 
   // Sincroniza billing con envío si el check está marcado
   useEffect(() => {
@@ -200,8 +200,8 @@ const BEARER_TOKEN = import.meta.env.VITE_API_BEARER_TOKEN; // Se usará cuando 
         // Buscar el ID original del ítem según el color seleccionado (si aplica)
         const colorData = item.color
           ? item.product.colors?.find(
-              (c) => c.name.toLowerCase() === item.color.toLowerCase()
-            )
+            (c) => c.name.toLowerCase() === item.color.toLowerCase()
+          )
           : undefined;
 
         const nombre = colorData?.itemId || item.product.id;
@@ -221,8 +221,8 @@ const BEARER_TOKEN = import.meta.env.VITE_API_BEARER_TOKEN; // Se usará cuando 
       }),
       billing_address,
     };
-
-  const API_URL = import.meta.env.VITE_API_URL; // Se usará cuando el pago esté activo
+    console.log("Cuerpo de la solicitud de pago:", body);
+    const API_URL = import.meta.env.VITE_API_URL; // Se usará cuando el pago esté activo
     try {
       const res = await fetch(`${API_URL}/pedido`, {
         method: "POST",
@@ -245,7 +245,7 @@ const BEARER_TOKEN = import.meta.env.VITE_API_BEARER_TOKEN; // Se usará cuando 
       alert("Hubo un problema al generar el pago.");
       return null;
     }
-    
+
   };
 
   /* END PAYMENT REQUEST */
@@ -279,7 +279,7 @@ const BEARER_TOKEN = import.meta.env.VITE_API_BEARER_TOKEN; // Se usará cuando 
     //navigate("/under-development");
     // Forzar redibujado
     await new Promise((resolve) => setTimeout(resolve, 100));
-  const checkoutUrl = await createPaymentRequest();
+    const checkoutUrl = await createPaymentRequest();
 
     if (checkoutUrl) {
       window.location.href = checkoutUrl; // Redirecciona al checkout externo (Agregar timeout si es necesario)
@@ -429,8 +429,8 @@ const BEARER_TOKEN = import.meta.env.VITE_API_BEARER_TOKEN; // Se usará cuando 
                 {!shippingCost
                   ? "Debes calcular el costo de envío antes de continuar."
                   : !confirmedAddress
-                  ? "Debes confirmar tu dirección antes de continuar."
-                  : null}
+                    ? "Debes confirmar tu dirección antes de continuar."
+                    : null}
               </div>
             )}
 
@@ -457,15 +457,15 @@ const BEARER_TOKEN = import.meta.env.VITE_API_BEARER_TOKEN; // Se usará cuando 
                     );
                     const colorHex = item.color
                       ? item.product.colors?.find(
-                          (c) =>
-                            c.name.toLowerCase() === item.color.toLowerCase()
-                        )?.hex
+                        (c) =>
+                          c.name.toLowerCase() === item.color.toLowerCase()
+                      )?.hex
                       : undefined;
 
                     const itemImage = item.color
                       ? item.product.colors?.find(
-                          (c) => c.name.toLowerCase() === item.color.toLowerCase()
-                        )?.images?.[0] || item.product.image
+                        (c) => c.name.toLowerCase() === item.color.toLowerCase()
+                      )?.images?.[0] || item.product.image
                       : item.product.image;
 
                     const uniqueKey = `${item.product.id}-${item.color || 'default'}-${item.weight}-${index}`;
@@ -514,7 +514,7 @@ const BEARER_TOKEN = import.meta.env.VITE_API_BEARER_TOKEN; // Se usará cuando 
                             </div>
                             <div className="ml-4 text-sm font-medium text-gray-900">
                               {discountedPrice &&
-                              discountedPrice < (price ?? 0) ? (
+                                discountedPrice < (price ?? 0) ? (
                                 <div className="flex flex-wrap items-center">
                                   <span className="text-base sm:text-lg font-bold mr-2">
                                     $
