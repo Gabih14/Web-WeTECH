@@ -449,6 +449,7 @@ export default function Checkout() {
               <div className="flow-root">
                 <ul className="divide-y divide-gray-200">
                   {items.map((item, index) => {
+                    console.log(item);
                     const price = getPrice(item.product, item.weight);
                     const discountedPrice = calculateItemPriceWithDiscount(
                       item.product,

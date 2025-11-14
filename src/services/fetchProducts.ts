@@ -123,7 +123,9 @@ export const fetchProducts = async (): Promise<Product[]> => {
 
         // Manejar el stock por colores
         const colorName = item.descripcion.split("|")[1]?.trim() || "Sin color"; // Extraer el color del campo descripción
-        const stock = parseFloat(item.stkExistencias?.[0]?.cantidad || "0");
+        const cantidad = parseFloat(item.stkExistencias?.[0]?.cantidad || "0");
+        const comprometido = parseFloat(item.stkExistencias?.[0]?.comprometido || "0");
+        const stock = Math.max(0, cantidad - comprometido); // Stock disponible = cantidad - comprometido (mínimo 0)
 
         // Buscar el color en el array `colors` para obtener su valor `hex`
         const colorData = colors.find(
@@ -188,10 +190,13 @@ export const fetchProducts = async (): Promise<Product[]> => {
           });
         }
       } else {
-        // Para otras categorías, sumar el stock de forma general
+        // Para otras categorías, sumar el stock de forma general (cantidad - comprometido)
+        const cantidad = parseFloat(item.stkExistencias?.[0]?.cantidad || "0");
+        const comprometido = parseFloat(item.stkExistencias?.[0]?.comprometido || "0");
+        const stockDisponible = Math.max(0, cantidad - comprometido);
+        
         groupedProducts[familia].stock =
-          (groupedProducts[familia].stock || 0) +
-          parseFloat(item.stkExistencias?.[0]?.cantidad || "0");
+          (groupedProducts[familia].stock || 0) + stockDisponible;
       }
     });
 
@@ -242,6 +247,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
         product.colors = sortedColors;
       }
     });
+    console.log("Transformed products:", transformedProducts);
     
     return transformedProducts;
   } catch (error: any) {
