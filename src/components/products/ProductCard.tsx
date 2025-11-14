@@ -47,6 +47,11 @@ export function ProductCard({ product }: ProductCardProps) {
   );
   const [quantity, setQuantity] = useState(1);
   const dropdownRef = useRef<HTMLDivElement>(null);
+const getStockStatus = () => {
+  if (availableStock === 0) return { label: "Sin stock", color: "text-red-600" };
+  if (availableStock <= 5) return { label: "Últimas unidades", color: "text-yellow-600" };
+  return { label: "En stock", color: "text-green-600" };
+};
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -137,6 +142,8 @@ export function ProductCard({ product }: ProductCardProps) {
     selectedColor && selectedWeight !== null
       ? getCartQuantity(product.id, selectedColor, selectedWeight)
       : getCartQuantity(product.id, "", 0);
+      const stockStatus = getStockStatus();
+
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-visible hover:shadow-lg transition-shadow flex flex-col">
@@ -152,6 +159,11 @@ export function ProductCard({ product }: ProductCardProps) {
           <h3 className="text-xs sm:text-sm lg:text-base font-semibold line-clamp-2 hover:text-yellow-600 transition-colors leading-tight">
             {product.name}
           </h3>
+          <p className={`text-xs font-medium ${stockStatus.color}`}>
+  {stockStatus.label}
+</p>
+
+
         </Link>
 
         {product.colors && (
