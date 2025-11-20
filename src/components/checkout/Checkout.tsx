@@ -319,6 +319,7 @@ export default function Checkout() {
         postalCode: clienteData.codigo_postal
           ? clienteData.codigo_postal
           : prev.postalCode,
+        observaciones: clienteData.observaciones ? clienteData.observaciones : prev.observaciones,
         // Facturación se autocompleta siempre
         billingStreet: clienteData.calle
           ? clienteData.calle

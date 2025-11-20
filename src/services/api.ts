@@ -25,18 +25,7 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
 export async function fetchClienteByCuit(cuit: string) {
   try {
     const data = await apiFetch(`/vta-cliente/${cuit}`);
-    // Estructura esperada:
-    // {
-    //   nombre: string,
-    //   email: string,
-    //   telefono: string,
-    //   domicilio: {
-    //     calle: string,
-    //     numero: string,
-    //     ciudad: string,
-    //     codigo_postal: string
-    //   }
-    // }
+
     if (!data) return null;
     return {
       nombre: data.razonSocial || data.nombre || "",
@@ -44,8 +33,9 @@ export async function fetchClienteByCuit(cuit: string) {
       telefono: data.telefono || "",
       calle: data.domicilio?.calle || "",
       numero: data.domicilio?.numero || "",
-      ciudad: data.domicilio?.ciudad || "",
-      codigo_postal: data.domicilio?.codigo_postal || ""
+      ciudad: data.localidad || "",
+      codigo_postal: data.domicilio?.codigo_postal || "",
+      observaciones: data.observaciones || "",
     };
   } catch (error) {
     console.error(`No se encontró cliente con CUIT ${cuit}:`, error);
