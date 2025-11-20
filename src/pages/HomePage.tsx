@@ -38,7 +38,18 @@ const categories = [
 
 export function HomePage() {
   const [showModal, setShowModal] = useState(true);
-  
+ 
+  /* en caso de querer que solo se vea una vez el modal cambiar const close modal por:
+  useEffect(() => {
+  const seen = localStorage.getItem("seenModal");
+  if (seen) setShowModal(false);
+}, []);
+const closeModal = () => {
+  setShowModal(false);
+  localStorage.setItem("seenModal", "true");
+};
+ */
+
   const openWhatsApp = () => {
     const phoneNumber = "5492615987988";
     const message = "¡Hola! Estoy interesado en realizar una compra. ¿Podrían ayudarme?";
