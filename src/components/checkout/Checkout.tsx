@@ -50,6 +50,7 @@ export default function Checkout() {
     distance: 0,
     city: "",
     postalCode: "",
+    observaciones: "",
     // Sección de facturación:
     billingStreet: "",
     billingNumber: "",
@@ -195,6 +196,7 @@ export default function Checkout() {
       region,
       pais,
       codigo_postal,
+      observaciones: formData.observaciones,
       mobile: isMobile,
       productos: items.map((item) => {
         // Buscar el ID original del ítem según el color seleccionado (si aplica)
