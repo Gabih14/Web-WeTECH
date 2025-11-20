@@ -10,6 +10,7 @@ type Props = {
     city: string;
     postalCode: string;
     distance: number;
+    observaciones: string;
   };
   handleInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   setShippingCost: (cost: number) => void;
@@ -279,6 +280,23 @@ export const CheckoutAdress = ({
                   placeholder="Ej: 5501"
                 />
               </div>
+            </div>
+            <div>
+              <label
+                htmlFor="observaciones"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Observaciones (opcional)
+              </label>
+              <textarea
+                id="observaciones"
+                name="observaciones"
+                value={formData.observaciones}
+                onChange={(e) => handleInputChange(e as any)}
+                rows={3}
+                className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+                placeholder="Ej: Casa con portón azul, timbre 2B"
+              />
             </div>
             <div className="flex items-center space-x-2">
               <input
