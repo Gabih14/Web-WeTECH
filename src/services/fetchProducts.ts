@@ -32,6 +32,11 @@ export const fetchProducts = async (): Promise<Product[]> => {
         return; // Salir de esta iteración
       }
 
+      // Ignorar productos no visibles
+      if (item.visible === false) {
+        return; // Salir de esta iteración
+      }
+
       // Ignorar ítems del grupo "FILAMENTOS" sin familia
       if (item.grupo === "FILAMENTOS" && !item.familia) {
         return; // Salir de esta iteración
