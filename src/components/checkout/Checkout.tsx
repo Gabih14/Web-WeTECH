@@ -196,7 +196,9 @@ export default function Checkout() {
       region,
       pais,
       codigo_postal,
+      tipo_envio: deliveryMethod,
       observaciones: formData.observaciones,
+      direccion: confirmedAddress || "",
       mobile: isMobile,
       productos: items.map((item) => {
         // Buscar el ID original del ítem según el color seleccionado (si aplica)
