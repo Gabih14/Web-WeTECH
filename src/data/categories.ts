@@ -3,7 +3,7 @@ import { Category } from "../types";
 export const categories: Category[] = [
   {
     name: "Filamentos",
-    id: "filamentos",
+    id: "FILAMENTO 3D",
     /* subcategories: [
       { name: "PLA", id: "pla" },
       { name: "Técnicos", id: "tecnicos" },
@@ -11,11 +11,11 @@ export const categories: Category[] = [
   },
   {
     name: "Impresoras 3D",
-    id: "IMPRESORAS FDM",
+    id: "IMPRESORAS 3D",
     
   },
   {
     name: "Repuestos",
-    id: "repuestos",
+    id: "REPUESTOS & ACCESORIOS",
   },
 ];
