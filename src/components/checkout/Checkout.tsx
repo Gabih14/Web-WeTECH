@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Tag } from "lucide-react";
+import { ArrowLeft, Tag, AlertCircle, X} from "lucide-react";
 import { useCart } from "../../context/CartContext";
 import { Coupon, Product } from "../../types";
 import { CheckoutPersonal } from "./CheckoutPersonal";
@@ -676,41 +676,78 @@ export default function Checkout() {
         </div>
       </div>
 
-      {/* Modal de error */}
+      {/* Modal de error mejorado */}
       {showErrorModal && error && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Error en el pago
-            </h3>
-            <p className="text-gray-600 mb-2">{error.message}</p>
-            <p className="text-sm text-gray-500 mb-6">
-              {error.retryable 
-                ? "Por favor, vuelve a intentarlo." 
-                : "Por favor, vuelve más tarde."}
-            </p>
-            <div className="flex gap-3 justify-end">
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div 
+            className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 transform transition-all animate-slideUp"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="error-title"
+          >
+            {/* Header con ícono y botón cerrar */}
+            <div className="relative px-6 pt-6 pb-4">
               <button
                 onClick={() => {
                   setShowErrorModal(false);
-                  setError(null);
                 }}
-                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
+                aria-label="Cerrar"
               >
-                Cerrar
+                <X size={20} />
               </button>
+              
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                  <AlertCircle className="text-red-600" size={24} />
+                </div>
+                
+                <div className="flex-1 pt-1">
+                  <h3 
+                    id="error-title"
+                    className="text-xl font-semibold text-gray-900 mb-1"
+                  >
+                    Error en el pago
+                  </h3>
+                  <p className="text-gray-600 leading-relaxed">
+                    {error.message}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Mensaje adicional */}
+            <div className="px-6 pb-6">
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <p className="text-sm text-gray-700">
+                  {error.retryable 
+                    ? "💡 Puedes intentar realizar el pago nuevamente." 
+                    : "⏰ Por favor, intenta más tarde o contacta con soporte."}
+                </p>
+              </div>
+            </div>
+
+            {/* Botones de acción */}
+            <div className="px-6 pb-6 flex gap-3">
               {error.retryable && (
                 <button
                   onClick={() => {
                     setShowErrorModal(false);
-                    setError(null);
                     createPaymentRequest();
                   }}
-                  className="px-4 py-2 text-white bg-yellow-400 rounded-md hover:bg-yellow-500 transition-colors"
+                  className="flex-1 px-4 py-3 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all font-medium shadow-sm hover:shadow-md"
                 >
-                  Reintentar
+                  Reintentar pago
                 </button>
               )}
+              <button
+                onClick={() => {
+                  setShowErrorModal(false);
+                }}
+                className={`${error.retryable ? 'flex-1' : 'w-full'} px-4 py-3 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium`}
+              >
+                {error.retryable ? 'Cancelar' : 'Cerrar'}
+              </button>
             </div>
           </div>
         </div>
