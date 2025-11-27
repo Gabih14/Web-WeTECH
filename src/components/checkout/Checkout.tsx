@@ -58,6 +58,9 @@ export default function Checkout() {
     billingPostalCode: "",
   });
 
+  const [error, setError] = useState<{ code: string; message: string; retryable: boolean } | null>(null);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+
   const BEARER_TOKEN = import.meta.env.VITE_API_BEARER_TOKEN; // Se usará cuando el pago esté activo
 
   // Sincroniza billing con envío si el check está marcado
@@ -239,15 +242,25 @@ export default function Checkout() {
 
       const data = await res.json();
       console.log("Respuesta del servidor:", data);
+      if (!res.ok) {
+        setError(data);
+        setShowErrorModal(true);
+        return;
+      }
+      // Manejo de la respuesta exitosa
       if (data?.naveUrl) {
         return data.naveUrl;
+      } else if (data?.code && data?.message) {
+        // Manejo de errores
+        setError(data);
+        setShowErrorModal(true);
       } else {
         throw new Error("No se recibió URL de Nave");
       }
     } catch (error) {
-      console.error("Error en createPaymentRequest:", error);
-      alert("Hubo un problema al generar el pago.");
-      return null;
+      console.error("Error en la solicitud de pago:", error);
+      setError({ code: "ERR_INTERNAL", message: "Error en la solicitud de pago", retryable: false });
+      setShowErrorModal(true);
     }
 
   };
@@ -289,7 +302,7 @@ export default function Checkout() {
       window.location.href = checkoutUrl; // Redirecciona al checkout externo (Agregar timeout si es necesario)
     } else {
       setIsLoading(false);
-      alert("Error al generar el pago");
+      console.log("Error al generar el pago");
     }
     // Referencia no-op para evitar warning de TS mientras está en under-development
     if (false) {
@@ -662,6 +675,46 @@ export default function Checkout() {
           </div>
         </div>
       </div>
+
+      {/* Modal de error */}
+      {showErrorModal && error && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Error en el pago
+            </h3>
+            <p className="text-gray-600 mb-2">{error.message}</p>
+            <p className="text-sm text-gray-500 mb-6">
+              {error.retryable 
+                ? "Por favor, vuelve a intentarlo." 
+                : "Por favor, vuelve más tarde."}
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowErrorModal(false);
+                  setError(null);
+                }}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+              >
+                Cerrar
+              </button>
+              {error.retryable && (
+                <button
+                  onClick={() => {
+                    setShowErrorModal(false);
+                    setError(null);
+                    createPaymentRequest();
+                  }}
+                  className="px-4 py-2 text-white bg-yellow-400 rounded-md hover:bg-yellow-500 transition-colors"
+                >
+                  Reintentar
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
