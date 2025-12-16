@@ -16,6 +16,8 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { addToCart, items } = useCart();
+  const FILAMENT_GROUP = "FILAMENTO 3D";
+  const isFilament = product.category === FILAMENT_GROUP;
 
   // Función para obtener el primer color con stock disponible
   const getFirstColorWithStock = () => {
@@ -37,7 +39,7 @@ export function ProductCard({ product }: ProductCardProps) {
   );
   const [currentPromotionalPrice, setCurrentPromotionalPrice] = useState<
     number | undefined
-  >(product.category === "FILAMENTOS" ? product.promotionalPrice : undefined);
+  >(isFilament ? product.promotionalPrice : undefined);
   const [isColorMenuOpen, setIsColorMenuOpen] = useState(false);
   const [selectedColor, setSelectedColor] = useState<string | null>(
     getFirstColorWithStock()
@@ -83,7 +85,7 @@ const getStockStatus = () => {
       setCurrentPrice(originalPrice);
       setCurrentPromotionalPrice(discountedPrice);
     } else {
-      // No aplicar descuentos para no FILAMENTOS
+      // No aplicar descuentos para categorías que no son filamento
       if (selectedWeight !== null && product.weights) {
         const weightData = product.weights.find((w) => w.weight === selectedWeight);
         if (weightData) setCurrentPrice(weightData.price);
