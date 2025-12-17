@@ -11,7 +11,7 @@ import { Reviews } from "../components/home/ReviewSection";
 
 const categories = [
   {
-    id: "filamentos",
+    id: "FILAMENTO 3D",
     name: "Filamentos",
     description:
       "Descubre nuestra amplia gama de filamentos PLA y técnicos para tus proyectos.",

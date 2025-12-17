@@ -728,25 +728,14 @@ export default function Checkout() {
             </div>
 
             {/* Botones de acción */}
-            <div className="px-6 pb-6 flex gap-3">
-              {error.retryable && (
-                <button
-                  onClick={() => {
-                    setShowErrorModal(false);
-                    createPaymentRequest();
-                  }}
-                  className="flex-1 px-4 py-3 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all font-medium shadow-sm hover:shadow-md"
-                >
-                  Reintentar pago
-                </button>
-              )}
+            <div className="px-6 pb-6">
               <button
                 onClick={() => {
                   setShowErrorModal(false);
                 }}
-                className={`${error.retryable ? 'flex-1' : 'w-full'} px-4 py-3 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium`}
+                className="w-full px-4 py-3 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all font-medium shadow-sm hover:shadow-md"
               >
-                {error.retryable ? 'Cancelar' : 'Cerrar'}
+                Aceptar
               </button>
             </div>
           </div>
