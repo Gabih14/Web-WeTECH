@@ -6,6 +6,11 @@ import { shouldExcludeFamily } from "../data/excludedFamilies";
 
 export const fetchProducts = async (): Promise<Product[]> => {
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+  const FILAMENT_GROUP = "FILAMENTO 3D";
+  const isFilamentGroup = (group: string) => {
+    const upper = group?.toUpperCase();
+    return upper === FILAMENT_GROUP || upper === "FILAMENTOS"; // aceptar legacy
+  };
   if (!API_URL) {
     throw new Error("API URL is not defined");
   }
@@ -22,6 +27,22 @@ export const fetchProducts = async (): Promise<Product[]> => {
     const groupedProducts: { [key: string]: Product } = {};
 
     rawProducts.forEach((item: any) => {
+      // TEMP: mostrar solo productos cuya descripción empieza con "Grilon3" (testing)
+      const desc = (item.descripcion || "").trim();
+      if (!desc.startsWith("Grilon3")) {
+        return;
+      }
+
+      // Ignorar ítems cuyo id no cumpla el patrón con 3 guiones: XXXX-XXXX-XXXX-XXXX
+      const id: string = String(item.id || "");
+      const hasFourPartsWithThreeHyphens = /^[^-]+-[^-]+-[^-]+-[^-]+$/.test(id);
+      if (!hasFourPartsWithThreeHyphens) {
+        return;
+      }
+
+      const isFilament = isFilamentGroup(item.grupo);
+      const normalizedGroup = isFilament ? FILAMENT_GROUP : item.grupo;
+
       // Usar familia si está disponible, de lo contrario usar id
       const familia = item.familia || item.id;
       // const [marca, ...modeloArr] = familia.split(" ");
@@ -37,8 +58,8 @@ export const fetchProducts = async (): Promise<Product[]> => {
         return; // Salir de esta iteración
       }
 
-      // Ignorar ítems del grupo "FILAMENTOS" sin familia
-      if (item.grupo === "FILAMENTOS" && !item.familia) {
+      // Ignorar ítems del grupo de filamentos sin familia
+      if (isFilament && !item.familia) {
         return; // Salir de esta iteración
       }
 
@@ -48,11 +69,25 @@ export const fetchProducts = async (): Promise<Product[]> => {
       }
 
       if (!groupedProducts[familia]) {
+        // Derivar el nombre usando los dos primeros segmentos de la descripción ("Marca Material")
+        const productName = (() => {
+          if (item.descripcion) {
+            const parts = item.descripcion
+              .split("|")
+              .map((p: string) => p.trim())
+              .filter(Boolean);
+            if (parts.length >= 2) {
+              return `${parts[0]} ${parts[1]}`;
+            }
+          }
+          return familia;
+        })();
+
         // Generar rutas de imágenes para el producto
-        const generateProductImages = (itemId: string, itemGroup: string, familia: string) => {
-          const basePath = itemGroup === "FILAMENTOS" ? "/assets/filamentos" : "/assets/productos";
+        const generateProductImages = (itemId: string, isFilamentItem: boolean, familia: string) => {
+          const basePath = isFilamentItem ? "/assets/filamentos" : "/assets/productos";
           
-          if (itemGroup === "FILAMENTOS") {
+          if (isFilamentItem) {
             // Para filamentos, usar el nombre de la familia
             return [
               `${basePath}/${familia}.png`,
@@ -71,43 +106,46 @@ export const fetchProducts = async (): Promise<Product[]> => {
           }
         };
 
-        const productImages = generateProductImages(item.id, item.grupo, familia);
+        const productImages = generateProductImages(item.id, isFilament, familia);
         
         // Para filamentos, la imagen principal será la primera imagen de color
         let primaryImage = productImages[0];
         
         // Crear el producto principal
         groupedProducts[familia] = {
-          id: item.id,
-          name: familia,//item.id, //item.familia ? item.familia : item.descripcion
+          id: item.id, // considerar cambiar por productName
+          name: productName,
           description: item.descripcion,
           image: primaryImage, // Se actualizará después con la primera imagen de color para filamentos
           images: productImages, // Array completo de imágenes
-          category: item.grupo,
+          category: normalizedGroup,
           subcategory: item.subgrupo ? item.subgrupo.toUpperCase() : undefined,
           price: parseFloat(item.precioVtaCotizadoMin || "0"), // Guardar precioVtaCotizadoMin en todos los productos
-          ...(item.grupo === "FILAMENTOS" && { colors: [] }), // Solo agregar `colors` si es "FILAMENTOS"
-          ...(item.grupo !== "FILAMENTOS" && { stock: 0 }), // Solo agregar `stock` si no es "FILAMENTOS"
+          ...(isFilament && { colors: [] }), // Solo agregar `colors` si es filamento
+          ...(!isFilament && { stock: 0 }), // Solo agregar `stock` si no es filamento
         };
 
         // Solo agregar `weights` si el grupo es "FILAMENTOS"
-        if (item.grupo === "FILAMENTOS") {
+        if (isFilament) {
           groupedProducts[familia].weights = [];
         }
       }
 
       // Si el grupo es "FILAMENTOS", manejar los weights y precios
-      if (item.grupo === "FILAMENTOS") {
-        // Extraer el peso y la unidad (kg o g) de la presentación
-        const weightMatch = item.presentacion.match(/(\d+\.?\d*)\s*(kg|g)/i);
+      if (isFilament) {
+        // Extraer el peso del TERCER elemento de la descripción, en MAYÚSCULAS (e.g., "1kg" -> "1KG")
+        const descParts = String(item.descripcion || "")
+          .split("|")
+          .map((p: string) => p.trim());
+        const thirdPartUpper = (descParts[2] || "").toUpperCase();
+        const weightMatch = thirdPartUpper.match(/(\d+\.?\d*)\s*(KG|G)/);
         let weight = 0;
 
         if (weightMatch) {
-          const value = parseFloat(weightMatch[1]); // Extraer el número
-          const unit = weightMatch[2].toLowerCase(); // Extraer la unidad (kg o g)
-
+          const value = parseFloat(weightMatch[1]);
+          const unit = weightMatch[2]; // already uppercase KG/G
           // Convertir a kilogramos si es necesario
-          weight = unit === "g" ? value / 1000 : value;
+          weight = unit === "G" ? value / 1000 : value;
         }
         const price = parseFloat(item.precioVtaCotizadoMin || "0"); // Usar precioVtaCotizadoMin como precio
         const promotionalPrice = price - price * 0.15; // Calcular el precio promocional (15% de descuento)
@@ -127,7 +165,14 @@ export const fetchProducts = async (): Promise<Product[]> => {
         }
 
         // Manejar el stock por colores
-        const colorName = item.descripcion.split("|")[1]?.trim() || "Sin color"; // Extraer el color del campo descripción
+        // Extraer el color del ÚLTIMO segmento de la descripción (e.g., "Grilon3 | PLA | 1kg | Premium | Amarillo" -> "Amarillo")
+        const colorName = (() => {
+          const parts = String(item.descripcion || "")
+            .split("|")
+            .map((p: string) => p.trim())
+            .filter(Boolean);
+          return parts.length > 0 ? parts[parts.length - 1] : "Sin color";
+        })();
         const cantidad = parseFloat(item.stkExistencias?.[0]?.cantidad || "0");
         const comprometido = parseFloat(item.stkExistencias?.[0]?.comprometido || "0");
         const stock = Math.max(0, cantidad - comprometido); // Stock disponible = cantidad - comprometido (mínimo 0)
@@ -210,7 +255,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
     
     // Para filamentos, actualizar la imagen principal con la primera imagen de color
     transformedProducts.forEach(product => {
-      if (product.category === "FILAMENTOS" && product.colors && product.colors.length > 0) {
+      if (product.category === FILAMENT_GROUP && product.colors && product.colors.length > 0) {
         /* console.log(`Procesando filamento: ${product.name}`);
         console.log(`Colores disponibles:`, product.colors.map(c => c.name)); */
         
