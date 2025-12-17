@@ -16,6 +16,7 @@ import {
 export function ProductPage() {
   const { id } = useParams<{ id: string }>();
   const { addToCart, items } = useCart();
+  const FILAMENT_GROUP = "FILAMENTO 3D";
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -41,6 +42,7 @@ export function ProductPage() {
   }, []);
 
   const product = products.find((p) => p.id === id);
+  const isFilament = product?.category === FILAMENT_GROUP;
 
   // Inicializa los estados dependientes de product cuando product cambia
   useEffect(() => {
@@ -48,7 +50,7 @@ export function ProductPage() {
       setCurrentPrice(product.price);
       // Solo aplicar precio promocional inicial si es FILAMENTOS
       setCurrentPromotionalPrice(
-        product.category === "FILAMENTOS" ? product.promotionalPrice : undefined
+        isFilament ? product.promotionalPrice : undefined
       );
       
       // Función para obtener el primer color con stock disponible
@@ -70,7 +72,7 @@ export function ProductPage() {
       setSelectedWeight(product.weights?.[0]?.weight || null);
       
       // Para filamentos, solo mostrar imagen principal (sin galería)
-      if (product.category === "FILAMENTOS") {
+      if (isFilament) {
         setCurrentImages([product.image]);
       } else {
         setCurrentImages(product.images || [product.image]);
@@ -85,7 +87,7 @@ export function ProductPage() {
       const colorData = product.colors?.find((c) => c.name === selectedColor);
       if (colorData && colorData.images) {
         // Para filamentos, solo usar la primera imagen del color (sin galería)
-        if (product.category === "FILAMENTOS") {
+        if (isFilament) {
           setCurrentImages([colorData.images[0]]);
         } else {
           setCurrentImages(colorData.images);
@@ -99,40 +101,40 @@ export function ProductPage() {
 
   // Actualizar precios con descuentos por cantidad
   useEffect(() => {
-    if (product) {
-      if (shouldApplyDiscount(product)) {
-        if (selectedWeight !== null && product.weights) {
-          const weightData = product.weights.find(
-            (w) => w.weight === selectedWeight
-          );
-          if (weightData) {
-            const originalPrice = weightData.price;
+      if (product) {
+        if (shouldApplyDiscount(product)) {
+          if (selectedWeight !== null && product.weights) {
+            const weightData = product.weights.find(
+              (w) => w.weight === selectedWeight
+            );
+            if (weightData) {
+              const originalPrice = weightData.price;
+              const discountedPrice = calculateDiscountedPriceForProduct(product, originalPrice, quantity);
+              setCurrentPrice(originalPrice);
+              setCurrentPromotionalPrice(discountedPrice);
+            }
+          } else if (product.price) {
+            const originalPrice = product.price;
             const discountedPrice = calculateDiscountedPriceForProduct(product, originalPrice, quantity);
             setCurrentPrice(originalPrice);
             setCurrentPromotionalPrice(discountedPrice);
           }
-        } else if (product.price) {
-          const originalPrice = product.price;
-          const discountedPrice = calculateDiscountedPriceForProduct(product, originalPrice, quantity);
-          setCurrentPrice(originalPrice);
-          setCurrentPromotionalPrice(discountedPrice);
-        }
-      } else {
-        // No aplicar descuentos para productos que no son FILAMENTOS
-        if (selectedWeight !== null && product.weights) {
-          const weightData = product.weights.find(
-            (w) => w.weight === selectedWeight
-          );
-          if (weightData) {
-            setCurrentPrice(weightData.price);
+        } else {
+          // No aplicar descuentos para productos que no son filamento
+          if (selectedWeight !== null && product.weights) {
+            const weightData = product.weights.find(
+              (w) => w.weight === selectedWeight
+            );
+            if (weightData) {
+              setCurrentPrice(weightData.price);
+            }
+          } else if (product.price) {
+            setCurrentPrice(product.price);
           }
-        } else if (product.price) {
-          setCurrentPrice(product.price);
+          setCurrentPromotionalPrice(undefined);
         }
-        setCurrentPromotionalPrice(undefined);
       }
-    }
-  }, [product, selectedWeight, quantity]);
+  }, [product, selectedWeight, quantity, isFilament]);
 
   /* Si el producto no existe mostrar mensaje de error */
   if (!product) {
@@ -226,7 +228,7 @@ export function ProductPage() {
         </div>
         
         {/* Thumbnails para navegar entre imágenes - Solo para productos que NO son filamentos */}
-        {currentImages.length > 1 && product.category !== "FILAMENTOS" && (
+        {currentImages.length > 1 && product.category !== FILAMENT_GROUP && (
           <div className="flex gap-2 overflow-x-auto">
             {currentImages.map((img, index) => (
               <button

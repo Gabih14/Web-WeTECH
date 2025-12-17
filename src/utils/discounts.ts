@@ -6,10 +6,16 @@ export const QUANTITY_DISCOUNTS = {
   50: 0.22,   // 22% descuento por 50+ productos
 };
 
-// Reglas por categoría (extensible). Ejemplo: solo FILAMENTOS tiene descuentos.
+// Categorías que comparten la misma regla de descuento (aceptamos legacy y nuevo nombre)
+const FILAMENT_CATEGORIES = ["FILAMENTO 3D", "FILAMENTOS"] as const;
+
+// Reglas por categoría (extensible). Ejemplo: solo filamentos tienen descuentos.
 // Puedes agregar otras categorías con su propia escala sin tocar componentes.
-export const DISCOUNT_RULES: Record<string, { discounts: Record<number, number> } > = {
-  FILAMENTOS: { discounts: { ...QUANTITY_DISCOUNTS } },
+export const DISCOUNT_RULES: Record<string, { discounts: Record<number, number> }> = {
+  ...FILAMENT_CATEGORIES.reduce((acc, key) => {
+    acc[key] = { discounts: { ...QUANTITY_DISCOUNTS } };
+    return acc;
+  }, {} as Record<string, { discounts: Record<number, number> }>),
   // Otras categorías: agregar aquí si en el futuro aplican descuentos
   // "IMPRESORAS": { discounts: { 1: 0.05, 3: 0.08 } }
 };
