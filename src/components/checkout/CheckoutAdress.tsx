@@ -1,4 +1,4 @@
-import { MapPin, Store, Truck } from "lucide-react"; //MapPin,
+import { MapPin, Store, Truck, AlertCircle, X } from "lucide-react"; //MapPin,
 import { useState } from "react";
 import { ShippingInfoModal } from "./ShippingInfoModal";
 import { apiFetch } from "../../services/api";
@@ -33,12 +33,15 @@ export const CheckoutAdress = ({
 
   const [showShippingInfo, setShowShippingInfo] = useState(false);
   const [shippingInfoChecked, setShippingInfoChecked] = useState(false);
+  const [showShippingErrorModal, setShowShippingErrorModal] = useState(false);
+  const [shippingError, setShippingError] = useState<{ message: string; retryable: boolean } | null>(null);
   // Función para calcular el costo de envío
   const calculateShippingCost = async (distance: number): Promise<number> => {
     try {
       // Redondear la distancia al entero más cercano para el endpoint
       const roundedDistance = Math.round(distance);
       const response = await apiFetch(`/stk-item/costo/${roundedDistance}`);
+      console.log("Costo de envío recibido:", response);
       return response.costoTotal;
     } catch (error) {
       console.error("Error al obtener costo de envío:", error);
@@ -69,7 +72,6 @@ export const CheckoutAdress = ({
           `¿Este es tu domicilio?\n\n${data.destinationResolved}\n\nPresiona "Aceptar" si es correcto, o "Cancelar" para volver a intentarlo con datos más precisos.`
         );
         if (!isConfirmed) {
-          alert("Por favor, ingresa tu dirección con más detalles.");
           setCalculatingShipping(false);
           setConfirmedAddress(null);
           return;
@@ -78,18 +80,21 @@ export const CheckoutAdress = ({
         const distanceText = data.distance; // Ejemplo: "2.2 km"
         const distanceValue = parseFloat(distanceText.replace(" km", ""));
         if (distanceValue > 20) {
-          alert("La distancia supera los 20 km. El envío no está permitido.");
+          setShippingError({ message: "La distancia supera los 20 km. El envío no está permitido.", retryable: false });
+          setShowShippingErrorModal(true);
           setShippingCost(0);
         } else {
           const cost = await calculateShippingCost(distanceValue);
           setShippingCost(cost);
         }
       } else {
-        alert("No se pudo calcular la distancia. Verifica la dirección.");
+        setShippingError({ message: "No se pudo calcular la distancia. Verifica la dirección.", retryable: true });
+        setShowShippingErrorModal(true);
       }
     } catch (error) {
       console.error("Error al obtener la distancia:", error);
-      alert("Hubo un error al calcular la distancia. Inténtalo de nuevo.");
+      setShippingError({ message: "Hubo un error al calcular la distancia. Inténtalo de nuevo.", retryable: true });
+      setShowShippingErrorModal(true);
     } finally {
       setCalculatingShipping(false);
     }
@@ -343,6 +348,65 @@ export const CheckoutAdress = ({
                 open={showShippingInfo}
                 onClose={() => setShowShippingInfo(false)}
               />
+            )}
+
+            {/* Modal de error de envío */}
+            {showShippingErrorModal && shippingError && (
+              <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+                <div 
+                  className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="shipping-error-title"
+                >
+                  <div className="relative px-6 pt-6 pb-4">
+                    <button
+                      onClick={() => {
+                        setShowShippingErrorModal(false);
+                      }}
+                      className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
+                      aria-label="Cerrar"
+                    >
+                      <X size={20} />
+                    </button>
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0 w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                        <AlertCircle className="text-red-600" size={24} />
+                      </div>
+                      <div className="flex-1 pt-1">
+                        <h3 
+                          id="shipping-error-title"
+                          className="text-xl font-semibold text-gray-900 mb-1"
+                        >
+                          Error al calcular envío
+                        </h3>
+                        <p className="text-gray-600 leading-relaxed">
+                          {shippingError.message}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="px-6 pb-6">
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <p className="text-sm text-gray-700">
+                        {shippingError.retryable 
+                          ? "💡 Puedes intentar calcular nuevamente." 
+                          : "⏰ Por favor, intenta más tarde o contacta con soporte."}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="px-6 pb-6">
+                    <button
+                      onClick={() => {
+                        setShowShippingErrorModal(false);
+                      }}
+                      className="w-full px-4 py-3 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all font-medium shadow-sm hover:shadow-md"
+                    >
+                      Aceptar
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         )}
