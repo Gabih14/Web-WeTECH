@@ -68,6 +68,8 @@ export const fetchProducts = async (): Promise<Product[]> => {
         return; // Salir de esta iteración
       }
 
+      const itemImageUrl = typeof item.fotoUrl === "string" ? item.fotoUrl : null;
+
       if (!groupedProducts[familia]) {
         // Derivar el nombre usando los dos primeros segmentos de la descripción ("Marca Material")
         const productName = (() => {
@@ -83,33 +85,10 @@ export const fetchProducts = async (): Promise<Product[]> => {
           return familia;
         })();
 
-        // Generar rutas de imágenes para el producto
-        const generateProductImages = (itemId: string, isFilamentItem: boolean, familia: string) => {
-          const basePath = isFilamentItem ? "/assets/filamentos" : "/assets/productos";
-          
-          if (isFilamentItem) {
-            // Para filamentos, usar el nombre de la familia
-            return [
-              `${basePath}/${familia}.png`,
-              `${basePath}/${familia}_1.png`,
-              `${basePath}/${familia}_2.png`,
-              `${basePath}/${familia}_3.png`,
-            ];
-          } else {
-            // Para otros productos, usar el ID
-            return [
-              `${basePath}/${itemId}.png`,
-              `${basePath}/${itemId}_1.png`,
-              `${basePath}/${itemId}_2.png`,
-              `${basePath}/${itemId}_3.png`,
-            ];
-          }
-        };
-
-        const productImages = generateProductImages(item.id, isFilament, familia);
+        const productImages = itemImageUrl ? [itemImageUrl] : [];
         
-        // Para filamentos, la imagen principal será la primera imagen de color
-        let primaryImage = productImages[0];
+        // Para filamentos, la imagen principal será la primera imagen de color (se actualizará luego)
+        let primaryImage = itemImageUrl || "";
         
         // Crear el producto principal
         groupedProducts[familia] = {
@@ -117,7 +96,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
           name: productName,
           description: item.descripcion,
           image: primaryImage, // Se actualizará después con la primera imagen de color para filamentos
-          images: productImages, // Array completo de imágenes
+          images: productImages.length ? productImages : undefined, // Array completo de imágenes
           category: normalizedGroup,
           subcategory: item.subgrupo ? item.subgrupo.toUpperCase() : undefined,
           price: parseFloat(item.precioVtaCotizadoMin || "0"), // Guardar precioVtaCotizadoMin en todos los productos
@@ -129,6 +108,12 @@ export const fetchProducts = async (): Promise<Product[]> => {
         if (isFilament) {
           groupedProducts[familia].weights = [];
         }
+      }
+
+      // Agregar imagen del ítem al producto agrupado (si existe y no está ya)
+      const currentImages = groupedProducts[familia].images || [];
+      if (itemImageUrl && !currentImages.includes(itemImageUrl)) {
+        groupedProducts[familia].images = [...currentImages, itemImageUrl];
       }
 
       // Si el grupo es "FILAMENTOS", manejar los weights y precios
@@ -195,36 +180,16 @@ export const fetchProducts = async (): Promise<Product[]> => {
           if (!existingColor.itemId) {
             existingColor.itemId = item.id;
           }
-        } else {
-          // Función para normalizar nombres de colores para que coincidan con archivos
-          const normalizeColorName = (familia: string, color: string): string => {
-            // Mapeo específico para familias y colores que no coinciden con archivos
-            const colorMappings: { [key: string]: { [key: string]: string } } = {
-              '3N3 EPET': {
-                'Azul Traful': 'AZUL',
-                'Blanco': 'BLANCO', 
-                'Gris Espacial': 'GRIS ESPACIAL',
-                'Negro': 'NEGRO',
-                'Rojo Carmin': 'ROJO CARMIN',
-                'Verde Lima': 'VERDE LIMA'
-              }
-            };
-
-            const familiaMapping = colorMappings[familia];
-            if (familiaMapping && familiaMapping[color]) {
-              //console.log(`Color mapping: ${familia} ${color} -> ${familiaMapping[color]}`);
-              return familiaMapping[color];
+          // Asociar imagen si no estaba
+          if (itemImageUrl) {
+            const existingImages = existingColor.images || [];
+            if (!existingImages.includes(itemImageUrl)) {
+              existingColor.images = [...existingImages, itemImageUrl];
             }
-            
-            return color.toUpperCase();
-          };
-
-          // Generar imágenes específicas para este color
-          // Para filamentos: solo una imagen por color
-          const normalizedColor = normalizeColorName(familia, colorName);
-          const colorImages = [
-            `/assets/filamentos/${familia} ${normalizedColor}.png`,
-          ];
+          }
+        } else {
+          // Generar imágenes específicas para este color usando fotoUrl del item (si existe)
+          const colorImages = itemImageUrl ? [itemImageUrl] : [];
           
           //console.log(`Generando imagen para ${familia} color ${colorName}:`, colorImages[0]);
           
@@ -253,48 +218,24 @@ export const fetchProducts = async (): Promise<Product[]> => {
     // Convertir el objeto agrupado en un array
     const transformedProducts = Object.values(groupedProducts);
     
-    // Para filamentos, actualizar la imagen principal con la primera imagen de color
+    // Para filamentos, actualizar la imagen principal con la primera imagen de color disponible
     transformedProducts.forEach(product => {
       if (product.category === FILAMENT_GROUP && product.colors && product.colors.length > 0) {
-        /* console.log(`Procesando filamento: ${product.name}`);
-        console.log(`Colores disponibles:`, product.colors.map(c => c.name)); */
-        
         // Ordenar colores alfabéticamente para consistencia
         const sortedColors = product.colors.sort((a, b) => a.name.localeCompare(b.name));
-        
-        // Intentar con el primer color, si no funciona, buscar alternativas
-        let primaryImage = null;
-        
-        // Lista de colores prioritarios para buscar imagen
-        const priorityColors = ['AZUL', 'BLANCO', 'NEGRO', 'ROJO', 'VERDE'];
-        
-        // Intentar primero con colores prioritarios
-        for (const priorityColor of priorityColors) {
-          const foundColor = sortedColors.find(c => c.name.toUpperCase().includes(priorityColor));
-          if (foundColor && foundColor.images?.[0]) {
-            primaryImage = foundColor.images[0];
-            //console.log(`Usando imagen de color prioritario ${foundColor.name} para ${product.name}:`, primaryImage);
-            break;
-          }
+
+        const colorWithImage = sortedColors.find(c => c.images && c.images.length > 0);
+        if (colorWithImage && colorWithImage.images) {
+          product.image = colorWithImage.images[0];
+        } else if (!product.image) {
+          product.image = "";
         }
-        
-        // Si no encontró imagen con colores prioritarios, usar el primer color disponible
-        if (!primaryImage) {
-          const firstColorImage = sortedColors[0].images?.[0];
-          if (firstColorImage) {
-            primaryImage = firstColorImage;
-            //console.log(`Usando primera imagen disponible para ${product.name}:`, primaryImage);
-          }
-        }
-        
-        if (primaryImage) {
-          product.image = primaryImage;
-        } else {
-          console.warn(`No se pudo encontrar imagen para ${product.name}`);
-        }
-        
+
         // Actualizar el array de colores con el orden alfabético
         product.colors = sortedColors;
+      } else if (!product.image && product.images && product.images.length > 0) {
+        // Para otros productos, si no se asignó imagen principal usar la primera disponible
+        product.image = product.images[0];
       }
     });
     console.log("Transformed products:", transformedProducts);
