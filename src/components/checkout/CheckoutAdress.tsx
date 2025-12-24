@@ -55,16 +55,42 @@ export const CheckoutAdress = ({
   const fetchDistance = async () => {
     setCalculatingShipping(true);
     try {
-      const response = await fetch(`${API_URL}/maps/distance`, {
-        method: "POST",
-        headers: { "Authorization": `Bearer ${BEARER_TOKEN}`,"Content-Type": "application/json" },
-        body: JSON.stringify({
-          address: `${formData.street} ${formData.number}`,
-          city: formData.city,
-        }),
-      });
-      const data = await response.json();
-      console.log("Respuesta del backend:", data);
+      let data;
+      
+      // Simulación en desarrollo
+      if (import.meta.env.DEV) {
+        // Simular respuesta de la API
+        data = {
+          distance: "3.6 km",
+          duration: "11 mins",
+          destinationResolved: "33 Orientales 369, M5501AQG Mendoza, Argentina",
+          originResolved: "Santiago de Liniers 670, M5501 Godoy Cruz, Mendoza, Argentina",
+          raw: {
+            distance: {
+              text: "3.6 km",
+              value: 3640,
+            },
+            duration: {
+              text: "11 mins",
+              value: 661,
+            },
+            status: "OK",
+          },
+        };
+        console.log("Respuesta simulada (desarrollo):", data);
+      } else {
+        // Fetch real en producción
+        const response = await fetch(`${API_URL}/maps/distance`, {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${BEARER_TOKEN}`,"Content-Type": "application/json" },
+          body: JSON.stringify({
+            address: `${formData.street} ${formData.number}`,
+            city: formData.city,
+          }),
+        });
+        data = await response.json();
+        console.log("Respuesta del backend:", data);
+      }
 
       if (data && data.distance && data.destinationResolved) {
         // Pregunta al usuario si la dirección resuelta es correcta
