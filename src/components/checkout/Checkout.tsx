@@ -191,7 +191,8 @@ export default function Checkout() {
     const body = {
       cliente_nombre: formData.name,
       cliente_cuit: formData.cuit,
-      total: Number(total.toFixed(2)),
+      total: Number((total + shippingCost).toFixed(2)),  // ← Incluir envío
+      costo_envio: Number(shippingCost.toFixed(2)),
       email: formData.email,
       telefono: formData.phone,
       calle,
