@@ -13,7 +13,7 @@ type Props = {
     observaciones: string;
   };
   handleInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  setShippingCost: (cost: number) => void;
+  setShippingData: (data: { itemId: string; costoTotal: number } | null) => void;
   deliveryMethod: "pickup" | "shipping";
   setDeliveryMethod: (method: "pickup" | "shipping") => void;
   confirmedAddress: string | null;
@@ -23,7 +23,7 @@ type Props = {
 export const CheckoutAdress = ({
   formData,
   handleInputChange,
-  setShippingCost,
+  setShippingData,
   deliveryMethod,
   setDeliveryMethod,
   confirmedAddress,
@@ -36,16 +36,16 @@ export const CheckoutAdress = ({
   const [showShippingErrorModal, setShowShippingErrorModal] = useState(false);
   const [shippingError, setShippingError] = useState<{ message: string; retryable: boolean } | null>(null);
   // Función para calcular el costo de envío
-  const calculateShippingCost = async (distance: number): Promise<number> => {
+  const calculateShippingCost = async (distance: number): Promise<{ itemId: string; costoTotal: number } | null> => {
     try {
       // Redondear la distancia al entero más cercano para el endpoint
       const roundedDistance = Math.round(distance);
       const response = await apiFetch(`/stk-item/costo/${roundedDistance}`);
       console.log("Costo de envío recibido:", response);
-      return response.costoTotal;
+      return { itemId: response.itemId, costoTotal: response.costoTotal };
     } catch (error) {
       console.error("Error al obtener costo de envío:", error);
-      return 0;
+      return null;
     }
   };
   const [calculatingShipping, setCalculatingShipping] = useState(false);
@@ -108,10 +108,16 @@ export const CheckoutAdress = ({
         if (distanceValue > 20) {
           setShippingError({ message: "La distancia supera los 20 km. El envío no está permitido.", retryable: false });
           setShowShippingErrorModal(true);
-          setShippingCost(0);
+          setShippingData(null);
         } else {
-          const cost = await calculateShippingCost(distanceValue);
-          setShippingCost(cost);
+          const shippingInfo = await calculateShippingCost(distanceValue);
+          if (shippingInfo) {
+            setShippingData(shippingInfo);
+          } else {
+            setShippingError({ message: "No se pudo calcular el costo de envío.", retryable: true });
+            setShowShippingErrorModal(true);
+            setShippingData(null);
+          }
         }
       } else {
         setShippingError({ message: "No se pudo calcular la distancia. Verifica la dirección.", retryable: true });
@@ -130,7 +136,7 @@ export const CheckoutAdress = ({
   const handleDeliveryMethod = (method: "pickup" | "shipping") => {
     setDeliveryMethod(method);
     if (method === "pickup") {
-      setShippingCost(0);
+      setShippingData(null);
     }
     // Si es shipping, el costo se calcula con fetchDistance
   };

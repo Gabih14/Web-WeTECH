@@ -34,7 +34,7 @@ export default function Checkout() {
   const navigate = useNavigate();
   const isMobile = useMediaQuery("(max-width: 768px)"); // Detecta si es móvil
   const { items, total } = useCart();
-  const [shippingCost, setShippingCost] = useState(0);
+  const [shippingData, setShippingData] = useState<{ itemId: string; costoTotal: number } | null>(null);
   const [deliveryMethod, setDeliveryMethod] = useState<"pickup" | "shipping">(
     "pickup"
   );
@@ -191,8 +191,8 @@ export default function Checkout() {
     const body = {
       cliente_nombre: formData.name,
       cliente_cuit: formData.cuit,
-      total: Number((total + shippingCost).toFixed(2)),  // ← Incluir envío
-      costo_envio: Number(shippingCost.toFixed(2)),
+      total: Number((total + (shippingData?.costoTotal || 0)).toFixed(2)),  // ← Incluir envío
+      costo_envio: Number((shippingData?.costoTotal || 0).toFixed(2)),
       email: formData.email,
       telefono: formData.phone,
       calle,
@@ -204,29 +204,41 @@ export default function Checkout() {
       observaciones: formData.observaciones,
       direccion: confirmedAddress || "",
       mobile: isMobile,
-      productos: items.map((item) => {
-        // Buscar el ID original del ítem según el color seleccionado (si aplica)
-        const colorData = item.color
-          ? item.product.colors?.find(
-            (c) => c.name.toLowerCase() === item.color.toLowerCase()
-          )
-          : undefined;
+      productos: [
+        ...items.map((item) => {
+          // Buscar el ID original del ítem según el color seleccionado (si aplica)
+          const colorData = item.color
+            ? item.product.colors?.find(
+              (c) => c.name.toLowerCase() === item.color.toLowerCase()
+            )
+            : undefined;
 
-        const nombre = colorData?.itemId || item.product.id;
+          const nombre = colorData?.itemId || item.product.id;
 
-        return {
-          nombre,
-          cantidad: item.quantity,
-          precio_unitario:
-            calculateItemPriceWithDiscount(
-              item.product,
-              item.weight,
-              item.quantity
-            ) ??
-            getPrice(item.product, item.weight) ??
-            0,
-        };
-      }),
+          return {
+            nombre,
+            cantidad: item.quantity,
+            precio_unitario:
+              calculateItemPriceWithDiscount(
+                item.product,
+                item.weight,
+                item.quantity
+              ) ??
+              getPrice(item.product, item.weight) ??
+              0,
+          };
+        }),
+        // Agregar shipping como producto si aplica
+        ...(deliveryMethod === "shipping" && shippingData
+          ? [
+              {
+                nombre: shippingData.itemId,
+                cantidad: 1,
+                precio_unitario: shippingData.costoTotal,
+              },
+            ]
+          : []),
+      ],
       billing_address,
     };
     console.log("Cuerpo de la solicitud de pago:", body);
@@ -385,7 +397,7 @@ export default function Checkout() {
             <CheckoutAdress
               formData={formData}
               handleInputChange={handleInputChange}
-              setShippingCost={setShippingCost}
+              setShippingData={setShippingData}
               deliveryMethod={deliveryMethod}
               setDeliveryMethod={setDeliveryMethod}
               confirmedAddress={confirmedAddress}
@@ -430,7 +442,7 @@ export default function Checkout() {
               disabled={
                 isLoading ||
                 (deliveryMethod === "shipping" &&
-                  (!shippingCost || !confirmedAddress))
+                  (!shippingData || !confirmedAddress))
               }
             >
               {isLoading ? (
@@ -445,7 +457,7 @@ export default function Checkout() {
 
             {deliveryMethod === "shipping" && !isLoading && (
               <div className="mt-2 text-center text-sm text-red-600 font-semibold">
-                {!shippingCost
+                {!shippingData
                   ? "Debes calcular el costo de envío antes de continuar."
                   : !confirmedAddress
                     ? "Debes confirmar tu dirección antes de continuar."
@@ -631,7 +643,7 @@ export default function Checkout() {
                     <dt className="text-sm text-gray-600">Envío</dt>
                     <dd className="text-sm font-medium text-gray-900">
                       $
-                      {shippingCost.toLocaleString("es-ES", {
+                      {(shippingData?.costoTotal || 0).toLocaleString("es-ES", {
                         minimumFractionDigits: 0,
                         maximumFractionDigits: 0,
                       })}
@@ -653,7 +665,7 @@ export default function Checkout() {
                     </dt>
                     <dd className="text-xl font-bold text-black">
                       $
-                      {(total + shippingCost).toLocaleString("es-ES", {
+                      {(total + (shippingData?.costoTotal || 0)).toLocaleString("es-ES", {
                         minimumFractionDigits: 0,
                         maximumFractionDigits: 0,
                       })}
