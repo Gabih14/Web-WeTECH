@@ -28,20 +28,20 @@ export const fetchProducts = async (): Promise<Product[]> => {
 
     rawProducts.forEach((item: any) => {
       // TEMP: mostrar solo productos cuya descripción empieza con "Grilon3" (testing)
-      const desc = (item.descripcion || "").trim();
-      if (!desc.startsWith("Grilon3")) {
+      //const desc = (item.descripcion || "").trim();
+      /* if (!desc.startsWith("Grilon3")) {
         return;
-      }
-
-      // Ignorar ítems cuyo id no cumpla el patrón con 3 guiones: XXXX-XXXX-XXXX-XXXX
-      const id: string = String(item.id || "");
-      const hasFourPartsWithThreeHyphens = /^[^-]+-[^-]+-[^-]+-[^-]+$/.test(id);
-      if (!hasFourPartsWithThreeHyphens) {
-        return;
-      }
+      } */
 
       const isFilament = isFilamentGroup(item.grupo);
       const normalizedGroup = isFilament ? FILAMENT_GROUP : item.grupo;
+
+       // Ignorar ítems filamentos cuyo id no cumpla el patrón con 3 guiones: XXXX-XXXX-XXXX-XXXX
+      const id: string = String(item.id || "");
+      const hasFourPartsWithThreeHyphens = /^[^-]+-[^-]+-[^-]+-[^-]+$/.test(id);
+      if (!hasFourPartsWithThreeHyphens && isFilament) {
+        return;
+      }
 
       // Usar familia si está disponible, de lo contrario usar id
       const familia = item.familia || item.id;
@@ -86,10 +86,10 @@ export const fetchProducts = async (): Promise<Product[]> => {
         })();
 
         const productImages = itemImageUrl ? [itemImageUrl] : [];
-        
+
         // Para filamentos, la imagen principal será la primera imagen de color (se actualizará luego)
         let primaryImage = itemImageUrl || "";
-        
+
         // Crear el producto principal
         groupedProducts[familia] = {
           id: item.id, // considerar cambiar por productName
@@ -190,9 +190,9 @@ export const fetchProducts = async (): Promise<Product[]> => {
         } else {
           // Generar imágenes específicas para este color usando fotoUrl del item (si existe)
           const colorImages = itemImageUrl ? [itemImageUrl] : [];
-          
+
           //console.log(`Generando imagen para ${familia} color ${colorName}:`, colorImages[0]);
-          
+
           // Si el color no existe, agregarlo
           groupedProducts[familia].colors?.push({
             name: colorName,
@@ -209,7 +209,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
         const cantidad = parseFloat(item.stkExistencias?.[0]?.cantidad || "0");
         const comprometido = parseFloat(item.stkExistencias?.[0]?.comprometido || "0");
         const stockDisponible = Math.max(0, cantidad - comprometido);
-        
+
         groupedProducts[familia].stock =
           (groupedProducts[familia].stock || 0) + stockDisponible;
       }
@@ -217,7 +217,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
 
     // Convertir el objeto agrupado en un array
     const transformedProducts = Object.values(groupedProducts);
-    
+
     // Para filamentos, actualizar la imagen principal con la primera imagen de color disponible
     transformedProducts.forEach(product => {
       if (product.category === FILAMENT_GROUP && product.colors && product.colors.length > 0) {
@@ -239,7 +239,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
       }
     });
     console.log("Transformed products:", transformedProducts);
-    
+
     return transformedProducts;
   } catch (error: any) {
     console.error("Error al obtener los productos:", error.message);
