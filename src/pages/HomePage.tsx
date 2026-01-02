@@ -19,7 +19,7 @@ const categories = [
     image: filamentoCategoria,
   },
   {
-    id: "IMPRESORAS FDM",
+    id: "IMPRESORAS 3D",
     name: "Impresoras 3D",
     description:
       "Encuentra la impresora perfecta. Incluye curso de uso y armado gratuito.",
@@ -27,7 +27,7 @@ const categories = [
     image: impresoraCategoria,
   },
   {
-    id: "repuestos",
+    id: "REPUESTOS+%26+ACCESORIOS",
     name: "Repuestos",
     description:
       "Todo lo que necesitas para mantener tu impresora funcionando perfectamente.",
@@ -235,7 +235,7 @@ const closeModal = () => {
             Sumate a nuestra franquicia y llevá la revolución 3D a tu provincia.
           </p>
           <Link
-            to="/franquicias"
+            to="/franquicias/mendoza"
             className="inline-block px-6 py-2 bg-yellow-500 text-white font-semibold rounded-lg shadow hover:bg-yellow-700 transition"
           >
             Más info
