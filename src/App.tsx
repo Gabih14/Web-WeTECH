@@ -11,8 +11,12 @@ import Checkout from "./components/checkout/Checkout";
 import PaymentCallback from "./pages/PaymentCallback";
 import { Franquicias } from "./pages/Franquicias";
 import { UnderDevelopment } from "./pages/UnderDevelopment";
+import { useMetaPixel } from "./hooks/useMetaPixel";
 
 function App() {
+
+  useMetaPixel();
+
   return (
     <div className="grid grid-rows-[auto_1fr_auto] min-h-screen bg-gray-100 overflow-x-hidden">
       {" "}
@@ -31,7 +35,7 @@ function App() {
               element={<PaymentCallback />}
             />{" "}
             {/* http://localhost:5173/checkout/callback?payment_id=12345 */}
-            <Route path="/franquicias" element={<Franquicias />} />
+            <Route path="/franquicias/:provincia" element={<Franquicias />} />
             <Route path="/under-development" element={<UnderDevelopment />} />
           </Routes>
           <Footer />
