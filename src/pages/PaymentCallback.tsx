@@ -1,6 +1,12 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { CheckCircle, XCircle, Loader, PartyPopper, RefreshCw } from "lucide-react";
+import {
+  CheckCircle,
+  XCircle,
+  Loader,
+  PartyPopper,
+  RefreshCw,
+} from "lucide-react";
 import { apiFetch } from "../services/api";
 
 // Enum para los posibles estados del pago
@@ -14,6 +20,7 @@ const PaymentStatus = {
 interface Producto {
   id: number;
   nombre: string;
+  descripcion: string;
   cantidad: number;
   precio_unitario: number;
 }
@@ -43,12 +50,12 @@ const PaymentCallback = () => {
 
   // Obtener el external_id de los parámetros de la URL (compatibilidad con distintos gateways)
   const externalId =
-    searchParams.get('external_id') ||
-    searchParams.get('order_id') ||
-    searchParams.get('id') ||
-    searchParams.get('payment_id') ||
-    searchParams.get('preference_id') ||
-    searchParams.get('collection_id');
+    searchParams.get("external_id") ||
+    searchParams.get("order_id") ||
+    searchParams.get("id") ||
+    searchParams.get("payment_id") ||
+    searchParams.get("preference_id") ||
+    searchParams.get("collection_id");
 
   // Log de diagnóstico si no se encuentra ningún ID en la URL
   useEffect(() => {
@@ -58,10 +65,13 @@ const PaymentCallback = () => {
         // Object.fromEntries puede lanzar en navegadores antiguos, por eso el try/catch
         // pero en entornos modernos (y React) es seguro.
         // eslint-disable-next-line no-console
-        console.warn('No se encontró un identificador de pedido en la URL. Params:', Object.fromEntries(searchParams.entries()));
+        console.warn(
+          "No se encontró un identificador de pedido en la URL. Params:",
+          Object.fromEntries(searchParams.entries())
+        );
       } catch {
         // eslint-disable-next-line no-console
-        console.warn('No se encontró un identificador de pedido en la URL.');
+        console.warn("No se encontró un identificador de pedido en la URL.");
       }
     }
   }, [externalId, searchParams]);
@@ -74,7 +84,6 @@ const PaymentCallback = () => {
       setIsRefreshing(true);
       const data: PedidoData = await apiFetch(`/pedido/${externalId}`);
       setPedidoData(data);
-
       // Actualizar el estado basado en el nuevo estado del pedido
       if (data.estado === "APROBADO") {
         setStatus(PaymentStatus.SUCCESS);
@@ -83,7 +92,7 @@ const PaymentCallback = () => {
       } else {
         setStatus(PaymentStatus.LOADING);
       }
-      
+
       // Limpiar errores previos si la petición fue exitosa
       setError(null);
     } catch (error) {
@@ -134,11 +143,11 @@ const PaymentCallback = () => {
 
       try {
         setStatus(PaymentStatus.LOADING);
-        
+
         // Hacer petición al endpoint usando apiFetch
         const data: PedidoData = await apiFetch(`/pedido/${externalId}`);
         setPedidoData(data);
-
+        console.log(data);
         // Determinar el estado basado en el estado del pedido
         if (data.estado === "APROBADO") {
           setStatus(PaymentStatus.SUCCESS);
@@ -148,7 +157,6 @@ const PaymentCallback = () => {
           // Para estados como "PENDIENTE", mantener como loading y verificar periódicamente
           setStatus(PaymentStatus.LOADING);
         }
-        
       } catch (error) {
         console.error("Error al obtener el pedido:", error);
         setError(error instanceof Error ? error.message : "Error desconocido");
@@ -168,10 +176,13 @@ const PaymentCallback = () => {
         try {
           const data: PedidoData = await apiFetch(`/pedido/${externalId}`);
           setPedidoData(data);
-          
+
           if (data.estado === "APROBADO") {
             setStatus(PaymentStatus.SUCCESS);
-          } else if (data.estado === "RECHAZADO" || data.estado === "CANCELADO") {
+          } else if (
+            data.estado === "RECHAZADO" ||
+            data.estado === "CANCELADO"
+          ) {
             setStatus(PaymentStatus.FAIL);
           }
         } catch (error) {
@@ -195,17 +206,20 @@ const PaymentCallback = () => {
           <div className="flex flex-col items-center justify-center space-y-4">
             <Loader className="animate-spin text-blue-500" size={64} />
             <h2 className="text-xl font-semibold">
-              {pedidoData ? 'Verificando estado del pedido' : 'Cargando información del pedido'}
+              {pedidoData
+                ? "Verificando estado del pedido"
+                : "Cargando información del pedido"}
             </h2>
             <p className="text-gray-600 text-center">
               {pedidoData ? (
                 <>
-                  Su pedido está en estado <span className="font-medium">{pedidoData.estado}</span>.
+                  Su pedido está en estado{" "}
+                  <span className="font-medium">{pedidoData.estado}</span>.
                   <br />
                   Por favor espere mientras verificamos el pago...
                 </>
               ) : (
-                'Por favor espere mientras obtenemos la información de su pedido...'
+                "Por favor espere mientras obtenemos la información de su pedido..."
               )}
             </p>
             {pedidoData && (
@@ -214,19 +228,21 @@ const PaymentCallback = () => {
                 <div className="mt-2 space-y-1 text-sm">
                   <p>ID: {pedidoData.id}</p>
                   <p>Cliente: {pedidoData.cliente_nombre}</p>
-                  <p>Total: ${pedidoData.total.toLocaleString('es-AR')} ARS</p>
+                  <p>Total: ${pedidoData.total.toLocaleString("es-AR")} ARS</p>
                 </div>
               </div>
             )}
-            
+
             {/* Botón para refrescar manualmente */}
             <button
               onClick={refreshPedidoStatus}
               disabled={isRefreshing}
               className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors transform hover:scale-105 hover:shadow-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
-              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-              {isRefreshing ? 'Verificando...' : 'Verificar estado ahora'}
+              <RefreshCw
+                className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`}
+              />
+              {isRefreshing ? "Verificando..." : "Verificar estado ahora"}
             </button>
           </div>
         );
@@ -274,7 +290,9 @@ const PaymentCallback = () => {
                   }}
                 >
                   Cliente:{" "}
-                  <span className="font-medium">{pedidoData?.cliente_nombre}</span>
+                  <span className="font-medium">
+                    {pedidoData?.cliente_nombre}
+                  </span>
                 </p>
                 <p
                   className="text-sm opacity-0 animate-fadeIn"
@@ -283,7 +301,7 @@ const PaymentCallback = () => {
                     animationFillMode: "forwards",
                   }}
                 >
-                  Total: ${pedidoData?.total?.toLocaleString('es-AR')} ARS
+                  Total: ${pedidoData?.total?.toLocaleString("es-AR")} ARS
                 </p>
                 <p
                   className="text-sm opacity-0 animate-fadeIn"
@@ -292,7 +310,10 @@ const PaymentCallback = () => {
                     animationFillMode: "forwards",
                   }}
                 >
-                  Estado: <span className="font-medium text-green-600">{pedidoData?.estado}</span>
+                  Estado:{" "}
+                  <span className="font-medium text-green-600">
+                    {pedidoData?.estado}
+                  </span>
                 </p>
                 <p
                   className="text-sm opacity-0 animate-fadeIn"
@@ -301,33 +322,44 @@ const PaymentCallback = () => {
                     animationFillMode: "forwards",
                   }}
                 >
-                  Fecha: {pedidoData?.creado ? new Date(pedidoData.creado).toLocaleString('es-AR') : 'N/A'}
+                  Fecha:{" "}
+                  {pedidoData?.creado
+                    ? new Date(pedidoData.creado).toLocaleString("es-AR")
+                    : "N/A"}
                 </p>
               </div>
-              
+
               {/* Mostrar productos */}
               {pedidoData?.productos && pedidoData.productos.length > 0 && (
                 <div className="mt-4 pt-4 border-t border-green-200">
                   <p className="font-medium text-sm mb-2">Productos:</p>
                   <div className="space-y-2">
-                    {pedidoData.productos.map((producto) => (
-                      <div key={producto.id} className="text-xs bg-white p-2 rounded border">
-                        <p className="font-medium">{producto.nombre}</p>
-                        <p className="text-gray-600">
-                          Cantidad: {producto.cantidad} | 
-                          Precio: ${producto.precio_unitario.toLocaleString('es-AR')}
-                        </p>
-                      </div>
-                    ))}
+                    {pedidoData.productos.map(
+                      (producto) => (
+                        console.log(producto),
+                        (
+                          <div
+                            key={producto.id}
+                            className="text-xs bg-white p-2 rounded border"
+                          >
+                            <p className="font-medium">{producto.descripcion}</p>
+                            <p className="text-gray-600">
+                              Cantidad: {producto.cantidad} | Precio: $
+                              {producto.precio_unitario.toLocaleString("es-AR")}
+                            </p>
+                          </div>
+                        )
+                      )
+                    )}
                   </div>
                 </div>
               )}
             </div>
 
             <div className="flex gap-3 mt-4">
-              <button 
+              <button
                 className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors transform hover:scale-105 hover:shadow-lg"
-                onClick={() => window.location.href = '/'}
+                onClick={() => (window.location.href = "/")}
               >
                 Volver al inicio
               </button>
@@ -360,39 +392,50 @@ const PaymentCallback = () => {
           <div className="flex flex-col items-center justify-center space-y-4">
             <XCircle className="text-red-500" size={64} />
             <h2 className="text-xl font-semibold">
-              {pedidoData ? 'Pago rechazado o cancelado' : 'Error al obtener el pedido'}
+              {pedidoData
+                ? "Pago rechazado o cancelado"
+                : "Error al obtener el pedido"}
             </h2>
             <p className="text-gray-600 text-center">
               {pedidoData ? (
                 <>
-                  Su pedido está en estado <span className="font-medium text-red-600">{pedidoData.estado}</span>.
+                  Su pedido está en estado{" "}
+                  <span className="font-medium text-red-600">
+                    {pedidoData.estado}
+                  </span>
+                  .
                   <br />
                   Por favor contacte con soporte para más información.
                 </>
               ) : (
-                'No pudimos obtener la información de su pedido. Por favor, inténtelo nuevamente.'
+                "No pudimos obtener la información de su pedido. Por favor, inténtelo nuevamente."
               )}
             </p>
-            
+
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 w-full max-w-md">
                 <p className="font-medium text-red-800">Error técnico:</p>
                 <p className="mt-1 text-sm text-red-700">{error}</p>
               </div>
             )}
-            
+
             {pedidoData && (
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 w-full max-w-md">
                 <p className="font-medium text-sm">Información del pedido:</p>
                 <div className="mt-2 space-y-1 text-sm">
                   <p>ID: {pedidoData.id}</p>
                   <p>Cliente: {pedidoData.cliente_nombre}</p>
-                  <p>Total: ${pedidoData.total.toLocaleString('es-AR')} ARS</p>
-                  <p>Estado: <span className="font-medium text-red-600">{pedidoData.estado}</span></p>
+                  <p>Total: ${pedidoData.total.toLocaleString("es-AR")} ARS</p>
+                  <p>
+                    Estado:{" "}
+                    <span className="font-medium text-red-600">
+                      {pedidoData.estado}
+                    </span>
+                  </p>
                 </div>
               </div>
             )}
-            
+
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 w-full max-w-md">
               <p className="font-medium">Posibles razones:</p>
               <ul className="mt-2 text-sm space-y-1">
@@ -407,13 +450,15 @@ const PaymentCallback = () => {
               <button className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">
                 Contactar soporte
               </button>
-              <button 
+              <button
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={refreshPedidoStatus}
                 disabled={isRefreshing}
               >
-                <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                {isRefreshing ? 'Verificando...' : 'Verificar estado'}
+                <RefreshCw
+                  className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`}
+                />
+                {isRefreshing ? "Verificando..." : "Verificar estado"}
               </button>
             </div>
           </div>

@@ -45,7 +45,7 @@ export const Footer = () => {
                   <Mail className="w-5 h-5 mt-1" />
                   <div>
                     <p className="font-semibold text-gray-900">Email</p>
-                    <p className="text-gray-600">fp@mdz3d.ar</p>
+                    <p className="text-gray-600">mendoza@wetech.ar</p>
                   </div>
                 </div>
               </div>
