@@ -27,6 +27,11 @@ export const fetchProducts = async (): Promise<Product[]> => {
     const groupedProducts: { [key: string]: Product } = {};
 
     rawProducts.forEach((item: any) => {
+      // Ignorar productos cuya descripción termina en "mm" (diámetros, etc)
+      if (String(item.descripcion || "").trim().toLowerCase().endsWith("mm")) {
+        return;
+      }
+
       // TEMP: mostrar solo productos cuya descripción empieza con "Grilon3" (testing)
       //const desc = (item.descripcion || "").trim();
       /* if (!desc.startsWith("Grilon3")) {
@@ -36,7 +41,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
       const isFilament = isFilamentGroup(item.grupo);
       const normalizedGroup = isFilament ? FILAMENT_GROUP : item.grupo;
 
-       // Ignorar ítems filamentos cuyo id no cumpla el patrón con 3 guiones: XXXX-XXXX-XXXX-XXXX
+      // Ignorar ítems filamentos cuyo id no cumpla el patrón con 3 guiones: XXXX-XXXX-XXXX-XXXX
       const id: string = String(item.id || "");
       const hasFourPartsWithThreeHyphens = /^[^-]+-[^-]+-[^-]+-[^-]+$/.test(id);
       if (!hasFourPartsWithThreeHyphens && isFilament) {
