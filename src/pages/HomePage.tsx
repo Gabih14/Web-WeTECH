@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Printer as Printer3D, Shapes, Wrench, X } from "lucide-react";
+import { Printer, Shapes, Wrench, X, Lock } from "lucide-react";
 import { ContactInfo } from "../components/home/ContactInfo";
 import Logo from "../assets/Logo WeTECH Negro PNG.png";
 import Slogan from "../assets/filamentso-removebg-preview.webp";
@@ -17,14 +17,16 @@ const categories = [
       "Descubre nuestra amplia gama de filamentos PLA y técnicos para tus proyectos.",
     icon: Shapes,
     image: filamentoCategoria,
+    locked: false,
   },
   {
     id: "IMPRESORAS 3D",
     name: "Impresoras 3D",
     description:
       "Encuentra la impresora perfecta. Incluye curso de uso y armado gratuito.",
-    icon: Printer3D,
+    icon: Printer,
     image: impresoraCategoria,
+    locked: true,
   },
   {
     id: "REPUESTOS+%26+ACCESORIOS",
@@ -33,23 +35,13 @@ const categories = [
       "Todo lo que necesitas para mantener tu impresora funcionando perfectamente.",
     icon: Wrench,
     image: repuestoCategoria,
+    locked: true,
   },
 ];
 
 export function HomePage() {
   const [showModal, setShowModal] = useState(true);
  
-  /* en caso de querer que solo se vea una vez el modal cambiar const close modal por:
-  useEffect(() => {
-  const seen = localStorage.getItem("seenModal");
-  if (seen) setShowModal(false);
-}, []);
-const closeModal = () => {
-  setShowModal(false);
-  localStorage.setItem("seenModal", "true");
-};
- */
-
   const openWhatsApp = () => {
     const phoneNumber = "5492615987988";
     const message = "¡Hola! Estoy interesado en realizar una compra. ¿Podrían ayudarme?";
@@ -62,6 +54,7 @@ const closeModal = () => {
   const closeModal = () => {
     setShowModal(false);
   };
+
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 font-sans w-full overflow-x-hidden">
       {/* Construction Modal */}
@@ -103,10 +96,6 @@ const closeModal = () => {
                 Estamos trabajando para mejorar nuestro sitio web y ofrecer una
                 mejor experiencia.
               </p>
-              {/* <p className="text-gray-700 mb-3 leading-relaxed">
-                Algunas secciones pueden estar incompletas o no funcionar correctamente.
-              </p> */}
-                            {/* Sección Para Comprar */}
               <div className="mb-3 sm:mb-4">
                 <h4 className="font-semibold text-gray-800 mb-2 flex items-center text-sm sm:text-base">
                   <div className="bg-green-100 p-1 rounded-full mr-2 flex-shrink-0">
@@ -147,10 +136,8 @@ const closeModal = () => {
                 </div>
               </div>
 
-              {/* Línea divisoria */}
               <div className="border-t border-gray-200 my-2 sm:my-3"></div>
 
-              {/* Sección Para Sugerencias */}
               <div>
                 <h4 className="font-semibold text-gray-800 mb-2 flex items-center text-sm sm:text-base">
                   <div className="bg-yellow-100 p-1 rounded-full mr-2 flex-shrink-0">
@@ -212,7 +199,7 @@ const closeModal = () => {
       <div id="categories" className="text-center mb-8 gap-4">
         <div className="flex flex-col md:flex-row items-center justify-center">
           <img src={Logo} alt="Logo WeTECH" className="mx-auto h-24 md:h-48" />
-          <Link to={"/products?category=filamentos"}>. {/* /under-development */}
+          <Link to={"/products?category=filamentos"}>
             <img
               src={Slogan}
               alt="Slogan WeTECH"
@@ -246,6 +233,37 @@ const closeModal = () => {
       <div className="flex flex-row gap-2 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-8 mb-16">
         {categories.map((category) => {
           const Icon = category.icon;
+          
+          if (category.locked) {
+            return (
+              <div
+                key={category.id}
+                className="group relative overflow-hidden rounded-lg shadow-lg flex-1 cursor-not-allowed"
+              >
+                <div className="absolute inset-0">
+                  <img
+                    src={category.image}
+                    alt={category.name}
+                    className="h-full w-full object-cover opacity-40 grayscale"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-black/50" />
+                </div>
+                <div className="relative p-3 md:p-16 h-32 md:h-full flex flex-col items-center justify-center text-center text-white">
+                  <div className="absolute top-2 right-2 md:top-4 md:right-4 bg-gray-800 bg-opacity-90 p-1.5 md:p-2 rounded-full">
+                    <Lock className="h-4 w-4 md:h-6 md:w-6 text-gray-300" />
+                  </div>
+                  <Icon className="h-8 w-8 md:h-12 md:w-12 mb-2 md:mb-4 opacity-60" />
+                  <h3 className="text-base sm:text-lg md:text-2xl font-bold mb-1 md:mb-2">
+                    {category.name}
+                  </h3>
+                  <span className="text-xs md:text-sm bg-gray-800 bg-opacity-75 px-2 md:px-3 py-1 rounded-full mt-1 md:mt-2">
+                    Próximamente
+                  </span>
+                </div>
+              </div>
+            );
+          }
+          
           return (
             <Link
               key={category.id}
