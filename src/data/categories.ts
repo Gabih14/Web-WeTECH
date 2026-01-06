@@ -9,7 +9,7 @@ export const categories: Category[] = [
       { name: "Técnicos", id: "tecnicos" },
     ], */
   },
-  {
+ /*  {
     name: "Impresoras 3D",
     id: "IMPRESORAS 3D",
     
@@ -17,5 +17,5 @@ export const categories: Category[] = [
   {
     name: "Repuestos",
     id: "REPUESTOS & ACCESORIOS",
-  },
+  }, */
 ];
