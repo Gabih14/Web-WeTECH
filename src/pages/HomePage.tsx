@@ -199,7 +199,7 @@ export function HomePage() {
       <div id="categories" className="text-center mb-8 gap-4">
         <div className="flex flex-col md:flex-row items-center justify-center">
           <img src={Logo} alt="Logo WeTECH" className="mx-auto h-24 md:h-48" />
-          <Link to={"/products?category=filamentos"}>
+          <Link to={"/products?category=FILAMENTO+3D"}>
             <img
               src={Slogan}
               alt="Slogan WeTECH"
