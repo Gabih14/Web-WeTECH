@@ -105,13 +105,13 @@ export default function Checkout() {
     setCouponError("");
   };
 
-  /*  const calculateCoupounDiscount = () => {
+  const calculateCouponDiscount = () => {
     if (!appliedCoupon) return 0;
     if (appliedCoupon.type === 'percentage') {
       return (total * appliedCoupon.discount) / 100;
     }
     return appliedCoupon.discount;
-  }; */
+  };
 
   const getPrice = (product: Product, weight: number): number | undefined => {
     const weightData = product.weights?.find((w) => w.weight === weight);
@@ -188,11 +188,16 @@ export default function Checkout() {
       postal_code: formData.billingPostalCode,
     };
 
+    const couponDiscount = calculateCouponDiscount();
+    const finalTotal = total + (shippingData?.costoTotal || 0) - couponDiscount;
+
     const body = {
       cliente_nombre: formData.name,
       cliente_cuit: formData.cuit,
-      total: Number((total + (shippingData?.costoTotal || 0)).toFixed(2)),  // ← Incluir envío
+      total: Number(finalTotal.toFixed(2)),
       costo_envio: Number((shippingData?.costoTotal || 0).toFixed(2)),
+      descuento_cupon: Number(couponDiscount.toFixed(2)),
+      codigo_cupon: appliedCoupon?.code || "",
       email: formData.email,
       telefono: formData.phone,
       calle,
@@ -659,13 +664,25 @@ export default function Checkout() {
                       })}
                     </span>
                   </div>
+                  {appliedCoupon && (
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-medium text-green-700">Cupón {appliedCoupon.code}:</span>
+                      <span className="text-sm font-bold text-green-700">
+                        -$
+                        {calculateCouponDiscount().toLocaleString("es-ES", {
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0,
+                        })}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between border-t border-gray-200 pt-4">
                     <dt className="text-base font-medium text-gray-900">
                       Total
                     </dt>
                     <dd className="text-xl font-bold text-black">
                       $
-                      {(total + (shippingData?.costoTotal || 0)).toLocaleString("es-ES", {
+                      {(total + (shippingData?.costoTotal || 0) - calculateCouponDiscount()).toLocaleString("es-ES", {
                         minimumFractionDigits: 0,
                         maximumFractionDigits: 0,
                       })}
