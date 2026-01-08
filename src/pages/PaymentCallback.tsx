@@ -35,6 +35,13 @@ interface PedidoData {
   productos: Producto[];
   creado: string;
   aprobado: string | null;
+  costo_envio?: string;
+  descuento_cupon?: string;
+  codigo_cupon?: string;
+  delivery_method?: string;
+  cliente_mail?: string;
+  cliente_ubicacion?: string;
+  observaciones_direccion?: string | null;
 }
 
 // Componente principal de la página de pago
@@ -327,6 +334,52 @@ const PaymentCallback = () => {
                     ? new Date(pedidoData.creado).toLocaleString("es-AR")
                     : "N/A"}
                 </p>
+                <p
+                  className="text-sm opacity-0 animate-fadeIn"
+                  style={{
+                    animationDelay: "0.7s",
+                    animationFillMode: "forwards",
+                  }}
+                >
+                  Método de entrega:{" "}
+                  <span className="font-medium">
+                    {pedidoData?.delivery_method === "pickup"
+                      ? "Retiro en tienda"
+                      : pedidoData?.delivery_method === "shipping"
+                      ? "Envío a domicilio"
+                      : "N/A"}
+                  </span>
+                </p>
+                {pedidoData?.costo_envio && parseFloat(pedidoData.costo_envio) > 0 && (
+                  <p
+                    className="text-sm opacity-0 animate-fadeIn"
+                    style={{
+                      animationDelay: "0.8s",
+                      animationFillMode: "forwards",
+                    }}
+                  >
+                    Costo de envío: ${parseFloat(pedidoData.costo_envio).toLocaleString("es-AR")}
+                  </p>
+                )}
+                {pedidoData?.codigo_cupon && (
+                  <p
+                    className="text-sm text-green-700 opacity-0 animate-fadeIn"
+                    style={{
+                      animationDelay: "0.9s",
+                      animationFillMode: "forwards",
+                    }}
+                  >
+                    Cupón aplicado:{" "}
+                    <span className="font-mono font-medium">
+                      {pedidoData.codigo_cupon}
+                    </span>
+                    {pedidoData.descuento_cupon && (
+                      <span className="ml-1">
+                        (-${parseFloat(pedidoData.descuento_cupon).toLocaleString("es-AR")})
+                      </span>
+                    )}
+                  </p>
+                )}
               </div>
 
               {/* Mostrar productos */}

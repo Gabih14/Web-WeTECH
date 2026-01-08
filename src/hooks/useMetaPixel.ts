@@ -20,5 +20,9 @@ export const useMetaPixel = () => {
       trackCustomEvent('ViewFranquicia', { ciudad: 'San Luis' });
     }
 
+if (path === '/franquicias/neuquen') {
+      trackCustomEvent('ViewFranquicia', { ciudad: 'Neuquén' });
+    }
+
   }, [location.pathname]);
 };

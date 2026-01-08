@@ -190,10 +190,11 @@ export default function Checkout() {
 
     const couponDiscount = calculateCouponDiscount();
     const finalTotal = total + (shippingData?.costoTotal || 0) - couponDiscount;
+    const cleanCuit = formData.cuit.trim().replace(/\D/g, ''); // Remover guiones y caracteres no numéricos
 
     const body = {
       cliente_nombre: formData.name,
-      cliente_cuit: formData.cuit,
+      cliente_cuit: cleanCuit,
       total: Number(finalTotal.toFixed(2)),
       costo_envio: Number((shippingData?.costoTotal || 0).toFixed(2)),
       descuento_cupon: Number(couponDiscount.toFixed(2)),
@@ -334,7 +335,7 @@ export default function Checkout() {
   };
 
   const handleCuitBlur = async () => {
-    const cuit = formData.cuit.trim();
+    const cuit = formData.cuit.trim().replace(/\D/g, ''); 
     if (!cuit) return;
 
     const clienteData = await fetchClienteByCuit(cuit);
