@@ -43,7 +43,7 @@ export function ProductPage() {
 
   const product = products.find((p) => p.id === id);
   const isFilament = product?.category === FILAMENT_GROUP;
-
+ console.log("Rendering ProductPage for product:", product);
   // Inicializa los estados dependientes de product cuando product cambia
   useEffect(() => {
     if (product) {

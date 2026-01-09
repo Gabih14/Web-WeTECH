@@ -48,11 +48,25 @@ export const fetchProducts = async (): Promise<Product[]> => {
         return;
       }
 
-      // Usar familia si está disponible, de lo contrario usar id
-      const familia = item.familia || item.id;
-      // const [marca, ...modeloArr] = familia.split(" ");
-      // const modelo = modeloArr.join(" ");
+      // Generar una clave de agrupación basada en las primeras dos partes de la descripción
+      // Esto permite agrupar productos con diferentes pesos pero mismo material
+      const groupingKey = (() => {
+        if (item.descripcion) {
+          const parts = item.descripcion
+            .split("|")
+            .map((p: string) => p.trim())
+            .filter(Boolean);
+          if (parts.length >= 2) {
+            return `${parts[0]}-${parts[1]}`.toUpperCase(); // e.g., "3N3-PLA"
+          }
+        }
+        // Fallback a familia o id si no hay descripción válida
+        return item.familia || item.id;
+      })();
 
+      // Usar familia original para verificar exclusiones
+      const familia = item.familia || item.id;
+      
       // Ignorar familias en la lista de exclusión
       if (shouldExcludeFamily(familia)) {
         return; // Salir de esta iteración
@@ -75,7 +89,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
 
       const itemImageUrl = typeof item.fotoUrl === "string" ? item.fotoUrl : null;
 
-      if (!groupedProducts[familia]) {
+      if (!groupedProducts[groupingKey]) {
         // Derivar el nombre usando los dos primeros segmentos de la descripción ("Marca Material")
         const productName = (() => {
           if (item.descripcion) {
@@ -87,7 +101,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
               return `${parts[0]} ${parts[1]}`;
             }
           }
-          return familia;
+          return groupingKey;
         })();
 
         const productImages = itemImageUrl ? [itemImageUrl] : [];
@@ -96,7 +110,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
         let primaryImage = itemImageUrl || "";
 
         // Crear el producto principal
-        groupedProducts[familia] = {
+        groupedProducts[groupingKey] = {
           id: item.id, // considerar cambiar por productName
           name: productName,
           description: item.descripcion,
@@ -111,14 +125,14 @@ export const fetchProducts = async (): Promise<Product[]> => {
 
         // Solo agregar `weights` si el grupo es "FILAMENTOS"
         if (isFilament) {
-          groupedProducts[familia].weights = [];
+          groupedProducts[groupingKey].weights = [];
         }
       }
 
       // Agregar imagen del ítem al producto agrupado (si existe y no está ya)
-      const currentImages = groupedProducts[familia].images || [];
+      const currentImages = groupedProducts[groupingKey].images || [];
       if (itemImageUrl && !currentImages.includes(itemImageUrl)) {
-        groupedProducts[familia].images = [...currentImages, itemImageUrl];
+        groupedProducts[groupingKey].images = [...currentImages, itemImageUrl];
       }
 
       // Si el grupo es "FILAMENTOS", manejar los weights y precios
@@ -141,13 +155,13 @@ export const fetchProducts = async (): Promise<Product[]> => {
         const promotionalPrice = price - price * 0.15; // Calcular el precio promocional (15% de descuento)
 
         // Verificar si el peso ya existe en `weights`
-        const existingWeight = groupedProducts[familia].weights?.find(
+        const existingWeight = groupedProducts[groupingKey].weights?.find(
           (w) => w.weight === weight
         );
 
         if (!existingWeight) {
           // Agregar el peso y precio a `weights` solo si no existe
-          groupedProducts[familia].weights?.push({
+          groupedProducts[groupingKey].weights?.push({
             weight,
             price,
             promotionalPrice,
@@ -173,7 +187,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
         );
         const hexValue = colorData ? colorData.hex : "#000000"; // Usar el valor encontrado o un valor predeterminado
 
-        const existingColor = groupedProducts[familia].colors?.find(
+        const existingColor = groupedProducts[groupingKey].colors?.find(
           (color) => color.name === colorName
         );
 
@@ -196,10 +210,10 @@ export const fetchProducts = async (): Promise<Product[]> => {
           // Generar imágenes específicas para este color usando fotoUrl del item (si existe)
           const colorImages = itemImageUrl ? [itemImageUrl] : [];
 
-          //console.log(`Generando imagen para ${familia} color ${colorName}:`, colorImages[0]);
+          //console.log(`Generando imagen para ${groupingKey} color ${colorName}:`, colorImages[0]);
 
           // Si el color no existe, agregarlo
-          groupedProducts[familia].colors?.push({
+          groupedProducts[groupingKey].colors?.push({
             name: colorName,
             hex: hexValue, // Puedes asignar un color genérico o específico
             stock: {
@@ -215,8 +229,8 @@ export const fetchProducts = async (): Promise<Product[]> => {
         const comprometido = parseFloat(item.stkExistencias?.[0]?.comprometido || "0");
         const stockDisponible = Math.max(0, cantidad - comprometido);
 
-        groupedProducts[familia].stock =
-          (groupedProducts[familia].stock || 0) + stockDisponible;
+        groupedProducts[groupingKey].stock =
+          (groupedProducts[groupingKey].stock || 0) + stockDisponible;
       }
     });
 
