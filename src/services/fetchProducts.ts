@@ -87,6 +87,16 @@ export const fetchProducts = async (): Promise<Product[]> => {
         return; // Salir de esta iteración
       }
 
+      // Ignorar filamentos con precio < 10.000 ARS
+      if (isFilament && parseFloat(item.precioVtaCotizadoMin) < 10000) {
+        return; // Salir de esta iteración
+      }
+
+      // Ignorar impresoras con precio < 300.000 ARS
+      if (item.grupo?.toUpperCase() === "IMPRESORAS" && parseFloat(item.precioVtaCotizadoMin) < 300000) {
+        return; // Salir de esta iteración
+      }
+
       const itemImageUrl = typeof item.fotoUrl === "string" ? item.fotoUrl : null;
 
       if (!groupedProducts[groupingKey]) {
