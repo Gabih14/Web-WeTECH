@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Tag, AlertCircle, X} from "lucide-react";
 import { useCart } from "../../context/CartContext";
-import { Coupon, Product } from "../../types";
+import {  Product } from "../../types";
 import { CheckoutPersonal } from "./CheckoutPersonal";
 import { CheckoutAdress } from "./CheckoutAdress";
 
@@ -12,8 +12,7 @@ import {
   shouldApplyDiscount,
 } from "../../utils/discounts";
 
-import { fetchClienteByCuit } from "../../services/api";
-import { coupons } from "../../data/coupon";
+import { fetchClienteByCuit, verifyCoupon, useCoupon } from "../../services/api";
 
 function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(window.matchMedia(query).matches);
@@ -83,20 +82,43 @@ export default function Checkout() {
   ]);
 
   const [couponCode, setCouponCode] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [couponError, setCouponError] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
 
-  const applyCoupon = () => {
-    const foundCoupon = coupons.find(
-      (c) => c.code === couponCode.toUpperCase()
-    );
-    if (foundCoupon) {
-      setAppliedCoupon(foundCoupon);
-      setCouponError("");
+  const applyCoupon = async () => {
+    if (!couponCode.trim()) {
+      setCouponError("Ingresa un código de cupón");
+      return;
+    }
+
+    setCouponLoading(true);
+    setCouponError("");
+
+    const couponData = await verifyCoupon(couponCode.toUpperCase());
+    
+    if (couponData) {
+      // Verificar que el cupón esté activo
+      if (!couponData.activo) {
+        setCouponError("Este cupón no está activo");
+        setAppliedCoupon(null);
+      } else {
+        // Verificar fechas de validez
+        const now = new Date();
+        if (now < couponData.fechaDesde || now > couponData.fechaHasta) {
+          setCouponError("Este cupón no es válido en este momento");
+          setAppliedCoupon(null);
+        } else {
+          setAppliedCoupon(couponData);
+          setCouponError("");
+        }
+      }
     } else {
       setCouponError("Cupón inválido");
       setAppliedCoupon(null);
     }
+
+    setCouponLoading(false);
   };
 
   const removeCoupon = () => {
@@ -107,10 +129,8 @@ export default function Checkout() {
 
   const calculateCouponDiscount = () => {
     if (!appliedCoupon) return 0;
-    if (appliedCoupon.type === 'percentage') {
-      return (total * appliedCoupon.discount) / 100;
-    }
-    return appliedCoupon.discount;
+    // El cupón ahora siempre es un porcentaje
+    return (total * appliedCoupon.porcentajeDescuento) / 100;
   };
 
   const getPrice = (product: Product, weight: number): number | undefined => {
@@ -268,6 +288,17 @@ export default function Checkout() {
       }
       // Manejo de la respuesta exitosa
       if (data?.naveUrl) {
+        // Si hay un cupón aplicado, usarlo después de crear la orden
+        if (appliedCoupon && data?.id) {
+          const cleanCuit = formData.cuit.trim().replace(/\D/g, '');
+          try {
+            await useCoupon(appliedCoupon.id, cleanCuit, data.id);
+            console.log("Cupón utilizado exitosamente");
+          } catch (error) {
+            console.error("Error al usar el cupón:", error);
+            // El cupón no se usó, pero continuamos con la orden
+          }
+        }
         return data.naveUrl;
       } else if (data?.code && data?.message) {
         // Manejo de errores
@@ -607,10 +638,20 @@ export default function Checkout() {
                     </div>
                     <button
                       onClick={applyCoupon}
-                      className="bg-gray-100 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-200 transition-colors flex items-center"
+                      disabled={couponLoading}
+                      className="bg-gray-100 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-200 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <Tag className="h-4 w-4 mr-2" />
-                      Aplicar
+                      {couponLoading ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-gray-700 border-t-transparent rounded-full animate-spin mr-2"></div>
+                          Verificando...
+                        </>
+                      ) : (
+                        <>
+                          <Tag className="h-4 w-4 mr-2" />
+                          Aplicar
+                        </>
+                      )}
                     </button>
                   </div>
                   {couponError && (
@@ -619,11 +660,8 @@ export default function Checkout() {
                   {appliedCoupon && (
                     <div className="mt-2 flex items-center justify-between bg-green-50 p-2 rounded-md">
                       <span className="text-green-700 text-sm">
-                        Cupón aplicado: {appliedCoupon.code}(
-                        {appliedCoupon.type === "percentage"
-                          ? `${appliedCoupon.discount}%`
-                          : `$${appliedCoupon.discount}`}
-                        )
+                        Cupón aplicado: {appliedCoupon.id} (
+                        {appliedCoupon.porcentajeDescuento}%)
                       </span>
                       <button
                         onClick={removeCoupon}
