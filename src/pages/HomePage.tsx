@@ -41,16 +41,17 @@ const categories = [
 
 export function HomePage() {
   const [showModal, setShowModal] = useState(true);
- 
+
   const openWhatsApp = () => {
     const phoneNumber = "5492615987988";
-    const message = "¡Hola! Estoy interesado en realizar una compra. ¿Podrían ayudarme?";
+    const message =
+      "¡Hola! Estoy interesado en realizar una compra. ¿Podrían ayudarme?";
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(
       message
     )}`;
     window.open(whatsappUrl, "_blank");
   };
-  
+
   const closeModal = () => {
     setShowModal(false);
   };
@@ -208,32 +209,12 @@ export function HomePage() {
           </Link>
         </div>
       </div>
-      {/* Sección Franquicias */}
-      <section
-        id="franquicias"
-        className="bg-gray-50 py-2 my-14 rounded-lg shadow-md"
-      >
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-gray-900 sm:text-4xl mb-2">
-            Franquicias
-          </h2>
-          <p className="text-2x1 text-gray-700 mb-2">
-            <span className="font-bold">¡Es tu momento de emprender!</span>{" "}
-            Sumate a nuestra franquicia y llevá la revolución 3D a tu provincia.
-          </p>
-          <Link
-            to="/franquicias/mendoza"
-            className="inline-block px-6 py-2 bg-yellow-500 text-white font-semibold rounded-lg shadow hover:bg-yellow-700 transition"
-          >
-            Más info
-          </Link>
-        </div>
-      </section>
+
       {/* Sección de Categorías */}
-      <div className="flex flex-row gap-2 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-8 mb-16">
+      <div className="flex flex-row gap-2 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-8 my-16">
         {categories.map((category) => {
           const Icon = category.icon;
-          
+
           if (category.locked) {
             return (
               <div
@@ -263,7 +244,7 @@ export function HomePage() {
               </div>
             );
           }
-          
+
           return (
             <Link
               key={category.id}
@@ -288,7 +269,35 @@ export function HomePage() {
           );
         })}
       </div>
+      {/* Sección Reseñas */}
+      <section className="mt-12">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center">
+          Opiniones de nuestros clientes
+        </h2>
+        <Reviews />
+      </section>
 
+      {/* Sección Franquicias */}
+      <section
+        id="franquicias"
+        className="bg-gray-50 py-2 my-14 rounded-lg shadow-md"
+      >
+        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl font-bold text-gray-900 sm:text-4xl mb-2">
+            Franquicias
+          </h2>
+          <p className="text-2x1 text-gray-700 mb-2">
+            <span className="font-bold">¡Es tu momento de emprender!</span>{" "}
+            Sumate a nuestra franquicia y llevá la revolución 3D a tu provincia.
+          </p>
+          <Link
+            to="/franquicias/mendoza"
+            className="inline-block px-6 py-2 bg-yellow-500 text-white font-semibold rounded-lg shadow hover:bg-yellow-700 transition"
+          >
+            Más info
+          </Link>
+        </div>
+      </section>
       {/* Sección Visitános */}
       <h2
         id="visit"
@@ -296,13 +305,9 @@ export function HomePage() {
       >
         VISITANOS
       </h2>
+      {/* Sección Contacto */}
       <ContactInfo />
-      <section className="mt-12">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4 text-center">
-          Opiniones de nuestros clientes
-        </h2>
-        <Reviews />
-      </section>
+
       {/* Sección En Desarrollo */}
       <section className="bg-gradient-to-r from-yellow-50 to-yellow-100 py-6 sm:py-8  lg:my-16 rounded-xl shadow-lg border-l-4 border-yellow-500">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
@@ -333,17 +338,21 @@ export function HomePage() {
               Estamos Mejorando Para Vos
             </h2>
           </div>
-          
+
           <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md mb-4 sm:mb-6">
             <p className="text-base sm:text-lg text-gray-700 mb-3 sm:mb-4 leading-relaxed">
-              Nuestro sitio web está en <span className="font-semibold text-yellow-700">constante desarrollo</span> para 
-              brindarte la mejor experiencia de compra posible.
+              Nuestro sitio web está en{" "}
+              <span className="font-semibold text-yellow-700">
+                constante desarrollo
+              </span>{" "}
+              para brindarte la mejor experiencia de compra posible.
             </p>
             <p className="text-sm sm:text-base text-gray-600 mb-4 leading-relaxed">
-              Tu opinión es fundamental para nosotros. Si tenés ideas, sugerencias o encontrás algo que podamos mejorar, 
-              no dudes en escribirnos.
+              Tu opinión es fundamental para nosotros. Si tenés ideas,
+              sugerencias o encontrás algo que podamos mejorar, no dudes en
+              escribirnos.
             </p>
-            
+
             <div className="bg-yellow-50 p-3 sm:p-4 rounded-lg border border-yellow-200">
               <p className="text-xs sm:text-sm font-medium text-gray-800 mb-2">
                 📧 Envianos tus sugerencias:
@@ -372,7 +381,7 @@ export function HomePage() {
               </a>
             </div>
           </div>
-          
+
           <p className="text-xs sm:text-sm text-gray-500 italic">
             Gracias por tu paciencia y por ayudarnos a crecer 🚀
           </p>
