@@ -99,6 +99,11 @@ export const fetchProducts = async (): Promise<Product[]> => {
 
       const itemImageUrl = typeof item.fotoUrl === "string" ? item.fotoUrl : null;
 
+      // Ignorar productos sin fotoUrl
+      if (!itemImageUrl || itemImageUrl.trim() === "") {
+        return; // Salir de esta iteración
+      }
+
       if (!groupedProducts[groupingKey]) {
         // Derivar el nombre usando los dos primeros segmentos de la descripción ("Marca Material")
         const productName = (() => {
