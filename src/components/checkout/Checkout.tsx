@@ -39,6 +39,7 @@ export default function Checkout() {
   );
   const [sameBillingAddress] = useState(true); // por defecto sí
   const [isLoading, setIsLoading] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<"online" | "transfer">("online");
   const [formData, setFormData] = useState({
     cuit: "",
     name: "",
@@ -430,6 +431,86 @@ export default function Checkout() {
               handleCuitBlur={handleCuitBlur}
             />
 
+            {/* Método de Pago */}
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Método de Pago
+              </h3>
+              <div className="space-y-3">
+                {/* Opción Pago en línea (Nave) */}
+                <label className="flex items-start p-3 sm:p-4 border-2 rounded-lg cursor-pointer transition-all hover:border-yellow-400 hover:bg-yellow-50/50 border-yellow-400 bg-yellow-50/30">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="online"
+                    checked={paymentMethod === "online"}
+                    onChange={(e) => setPaymentMethod(e.target.value as "online" | "transfer")}
+                    className="mt-1 h-4 w-4 text-yellow-600 focus:ring-yellow-500 flex-shrink-0"
+                  />
+                  <div className="ml-3 flex-1 min-w-0">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <span className="font-medium text-gray-900 text-sm sm:text-base">
+                        Pago en línea
+                      </span>
+                      <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium w-fit">
+                        Inmediato
+                      </span>
+                    </div>
+                    <p className="text-xs sm:text-sm text-gray-500 mt-1 leading-relaxed">
+                      Tarjeta de crédito/débito o billeteras virtuales
+                    </p>
+                  </div>
+                </label>
+
+                {/* Opción Transferencia (Deshabilitada - Próximamente) */}
+                <label className="flex items-start p-3 sm:p-4 border-2 rounded-lg border-gray-200 bg-gray-50/50 cursor-not-allowed opacity-60 relative">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="transfer"
+                    disabled
+                    className="mt-1 h-4 w-4 text-gray-400 cursor-not-allowed flex-shrink-0"
+                  />
+                  <div className="ml-3 flex-1 min-w-0">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-medium text-gray-500 text-sm sm:text-base">
+                          Transferencia bancaria
+                        </span>
+                        <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full font-medium whitespace-nowrap">
+                          Próximamente
+                        </span>
+                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium whitespace-nowrap">
+                          DESCUENTO
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-xs sm:text-sm text-gray-400 mt-2 leading-relaxed">
+                      Te enviaremos los datos bancarios por email
+                    </p>
+                  </div>
+                </label>
+              </div>
+
+              {/* Mensaje informativo para transferencia (solo si estuviera habilitada) */}
+              {paymentMethod === "transfer" && (
+                <div className="mt-4 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex gap-2 sm:gap-3">
+                    <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <div className="text-xs sm:text-sm text-blue-800 min-w-0">
+                      <p className="font-medium mb-1">Importante:</p>
+                      <ul className="list-disc list-inside space-y-1">
+                        <li>Recibirás los datos bancarios por email</li>
+                        <li>El pedido se procesará al confirmar el pago</li>
+                        <li>Tiempo de acreditación: 24-48 horas hábiles</li>
+                        <li>Se aplicará automáticamente un descuento del 5%</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Mostrar método de entrega y dirección de envío */}
             <CheckoutAdress
               formData={formData}
@@ -487,8 +568,10 @@ export default function Checkout() {
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   <span className="ml-2">Cargando...</span>
                 </div>
-              ) : (
+              ) : paymentMethod === "online" ? (
                 `Ir a pagar`
+              ) : (
+                `Confirmar pedido`
               )}
             </button>
 
