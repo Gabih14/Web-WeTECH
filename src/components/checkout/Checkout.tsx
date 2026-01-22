@@ -167,6 +167,29 @@ export default function Checkout() {
     return originalPrice;
   };
 
+  // Calcular precio para checkout considerando método de pago
+  const calculateItemPriceForCheckout = (
+    product: Product,
+    weight: number,
+    quantity: number
+  ): number | undefined => {
+    const originalPrice = getPrice(product, weight);
+
+    if (originalPrice) {
+      // Solo aplicar descuento si el método de pago es transferencia
+      if (paymentMethod === "transfer" && shouldApplyDiscount(product)) {
+        return calculateDiscountedPriceForProduct(
+          product,
+          originalPrice,
+          quantity
+        );
+      }
+      return originalPrice;
+    }
+
+    return originalPrice;
+  };
+
   if (items.length === 0) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-8">
@@ -210,7 +233,7 @@ export default function Checkout() {
     };
 
     const couponDiscount = calculateCouponDiscount();
-    const finalTotal = total + (shippingData?.costoTotal || 0) - couponDiscount;
+    const finalTotal = checkoutTotal + (shippingData?.costoTotal || 0) - couponDiscount;
     const cleanCuit = formData.cuit.trim().replace(/\D/g, ''); // Remover guiones y caracteres no numéricos
 
     const body = {
@@ -246,7 +269,7 @@ export default function Checkout() {
             nombre,
             cantidad: item.quantity,
             precio_unitario:
-              calculateItemPriceWithDiscount(
+              calculateItemPriceForCheckout(
                 item.product,
                 item.weight,
                 item.quantity
@@ -409,8 +432,19 @@ export default function Checkout() {
     }, 0);
   };
 
+  // Calcular total del checkout según método de pago
+  const calculateCheckoutTotal = () => {
+    return items.reduce((sum, item) => {
+      const price = calculateItemPriceForCheckout(item.product, item.weight, item.quantity);
+      const itemTotal = price ? price * item.quantity : 0;
+      return sum + itemTotal;
+    }, 0);
+  };
+
   const originalTotal = calculateOriginalTotal();
+  const checkoutTotal = calculateCheckoutTotal();
   const discount = originalTotal - total;
+  const checkoutDiscount = paymentMethod === "transfer" ? discount : 0;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
@@ -780,12 +814,24 @@ export default function Checkout() {
                     <span className="text-lg font-medium">Descuento:</span>
                     <span className="text-lg font-bold text-red-500">
                       -$
-                      {discount.toLocaleString("es-ES", {
+                      {checkoutDiscount.toLocaleString("es-ES", {
                         minimumFractionDigits: 0,
                         maximumFractionDigits: 0,
                       })}
                     </span>
                   </div>
+                  {paymentMethod === "online" && discount > 0 && (
+                    <div className="flex justify-between items-center mb-2 text-sm text-gray-500">
+                      <span>Descuento disponible con transferencia:</span>
+                      <span className="font-medium">
+                        -$
+                        {discount.toLocaleString("es-ES", {
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0,
+                        })}
+                      </span>
+                    </div>
+                  )}
                   {appliedCoupon && (
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-sm font-medium text-green-700">Cupón {appliedCoupon.code}:</span>
@@ -804,7 +850,7 @@ export default function Checkout() {
                     </dt>
                     <dd className="text-xl font-bold text-black">
                       $
-                      {(total + (shippingData?.costoTotal || 0) - calculateCouponDiscount()).toLocaleString("es-ES", {
+                      {(checkoutTotal + (shippingData?.costoTotal || 0) - calculateCouponDiscount()).toLocaleString("es-ES", {
                         minimumFractionDigits: 0,
                         maximumFractionDigits: 0,
                       })}
