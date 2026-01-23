@@ -52,6 +52,7 @@ export interface CartContextType {
     color: string,
     weight: number
   ) => void;
+  clearCart: () => void;
   total: number;
 }
 

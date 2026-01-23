@@ -32,7 +32,7 @@ export default function Checkout() {
   const [confirmedAddress, setConfirmedAddress] = useState<string | null>(null);
   const navigate = useNavigate();
   const isMobile = useMediaQuery("(max-width: 768px)"); // Detecta si es móvil
-  const { items, total } = useCart();
+  const { items, total, clearCart } = useCart();
   const [shippingData, setShippingData] = useState<{ itemId: string; costoTotal: number } | null>(null);
   const [deliveryMethod, setDeliveryMethod] = useState<"pickup" | "shipping">(
     "pickup"
@@ -373,6 +373,8 @@ export default function Checkout() {
     const checkoutUrl = await createPaymentRequest();
 
     if (checkoutUrl) {
+      // Limpiar el carrito antes de redirigir al pago
+      clearCart();
       window.location.href = checkoutUrl; // Redirecciona al checkout externo (Agregar timeout si es necesario)
     } else {
       setIsLoading(false);

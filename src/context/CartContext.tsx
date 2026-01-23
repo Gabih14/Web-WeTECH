@@ -95,6 +95,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
+  const clearCart = useCallback(() => {
+    setItems([]);
+    localStorage.removeItem("cartItems");
+  }, []);
+
   const calculateItemPrice = (item: CartItem) => {
     const weightData = item.product.weights?.find(
       (w) => w.weight === item.weight
@@ -121,6 +126,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     addToCart,
     removeFromCart,
     updateQuantity,
+    clearCart,
     total,
   };
 
