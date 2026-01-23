@@ -2,7 +2,7 @@ import { Colors } from "../types";
 
 export const colors: Colors[] = [
   { name: "Amarillo", hex: "#FFFF00" },
-  { name: "Amarillo Fluor", hex: "#FFFF00" },
+  { name: "Amarillo Fluo", hex: "#FFFF00" },
   { name: "Blanco", hex: "#FFFFFF" },
   { name: "Azul Traful", hex: "#38627e" },
   { name: "Rojo Fuego", hex: "#ec0d0d" },
@@ -77,4 +77,10 @@ export const colors: Colors[] = [
   { name: "Amarillo Transparente", hex: "#F0DB1D" },
   { name: "Negro Transparente", hex: "#111010" },
   { name: "Fibra de Carbono", hex: "#808080" },
+  { name: "Nebula", hex: "#440099" },
+  { name: "Caribe", hex: "#94e44b" },
+  { name: "Chocolate", hex: "#7B3F00" },
+  { name: "Lavanda", hex: "#DFC5FE" },
+  { name: "Dulce de Leche", hex: "#946317" },
+  { name: "Rubí", hex: "#E0115F" }
 ];
