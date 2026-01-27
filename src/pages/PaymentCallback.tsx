@@ -154,7 +154,6 @@ const PaymentCallback = () => {
         // Hacer petición al endpoint usando apiFetch
         const data: PedidoData = await apiFetch(`/pedido/${externalId}`);
         setPedidoData(data);
-        console.log(data);
         // Determinar el estado basado en el estado del pedido
         if (data.estado === "APROBADO") {
           setStatus(PaymentStatus.SUCCESS);
@@ -389,7 +388,6 @@ const PaymentCallback = () => {
                   <div className="space-y-2">
                     {pedidoData.productos.map(
                       (producto) => (
-                        console.log(producto),
                         (
                           <div
                             key={producto.id}
@@ -407,6 +405,24 @@ const PaymentCallback = () => {
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* Invitación al formulario de feedback */}
+            <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4 w-full max-w-md mt-4">
+              <p className="font-medium text-blue-900 text-center mb-2">
+                ¡Nos encantaría conocer tu opinión!
+              </p>
+              <p className="text-sm text-blue-800 text-center mb-3">
+                Tu experiencia es muy importante para nosotros. ¿Podrías compartir tu opinión sobre la web?
+              </p>
+              <a
+                href="https://docs.google.com/forms/d/e/1FAIpQLSfQsKpid_G41javou3KaZcoULz0VXpRJQKtGnhdBk8P92CJIQ/viewform?usp=publish-editor"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full text-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors transform hover:scale-105 hover:shadow-lg"
+              >
+                Completar formulario de experiencia
+              </a>
             </div>
 
             <div className="flex gap-3 mt-4">

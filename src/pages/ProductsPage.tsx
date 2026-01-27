@@ -30,7 +30,6 @@ export function ProductsPage() {
   };
 
   useEffect(() => {
-    console.log("Fetching products...");
     fetchProducts()
       .then((data) => {
         setProducts(data);

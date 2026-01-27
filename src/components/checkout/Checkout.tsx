@@ -291,7 +291,6 @@ export default function Checkout() {
       ],
       billing_address,
     };
-    console.log("Cuerpo de la solicitud de pago:", body);
     const API_URL = import.meta.env.VITE_API_URL; // Se usará cuando el pago esté activo
     try {
       const res = await fetch(`${API_URL}/pedido`, {
@@ -304,7 +303,7 @@ export default function Checkout() {
       });
 
       const data = await res.json();
-      console.log("Respuesta del servidor:", data);
+      //console.log("Respuesta del servidor:", data);
       if (!res.ok) {
         setError(data);
         setShowErrorModal(true);
@@ -636,7 +635,6 @@ export default function Checkout() {
               <div className="flow-root">
                 <ul className="divide-y divide-gray-200">
                   {items.map((item, index) => {
-                    console.log(item);
                     const price = getPrice(item.product, item.weight);
                     const discountedPrice = calculateItemPriceWithDiscount(
                       item.product,
@@ -872,6 +870,31 @@ export default function Checkout() {
                 </button>
               </div>
             )}
+          </div>
+
+          {/* Invitación al formulario de feedback */}
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 sm:p-6 rounded-lg shadow-sm border border-blue-200 mt-6">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                <span className="text-white text-xl">💬</span>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">
+                  ¿Nos ayudas a mejorar?
+                </h3>
+                <p className="text-sm text-gray-700 mb-3 leading-relaxed">
+                  Tu opinión sobre la experiencia de compra es muy valiosa para nosotros.
+                </p>
+                <a
+                  href="https://docs.google.com/forms/d/e/1FAIpQLSfQsKpid_G41javou3KaZcoULz0VXpRJQKtGnhdBk8P92CJIQ/viewform?usp=publish-editor"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105 hover:shadow-md"
+                >
+                  Compartir mi opinión
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       </div>
