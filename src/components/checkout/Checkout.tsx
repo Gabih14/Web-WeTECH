@@ -291,7 +291,6 @@ export default function Checkout() {
       ],
       billing_address,
     };
-    console.log("Cuerpo de la solicitud de pago:", body);
     const API_URL = import.meta.env.VITE_API_URL; // Se usará cuando el pago esté activo
     try {
       const res = await fetch(`${API_URL}/pedido`, {
@@ -304,7 +303,7 @@ export default function Checkout() {
       });
 
       const data = await res.json();
-      console.log("Respuesta del servidor:", data);
+      //console.log("Respuesta del servidor:", data);
       if (!res.ok) {
         setError(data);
         setShowErrorModal(true);
@@ -636,7 +635,6 @@ export default function Checkout() {
               <div className="flow-root">
                 <ul className="divide-y divide-gray-200">
                   {items.map((item, index) => {
-                    console.log(item);
                     const price = getPrice(item.product, item.weight);
                     const discountedPrice = calculateItemPriceWithDiscount(
                       item.product,

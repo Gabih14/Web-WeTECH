@@ -21,7 +21,6 @@ export const fetchProducts = async (): Promise<Product[]> => {
     // Petición
     // Usando apiFetch con token incluido
     const rawProducts = await apiFetch("/stk-item");
-    console.log("Raw products fetched:", rawProducts);
 
     // Transformar los datos
     const groupedProducts: { [key: string]: Product } = {};
@@ -225,7 +224,6 @@ export const fetchProducts = async (): Promise<Product[]> => {
           // Generar imágenes específicas para este color usando fotoUrl del item (si existe)
           const colorImages = itemImageUrl ? [itemImageUrl] : [];
 
-          //console.log(`Generando imagen para ${groupingKey} color ${colorName}:`, colorImages[0]);
 
           // Si el color no existe, agregarlo
           groupedProducts[groupingKey].colors?.push({
@@ -272,7 +270,6 @@ export const fetchProducts = async (): Promise<Product[]> => {
         product.image = product.images[0];
       }
     });
-    console.log("Transformed products:", transformedProducts);
 
     return transformedProducts;
   } catch (error: any) {
