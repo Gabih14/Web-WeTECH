@@ -390,6 +390,10 @@ export default function Checkout() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handlePhoneChange = (phone: string) => {
+    setFormData((prev) => ({ ...prev, phone }));
+  };
+
   const handleCuitBlur = async () => {
     const cuit = formData.cuit.trim().replace(/\D/g, ''); 
     if (!cuit) return;
@@ -464,6 +468,7 @@ export default function Checkout() {
               formData={formData}
               handleInputChange={handleInputChange}
               handleCuitBlur={handleCuitBlur}
+              handlePhoneChange={handlePhoneChange}
             />
 
             {/* Método de Pago */}
