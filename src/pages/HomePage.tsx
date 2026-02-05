@@ -57,7 +57,7 @@ export function HomePage() {
   };
 
   return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 font-sans w-full overflow-x-hidden">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 font-sans w-full overflow-x-hidden">
       {/* Construction Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4">
@@ -387,6 +387,6 @@ export function HomePage() {
           </p>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

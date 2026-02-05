@@ -44,7 +44,7 @@ export default function Navbar() {
   return (
     <>
       {/* Header */}
-      <header className="bg-primary shadow sticky top-0 z-20">
+      <header className="bg-primary shadow fixed top-0 left-0 right-0 z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <Link to="/" className="flex items-center pr-2">
