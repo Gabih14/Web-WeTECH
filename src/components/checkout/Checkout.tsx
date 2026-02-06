@@ -253,6 +253,7 @@ export default function Checkout() {
       costo_envio: Number((shippingData?.costoTotal || 0).toFixed(2)),
       descuento_cupon: Number(couponDiscount.toFixed(2)),
       codigo_cupon: appliedCoupon?.code || "",
+      metodo_pago: paymentMethod,
       email: formData.email,
       telefono: formData.phone,
       calle,
@@ -546,31 +547,29 @@ export default function Checkout() {
                 </div>
               </label>
 
-              {/* Opción Transferencia (Deshabilitada - Próximamente) */}
-              <label className="flex items-start p-3 sm:p-4 border-2 rounded-lg border-gray-200 bg-gray-50/50 cursor-not-allowed opacity-60 relative">
+              {/* Opción Transferencia (Habilitada con descuento) */}
+              <label className="flex items-start p-3 sm:p-4 border-2 rounded-lg cursor-pointer transition-all hover:border-green-400 hover:bg-green-50/50 border-gray-200">
                 <input
                   type="radio"
                   name="paymentMethod"
                   value="transfer"
-                  disabled
-                  className="mt-1 h-4 w-4 text-gray-400 cursor-not-allowed flex-shrink-0"
+                  checked={paymentMethod === "transfer"}
+                  onChange={(e) => setPaymentMethod(e.target.value as "online" | "transfer")}
+                  className="mt-1 h-4 w-4 text-green-600 focus:ring-green-500 flex-shrink-0"
                 />
                 <div className="ml-3 flex-1 min-w-0">
                   <div className="flex flex-col gap-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-medium text-gray-500 text-sm sm:text-base">
-                        Transferencia bancaria
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm sm:text-base font-medium text-gray-900">
+                        Transferencia Bancaria
                       </span>
-                      <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full font-medium whitespace-nowrap">
-                        Próximamente
-                      </span>
-                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium whitespace-nowrap">
-                        DESCUENTO
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                        Con descuento
                       </span>
                     </div>
                   </div>
-                  <p className="text-xs sm:text-sm text-gray-400 mt-2 leading-relaxed">
-                    Te enviaremos los datos bancarios por email
+                  <p className="text-xs sm:text-sm text-gray-600 mt-2 leading-relaxed">
+                    Descuentos por cantidad en productos seleccionados
                   </p>
                 </div>
               </label>
@@ -587,7 +586,7 @@ export default function Checkout() {
                       <li>Recibirás los datos bancarios por email</li>
                       <li>El pedido se procesará al confirmar el pago</li>
                       <li>Tiempo de acreditación: 24-48 horas hábiles</li>
-                      <li>Se aplicará automáticamente un descuento del 5%</li>
+                      <li>Descuentos aplicables: 15% (1+ unidad), 17% (5+), 20% (10+), 22% (50+)</li>
                     </ul>
                   </div>
                 </div>
@@ -675,6 +674,19 @@ export default function Checkout() {
                   ? "Tarjeta de crédito/débito o billeteras virtuales"
                   : "Se enviarán los datos bancarios por email"}
               </p>
+              
+              {/* Recordatorio para transferencia */}
+              {paymentMethod === "transfer" && (
+                <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <div className="flex gap-2">
+                    <AlertCircle className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <div className="text-xs text-blue-800">
+                      <p className="font-medium mb-1">Recordatorio:</p>
+                      <p>Una vez confirmado el pedido, deberás enviar el comprobante de transferencia por WhatsApp para que tu pedido sea procesado.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Método de Entrega */}
