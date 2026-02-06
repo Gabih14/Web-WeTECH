@@ -134,7 +134,7 @@ export const Franquicias = () => {
     <div className="bg-white">
 
       {/* Header Section Mejorado */}
-  <header className="relative bg-gradient-to-br from-black via-gray-800 to-gray-700 text-white py-10 md:py-14 overflow-hidden shadow-md">
+  <header className="relative bg-gradient-to-br from-black via-gray-800 to-gray-700 text-white py-10 md:py-14 overflow-hidden shadow-md -mt-10">
         <div className="container mx-auto px-4 flex flex-col items-center justify-center relative z-10">
           <img
             src="/assets/franquicias/wetech-franquicias-logo.webp"

@@ -57,7 +57,7 @@ export function HomePage() {
   };
 
   return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 font-sans w-full overflow-x-hidden">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 font-sans w-full overflow-x-hidden">
       {/* Construction Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4">
@@ -309,7 +309,7 @@ export function HomePage() {
       <ContactInfo />
 
       {/* Sección En Desarrollo */}
-      <section className="bg-gradient-to-r from-yellow-50 to-yellow-100 py-6 sm:py-8  lg:my-16 rounded-xl shadow-lg border-l-4 border-yellow-500">
+      <section className="bg-gradient-to-r from-yellow-50 to-yellow-100 my-10 py-6 sm:py-8  lg:my-16 rounded-xl shadow-lg border-l-4 border-yellow-500">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row items-center justify-center mb-4 sm:mb-6">
             <div className="bg-yellow-200 p-2 sm:p-3 rounded-full mb-3 sm:mb-0 sm:mr-3">
@@ -387,6 +387,6 @@ export function HomePage() {
           </p>
         </div>
       </section>
-    </main>
+    </div>
   );
 }
