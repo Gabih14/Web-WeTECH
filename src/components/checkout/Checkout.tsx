@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Tag, AlertCircle, X} from "lucide-react";
+import { ArrowLeft, Tag, AlertCircle, X, ChevronRight, ChevronLeft} from "lucide-react";
 import { useCart } from "../../context/CartContext";
 import {  Product } from "../../types";
 import { CheckoutPersonal } from "./CheckoutPersonal";
 import { CheckoutAdress } from "./CheckoutAdress";
+import { StepIndicator } from "./StepIndicator";
 
 import {
   calculateDiscountedPriceForProduct,
@@ -60,6 +61,15 @@ export default function Checkout() {
 
   const [error, setError] = useState<{ code: string; message: string; retryable: boolean } | null>(null);
   const [showErrorModal, setShowErrorModal] = useState(false);
+
+  // Estados para el wizard de pasos
+  const [currentStep, setCurrentStep] = useState(1);
+  const steps = [
+    { number: 1, title: "Información Personal", description: "Datos de contacto" },
+    { number: 2, title: "Método de Pago", description: "Selecciona cómo pagar" },
+    { number: 3, title: "Entrega", description: "Dirección y envío" },
+    { number: 4, title: "Resumen", description: "Confirma tu pedido" },
+  ];
 
   const BEARER_TOKEN = import.meta.env.VITE_API_BEARER_TOKEN; // Se usará cuando el pago esté activo
 
@@ -447,6 +457,283 @@ export default function Checkout() {
   const discount = originalTotal - total;
   const checkoutDiscount = paymentMethod === "transfer" ? discount : 0;
 
+  // Funciones de navegación del wizard
+  const canProceedToNextStep = (): boolean => {
+    switch (currentStep) {
+      case 1: // Información Personal
+        return !!(
+          formData.cuit &&
+          formData.name &&
+          formData.email &&
+          formData.phone
+        );
+      case 2: // Método de Pago
+        return !!paymentMethod;
+      case 3: // Entrega
+        if (deliveryMethod === "pickup") {
+          return true;
+        }
+        // Si es shipping, debe tener dirección confirmada y costo calculado
+        return !!(
+          formData.street &&
+          formData.number &&
+          formData.city &&
+          formData.postalCode &&
+          shippingData &&
+          confirmedAddress
+        );
+      case 4: // Resumen
+        return true;
+      default:
+        return false;
+    }
+  };
+
+  const nextStep = () => {
+    if (canProceedToNextStep() && currentStep < 4) {
+      setCurrentStep(currentStep + 1);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  const prevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  // Renderizar el contenido del paso actual
+  const renderCurrentStep = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <CheckoutPersonal
+            formData={formData}
+            handleInputChange={handleInputChange}
+            handleCuitBlur={handleCuitBlur}
+          />
+        );
+      case 2:
+        return (
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              Método de Pago
+            </h3>
+            <div className="space-y-3">
+              {/* Opción Pago en línea (Nave) */}
+              <label className="flex items-start p-3 sm:p-4 border-2 rounded-lg cursor-pointer transition-all hover:border-yellow-400 hover:bg-yellow-50/50 border-yellow-400 bg-yellow-50/30">
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="online"
+                  checked={paymentMethod === "online"}
+                  onChange={(e) => setPaymentMethod(e.target.value as "online" | "transfer")}
+                  className="mt-1 h-4 w-4 text-yellow-600 focus:ring-yellow-500 flex-shrink-0"
+                />
+                <div className="ml-3 flex-1 min-w-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <span className="font-medium text-gray-900 text-sm sm:text-base">
+                      Pago en línea
+                    </span>
+                    <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium w-fit">
+                      Inmediato
+                    </span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-gray-500 mt-1 leading-relaxed">
+                    Tarjeta de crédito/débito o billeteras virtuales
+                  </p>
+                </div>
+              </label>
+
+              {/* Opción Transferencia (Deshabilitada - Próximamente) */}
+              <label className="flex items-start p-3 sm:p-4 border-2 rounded-lg border-gray-200 bg-gray-50/50 cursor-not-allowed opacity-60 relative">
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="transfer"
+                  disabled
+                  className="mt-1 h-4 w-4 text-gray-400 cursor-not-allowed flex-shrink-0"
+                />
+                <div className="ml-3 flex-1 min-w-0">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-medium text-gray-500 text-sm sm:text-base">
+                        Transferencia bancaria
+                      </span>
+                      <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full font-medium whitespace-nowrap">
+                        Próximamente
+                      </span>
+                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium whitespace-nowrap">
+                        DESCUENTO
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-xs sm:text-sm text-gray-400 mt-2 leading-relaxed">
+                    Te enviaremos los datos bancarios por email
+                  </p>
+                </div>
+              </label>
+            </div>
+
+            {/* Mensaje informativo para transferencia (solo si estuviera habilitada) */}
+            {paymentMethod === "transfer" && (
+              <div className="mt-4 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex gap-2 sm:gap-3">
+                  <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <div className="text-xs sm:text-sm text-blue-800 min-w-0">
+                    <p className="font-medium mb-1">Importante:</p>
+                    <ul className="list-disc list-inside space-y-1">
+                      <li>Recibirás los datos bancarios por email</li>
+                      <li>El pedido se procesará al confirmar el pago</li>
+                      <li>Tiempo de acreditación: 24-48 horas hábiles</li>
+                      <li>Se aplicará automáticamente un descuento del 5%</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      case 3:
+        return (
+          <CheckoutAdress
+            formData={formData}
+            handleInputChange={handleInputChange}
+            setShippingData={setShippingData}
+            deliveryMethod={deliveryMethod}
+            setDeliveryMethod={setDeliveryMethod}
+            confirmedAddress={confirmedAddress}
+            setConfirmedAddress={setConfirmedAddress}
+          />
+        );
+      case 4:
+        return (
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 space-y-6">
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Confirma tu Pedido
+              </h3>
+              <p className="text-sm text-gray-600 mb-6">
+                Revisa que toda la información sea correcta antes de proceder al pago
+              </p>
+            </div>
+
+            {/* Información Personal */}
+            <div className="border-t border-gray-200 pt-4">
+              <div className="flex justify-between items-start mb-2">
+                <h4 className="text-sm font-semibold text-gray-900">
+                  Información Personal
+                </h4>
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep(1)}
+                  className="text-xs text-yellow-600 hover:text-yellow-700 font-medium"
+                >
+                  Editar
+                </button>
+              </div>
+              <dl className="text-sm space-y-1">
+                <div className="flex justify-between">
+                  <dt className="text-gray-600">CUIT:</dt>
+                  <dd className="text-gray-900 font-medium">{formData.cuit}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-gray-600">Nombre:</dt>
+                  <dd className="text-gray-900 font-medium">{formData.name}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-gray-600">Email:</dt>
+                  <dd className="text-gray-900 font-medium">{formData.email}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-gray-600">Teléfono:</dt>
+                  <dd className="text-gray-900 font-medium">{formData.phone}</dd>
+                </div>
+              </dl>
+            </div>
+
+            {/* Método de Pago */}
+            <div className="border-t border-gray-200 pt-4">
+              <div className="flex justify-between items-start mb-2">
+                <h4 className="text-sm font-semibold text-gray-900">
+                  Método de Pago
+                </h4>
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep(2)}
+                  className="text-xs text-yellow-600 hover:text-yellow-700 font-medium"
+                >
+                  Editar
+                </button>
+              </div>
+              <p className="text-sm text-gray-900 font-medium">
+                {paymentMethod === "online" ? "Pago en línea" : "Transferencia bancaria"}
+              </p>
+              <p className="text-xs text-gray-600 mt-1">
+                {paymentMethod === "online" 
+                  ? "Tarjeta de crédito/débito o billeteras virtuales"
+                  : "Se enviarán los datos bancarios por email"}
+              </p>
+            </div>
+
+            {/* Método de Entrega */}
+            <div className="border-t border-gray-200 pt-4">
+              <div className="flex justify-between items-start mb-2">
+                <h4 className="text-sm font-semibold text-gray-900">
+                  Método de Entrega
+                </h4>
+                <button
+                  type="button"
+                  onClick={() => setCurrentStep(3)}
+                  className="text-xs text-yellow-600 hover:text-yellow-700 font-medium"
+                >
+                  Editar
+                </button>
+              </div>
+              <p className="text-sm text-gray-900 font-medium mb-2">
+                {deliveryMethod === "pickup" ? "Retiro en Local" : "Envío a Domicilio"}
+              </p>
+              {deliveryMethod === "pickup" ? (
+                <div className="text-xs text-gray-600 space-y-1">
+                  <p>Santiago de Liniers 670</p>
+                  <p>Godoy Cruz, Mendoza</p>
+                  <p className="mt-2">
+                    <span className="font-medium">Horario:</span> Lunes a Viernes 10:00 - 19:00
+                  </p>
+                  <p>Sábados: 10:00 - 14:00</p>
+                </div>
+              ) : (
+                <div className="text-xs text-gray-600 space-y-1">
+                  <p>{confirmedAddress}</p>
+                  {formData.observaciones && (
+                    <p className="mt-2">
+                      <span className="font-medium">Observaciones:</span> {formData.observaciones}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex gap-2">
+                <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-blue-800">
+                  <p className="font-medium mb-1">Importante:</p>
+                  <p>
+                    Al hacer clic en "Ir a pagar" serás redirigido a la plataforma de pago seguro
+                    para completar tu compra.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        ); // El resumen se muestra en la columna derecha
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
       <button
@@ -457,160 +744,68 @@ export default function Checkout() {
         Volver
       </button>
 
+      {/* Step Indicator */}
+      <StepIndicator currentStep={currentStep} steps={steps} />
+
       <div className="grid grid-cols-1 lg:grid lg:grid-cols-2 lg:gap-x-12 xl:gap-x-16">
         <div>
           <form onSubmit={handleSubmit} className="space-y-6">
-            <CheckoutPersonal
-              formData={formData}
-              handleInputChange={handleInputChange}
-              handleCuitBlur={handleCuitBlur}
-            />
+            {/* Renderizar el paso actual */}
+            <div className="animate-fadeIn">
+              {renderCurrentStep()}
+            </div>
 
-            {/* Método de Pago */}
-            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Método de Pago
-              </h3>
-              <div className="space-y-3">
-                {/* Opción Pago en línea (Nave) */}
-                <label className="flex items-start p-3 sm:p-4 border-2 rounded-lg cursor-pointer transition-all hover:border-yellow-400 hover:bg-yellow-50/50 border-yellow-400 bg-yellow-50/30">
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="online"
-                    checked={paymentMethod === "online"}
-                    onChange={(e) => setPaymentMethod(e.target.value as "online" | "transfer")}
-                    className="mt-1 h-4 w-4 text-yellow-600 focus:ring-yellow-500 flex-shrink-0"
-                  />
-                  <div className="ml-3 flex-1 min-w-0">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                      <span className="font-medium text-gray-900 text-sm sm:text-base">
-                        Pago en línea
-                      </span>
-                      <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium w-fit">
-                        Inmediato
-                      </span>
+            {/* Botones de navegación */}
+            <div className="flex gap-4">
+              {currentStep > 1 && (
+                <button
+                  type="button"
+                  onClick={prevStep}
+                  className="flex-1 flex items-center justify-center py-3 px-4 rounded-md border-2 border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  <ChevronLeft className="h-5 w-5 mr-2" />
+                  Anterior
+                </button>
+              )}
+              
+              {currentStep < 4 ? (
+                <button
+                  type="button"
+                  onClick={nextStep}
+                  disabled={!canProceedToNextStep()}
+                  className={`flex-1 flex items-center justify-center py-3 px-4 rounded-md transition-colors ${
+                    currentStep === 1 ? 'w-full' : ''
+                  } ${
+                    canProceedToNextStep()
+                      ? 'bg-yellow-400 hover:bg-yellow-500 text-gray-900'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  Continuar
+                  <ChevronRight className="h-5 w-5 ml-2" />
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  className="flex-1 py-3 px-4 rounded-md transition-colors bg-yellow-400 hover:bg-yellow-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <div className="flex items-center justify-center">
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span className="ml-2">Cargando...</span>
                     </div>
-                    <p className="text-xs sm:text-sm text-gray-500 mt-1 leading-relaxed">
-                      Tarjeta de crédito/débito o billeteras virtuales
-                    </p>
-                  </div>
-                </label>
-
-                {/* Opción Transferencia (Deshabilitada - Próximamente) */}
-                <label className="flex items-start p-3 sm:p-4 border-2 rounded-lg border-gray-200 bg-gray-50/50 cursor-not-allowed opacity-60 relative">
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="transfer"
-                    disabled
-                    className="mt-1 h-4 w-4 text-gray-400 cursor-not-allowed flex-shrink-0"
-                  />
-                  <div className="ml-3 flex-1 min-w-0">
-                    <div className="flex flex-col gap-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-medium text-gray-500 text-sm sm:text-base">
-                          Transferencia bancaria
-                        </span>
-                        <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full font-medium whitespace-nowrap">
-                          Próximamente
-                        </span>
-                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium whitespace-nowrap">
-                          DESCUENTO
-                        </span>
-                      </div>
-                    </div>
-                    <p className="text-xs sm:text-sm text-gray-400 mt-2 leading-relaxed">
-                      Te enviaremos los datos bancarios por email
-                    </p>
-                  </div>
-                </label>
-              </div>
-
-              {/* Mensaje informativo para transferencia (solo si estuviera habilitada) */}
-              {paymentMethod === "transfer" && (
-                <div className="mt-4 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="flex gap-2 sm:gap-3">
-                    <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                    <div className="text-xs sm:text-sm text-blue-800 min-w-0">
-                      <p className="font-medium mb-1">Importante:</p>
-                      <ul className="list-disc list-inside space-y-1">
-                        <li>Recibirás los datos bancarios por email</li>
-                        <li>El pedido se procesará al confirmar el pago</li>
-                        <li>Tiempo de acreditación: 24-48 horas hábiles</li>
-                        <li>Se aplicará automáticamente un descuento del 5%</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
+                  ) : paymentMethod === "online" ? (
+                    `Ir a pagar`
+                  ) : (
+                    `Confirmar pedido`
+                  )}
+                </button>
               )}
             </div>
 
-            {/* Mostrar método de entrega y dirección de envío */}
-            <CheckoutAdress
-              formData={formData}
-              handleInputChange={handleInputChange}
-              setShippingData={setShippingData}
-              deliveryMethod={deliveryMethod}
-              setDeliveryMethod={setDeliveryMethod}
-              confirmedAddress={confirmedAddress}
-              setConfirmedAddress={setConfirmedAddress}
-            />
-
-            {/* Mostrar checkbox y form de facturación si es envío */}
-            {/* {deliveryMethod === "shipping" && (
-              <>
-                <div className="mt-4">
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={sameBillingAddress}
-                      onChange={handleSameBillingChange}
-                      className="mr-2"
-                    />
-                    Usar la dirección de envío para la dirección de facturación
-                  </label>
-                </div>
-
-                {!sameBillingAddress && (
-                  <CheckoutBilling
-                    formData={formData}
-                    handleInputChange={handleInputChange}
-                  />
-                )}
-              </>
-            )} */}
-
-            {/* Mostrar facturación obligatoria si es retiro */}
-            {/* {deliveryMethod === "pickup" && (
-              <CheckoutBilling
-                formData={formData}
-                handleInputChange={handleInputChange}
-              />
-            )} */}
-
-            <button
-              type="submit"
-              className="w-full py-3 px-4 rounded-md transition-colors bg-yellow-400 hover:bg-yellow-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-              disabled={
-                isLoading ||
-                (deliveryMethod === "shipping" &&
-                  (!shippingData || !confirmedAddress))
-              }
-            >
-              {isLoading ? (
-                <div className="flex items-center justify-center">
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span className="ml-2">Cargando...</span>
-                </div>
-              ) : paymentMethod === "online" ? (
-                `Ir a pagar`
-              ) : (
-                `Confirmar pedido`
-              )}
-            </button>
-
-            {deliveryMethod === "shipping" && !isLoading && (
+            {/* Mensaje de validación para paso 3 */}
+            {currentStep === 3 && deliveryMethod === "shipping" && !isLoading && (
               <div className="mt-2 text-center text-sm text-red-600 font-semibold">
                 {!shippingData
                   ? "Debes calcular el costo de envío antes de continuar."
@@ -620,14 +815,16 @@ export default function Checkout() {
               </div>
             )}
 
-            <div className="text-xs text-gray-500 text-center mt-4">
-              Al confirmar tu compra aceptas nuestros términos y condiciones
-            </div>
+            {currentStep === 4 && (
+              <div className="text-xs text-gray-500 text-center mt-4">
+                Al confirmar tu compra aceptas nuestros términos y condiciones
+              </div>
+            )}
           </form>
         </div>
 
         <div className="mt-10 lg:mt-0">
-          <div className="bg-white p-6 rounded-lg shadow-md">
+          <div className="bg-white p-6 rounded-lg shadow-md sticky top-4">
             <h2 className="text-lg font-medium text-gray-900 mb-4">
               Resumen del Pedido
             </h2>
@@ -742,53 +939,55 @@ export default function Checkout() {
                     );
                   })}
                 </ul>
-                <div className="mt-6">
-                  <div className="flex items-center space-x-2">
-                    <div className="flex-1">
-                      <input
-                        type="text"
-                        value={couponCode}
-                        onChange={(e) => setCouponCode(e.target.value)}
-                        placeholder="Código de cupón"
-                        className="w-full px-3 py-2 border rounded-md"
-                      />
-                    </div>
-                    <button
-                      onClick={applyCoupon}
-                      disabled={couponLoading}
-                      className="bg-gray-100 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-200 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {couponLoading ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-gray-700 border-t-transparent rounded-full animate-spin mr-2"></div>
-                          Verificando...
-                        </>
-                      ) : (
-                        <>
-                          <Tag className="h-4 w-4 mr-2" />
-                          Aplicar
-                        </>
-                      )}
-                    </button>
-                  </div>
-                  {couponError && (
-                    <p className="text-red-500 text-sm mt-1">{couponError}</p>
-                  )}
-                  {appliedCoupon && (
-                    <div className="mt-2 flex items-center justify-between bg-green-50 p-2 rounded-md">
-                      <span className="text-green-700 text-sm">
-                        Cupón aplicado: {appliedCoupon.id} (
-                        {appliedCoupon.porcentajeDescuento}%)
-                      </span>
+                {currentStep === 4 && (
+                  <div className="mt-6">
+                    <div className="flex items-center space-x-2">
+                      <div className="flex-1">
+                        <input
+                          type="text"
+                          value={couponCode}
+                          onChange={(e) => setCouponCode(e.target.value)}
+                          placeholder="Código de cupón"
+                          className="w-full px-3 py-2 border rounded-md"
+                        />
+                      </div>
                       <button
-                        onClick={removeCoupon}
-                        className="text-green-700 hover:text-green-800 text-sm"
+                        onClick={applyCoupon}
+                        disabled={couponLoading}
+                        className="bg-gray-100 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-200 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Eliminar
+                        {couponLoading ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-gray-700 border-t-transparent rounded-full animate-spin mr-2"></div>
+                            Verificando...
+                          </>
+                        ) : (
+                          <>
+                            <Tag className="h-4 w-4 mr-2" />
+                            Aplicar
+                          </>
+                        )}
                       </button>
                     </div>
-                  )}
-                </div>
+                    {couponError && (
+                      <p className="text-red-500 text-sm mt-1">{couponError}</p>
+                    )}
+                    {appliedCoupon && (
+                      <div className="mt-2 flex items-center justify-between bg-green-50 p-2 rounded-md">
+                        <span className="text-green-700 text-sm">
+                          Cupón aplicado: {appliedCoupon.id} (
+                          {appliedCoupon.porcentajeDescuento}%)
+                        </span>
+                        <button
+                          onClick={removeCoupon}
+                          className="text-green-700 hover:text-green-800 text-sm"
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
                 <dl className="border-t border-gray-200 py-4 space-y-2">
                   <div className="flex items-center justify-between">
                     <dt className="text-sm text-gray-600">Subtotal</dt>
