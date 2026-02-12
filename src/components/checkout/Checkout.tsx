@@ -73,6 +73,10 @@ export default function Checkout() {
 
   const BEARER_TOKEN = import.meta.env.VITE_API_BEARER_TOKEN; // Se usará cuando el pago esté activo
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, []);
+
   // Sincroniza billing con envío si el check está marcado
   useEffect(() => {
     if (sameBillingAddress) {
@@ -523,7 +527,13 @@ export default function Checkout() {
             </h3>
             <div className="space-y-3">
               {/* Opción Pago en línea (Nave) */}
-              <label className="flex items-start p-3 sm:p-4 border-2 rounded-lg cursor-pointer transition-all hover:border-yellow-400 hover:bg-yellow-50/50 border-yellow-400 bg-yellow-50/30">
+              <label
+                className={`flex items-start p-3 sm:p-4 border-2 rounded-lg cursor-pointer transition-all hover:border-gray-400 hover:bg-gray-50/60 bg-white ${
+                  paymentMethod === "online"
+                    ? "border-yellow-400"
+                    : "border-gray-200"
+                }`}
+              >
                 <input
                   type="radio"
                   name="paymentMethod"
@@ -548,7 +558,13 @@ export default function Checkout() {
               </label>
 
               {/* Opción Transferencia (Habilitada con descuento) */}
-              <label className="flex items-start p-3 sm:p-4 border-2 rounded-lg cursor-pointer transition-all hover:border-green-400 hover:bg-green-50/50 border-gray-200">
+              <label
+                className={`flex items-start p-3 sm:p-4 border-2 rounded-lg cursor-pointer transition-all hover:border-gray-400 hover:bg-gray-50/60 bg-white ${
+                  paymentMethod === "transfer"
+                    ? "border-yellow-400"
+                    : "border-gray-200"
+                }`}
+              >
                 <input
                   type="radio"
                   name="paymentMethod"
