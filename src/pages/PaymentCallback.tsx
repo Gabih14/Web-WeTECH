@@ -216,14 +216,14 @@ const PaymentCallback = () => {
     switch (status) {
       case PaymentStatus.LOADING:
         return (
-          <div className="flex flex-col items-center justify-center space-y-4">
-            <Loader className="animate-spin text-blue-500" size={64} />
-            <h2 className="text-xl font-semibold">
+          <div className="flex flex-col items-center justify-center space-y-4 sm:space-y-5">
+            <Loader className="animate-spin text-blue-500" size={56} />
+            <h2 className="text-lg sm:text-xl font-semibold text-center">
               {pedidoData
                 ? "Verificando estado del pedido"
                 : "Cargando información del pedido"}
             </h2>
-            <p className="text-gray-600 text-center">
+            <p className="text-gray-600 text-center text-sm sm:text-base">
               {pedidoData ? (
                 <>
                   Su pedido está en estado{" "}
@@ -249,11 +249,11 @@ const PaymentCallback = () => {
             {/* Mensaje para pedidos con transferencia pendiente */}
             {showTransferProof && pedidoData && (
               <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4 w-full max-w-md mt-4">
-                <div className="flex items-start gap-3">
+                <div className="flex flex-col sm:flex-row items-start gap-3">
                   <div className="flex-shrink-0 w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center">
                     <span className="text-white text-xl">📱</span>
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 w-full">
                     <p className="font-semibold text-yellow-900 mb-2">
                       ¡Último paso importante!
                     </p>
@@ -289,7 +289,7 @@ const PaymentCallback = () => {
             <button
               onClick={refreshPedidoStatus}
               disabled={isRefreshing}
-              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors transform hover:scale-105 hover:shadow-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              className="mt-4 w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors transform hover:scale-105 hover:shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
               <RefreshCw
                 className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`}
@@ -301,24 +301,24 @@ const PaymentCallback = () => {
 
       case PaymentStatus.SUCCESS:
         return (
-          <div className="flex flex-col items-center justify-center space-y-4">
+          <div className="flex flex-col items-center justify-center space-y-4 sm:space-y-5">
             <div className="relative">
-              <CheckCircle className="text-green-500" size={64} />
+              <CheckCircle className="text-green-500" size={56} />
               <PartyPopper
                 className="absolute -top-4 -right-9 text-yellow-500 animate-pulse"
-                size={32}
+                size={28}
               />
               <PartyPopper
                 className="absolute -top-4 -left-8 text-blue-500 animate-pulse"
-                size={32}
+                size={28}
               />
             </div>
 
-            <h2 className="text-xl font-semibold animate-pulse text-green-600">
+            <h2 className="text-lg sm:text-xl font-semibold animate-pulse text-green-600 text-center">
               ¡Pago Exitoso!
             </h2>
 
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 w-full max-w-md transform transition-all duration-500 hover:scale-105">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 w-full max-w-md transform transition-all duration-500 sm:hover:scale-105">
               <div className="flex items-center">
                 <div className="w-2 h-2 rounded-full bg-green-500 mr-2 animate-ping"></div>
                 <p className="font-medium">Detalles del pedido:</p>
@@ -456,11 +456,11 @@ const PaymentCallback = () => {
             {/* Mensaje para pedidos con transferencia */}
             {paymentMethod === "transfer" && pedidoData && (
               <div className="bg-yellow-50 border-2 border-yellow-300 rounded-lg p-4 w-full max-w-md mt-4">
-                <div className="flex items-start gap-3">
+                <div className="flex flex-col sm:flex-row items-start gap-3">
                   <div className="flex-shrink-0 w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center">
                     <span className="text-white text-xl">📱</span>
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 w-full">
                     <p className="font-semibold text-yellow-900 mb-2">
                       ¡Último paso importante!
                     </p>
@@ -510,9 +510,9 @@ const PaymentCallback = () => {
               </a>
             </div>
 
-            <div className="flex gap-3 mt-4">
+            <div className="flex flex-col sm:flex-row gap-3 mt-4 w-full max-w-md">
               <button
-                className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors transform hover:scale-105 hover:shadow-lg"
+                className="w-full sm:w-auto px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors transform hover:scale-105 hover:shadow-lg"
                 onClick={() => (window.location.href = "/")}
               >
                 Volver al inicio
@@ -543,14 +543,14 @@ const PaymentCallback = () => {
 
       case PaymentStatus.FAIL:
         return (
-          <div className="flex flex-col items-center justify-center space-y-4">
-            <XCircle className="text-red-500" size={64} />
-            <h2 className="text-xl font-semibold">
+          <div className="flex flex-col items-center justify-center space-y-4 sm:space-y-5">
+            <XCircle className="text-red-500" size={56} />
+            <h2 className="text-lg sm:text-xl font-semibold text-center">
               {pedidoData
                 ? "Pago rechazado o cancelado"
                 : "Error al obtener el pedido"}
             </h2>
-            <p className="text-gray-600 text-center">
+            <p className="text-gray-600 text-center text-sm sm:text-base">
               {pedidoData ? (
                 <>
                   Su pedido está en estado{" "}
@@ -600,12 +600,12 @@ const PaymentCallback = () => {
                 <li>• Pedido cancelado manualmente</li>
               </ul>
             </div>
-            <div className="flex space-x-4 mt-4">
-              <button className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">
+            <div className="flex flex-col sm:flex-row gap-3 mt-4 w-full max-w-md">
+              <button className="w-full sm:w-auto px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">
                 Contactar soporte
               </button>
               <button
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={refreshPedidoStatus}
                 disabled={isRefreshing}
               >
@@ -628,7 +628,7 @@ const PaymentCallback = () => {
       {/* Cabecera */}
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
-          <h1 className="text-lg font-medium text-gray-900">
+          <h1 className="text-base sm:text-lg font-medium text-gray-900">
             Verificación de Pago
           </h1>
         </div>
@@ -636,8 +636,8 @@ const PaymentCallback = () => {
 
       {/* Contenido principal */}
       <main className="flex-grow">
-        <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
-          <div className="bg-white shadow rounded-lg p-6 md:p-12">
+        <div className="max-w-7xl mx-auto px-4 py-8 sm:py-12 sm:px-6 lg:px-8">
+          <div className="bg-white shadow rounded-lg p-4 sm:p-6 md:p-12">
             {/* Renderizar el contenido según el estado */}
             {renderContent()}
           </div>
