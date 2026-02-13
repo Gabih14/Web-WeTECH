@@ -75,13 +75,23 @@ const getStockStatus = () => {
       );
       if (weightData) {
         const originalPrice = weightData.price;
-        const discountedPrice = calculateDiscountedPriceForProduct(product, originalPrice, quantity);
+        const discountedPrice = calculateDiscountedPriceForProduct(
+          product,
+          originalPrice,
+          quantity,
+          selectedWeight
+        );
         setCurrentPrice(originalPrice);
         setCurrentPromotionalPrice(discountedPrice);
       }
     } else if (shouldApplyDiscount(product) && product.price) {
       const originalPrice = product.price;
-      const discountedPrice = calculateDiscountedPriceForProduct(product, originalPrice, quantity);
+      const discountedPrice = calculateDiscountedPriceForProduct(
+        product,
+        originalPrice,
+        quantity,
+        selectedWeight || 0
+      );
       setCurrentPrice(originalPrice);
       setCurrentPromotionalPrice(discountedPrice);
     } else {
@@ -287,12 +297,12 @@ const getStockStatus = () => {
                     })}
                   </span>
                   <span className="text-xs bg-red-500 text-white px-1.5 py-0.5 rounded-full font-medium">
-                    -{getDiscountPercentageForProduct(product, quantity)}
+                    -{getDiscountPercentageForProduct(product, quantity, selectedWeight || undefined)}
                   </span>
                 </div>
                 {/* Mostrar información del siguiente nivel de descuento */}
                 {(() => {
-                  const nextLevel = getNextDiscountLevelForProduct(product, quantity);
+                  const nextLevel = getNextDiscountLevelForProduct(product, quantity, selectedWeight || undefined);
                   return nextLevel ? (
                     <div className="text-xs text-gray-600">
                       Compra {nextLevel.quantity - quantity} más para obtener {nextLevel.discount} de descuento

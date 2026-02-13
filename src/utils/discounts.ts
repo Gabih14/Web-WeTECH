@@ -6,6 +6,20 @@ export const QUANTITY_DISCOUNTS = {
   50: 0.22,   // 22% descuento por 50+ productos
 };
 
+// Descuento base para todos los filamentos por transferencia
+export const BASE_FILAMENT_DISCOUNT = 0.15; // 15%
+
+// Marcas elegibles para descuentos por cantidad (solo filamentos de 1kg)
+export const ELIGIBLE_BRANDS_FOR_QUANTITY_DISCOUNT = [
+  "3N3-PLA",
+  "GRILON3-PLA BOUTIQUE",
+  "GRILON3-PLA",
+  "GST3D-PLA",
+  "HELLBOT-PLA",
+  "3NMAX-PLA",
+  "FREMOVER-PLA"
+] as const;
+
 // Categorías que comparten la misma regla de descuento (aceptamos legacy y nuevo nombre)
 const FILAMENT_CATEGORIES = ["FILAMENTO 3D", "FILAMENTOS"] as const;
 
@@ -37,6 +51,24 @@ export const shouldApplyDiscount = (product: { category: string }): boolean => {
   return Boolean(DISCOUNT_RULES[product.category]);
 };
 
+// Verificar si un producto es elegible para descuentos por cantidad
+export const isEligibleForQuantityDiscount = (
+  product: { id: string; category: string },
+  weight: number
+): boolean => {
+  // Debe ser filamento
+  if (!shouldApplyDiscount(product)) return false;
+  
+  // Debe ser de 1kg
+  if (weight !== 1) return false;
+  
+  // Debe ser de una marca elegible (comparación exacta)
+  const productId = product.id.toUpperCase();
+  return ELIGIBLE_BRANDS_FOR_QUANTITY_DISCOUNT.some(
+    brand => productId === brand
+  );
+};
+
 export const getDiscountForQuantityForProduct = (product: { category: string }, quantity: number): number => {
   const rule = DISCOUNT_RULES[product.category];
   if (!rule) return 0;
@@ -44,18 +76,39 @@ export const getDiscountForQuantityForProduct = (product: { category: string }, 
 };
 
 export const calculateDiscountedPriceForProduct = (
-  product: { category: string },
+  product: { id: string; category: string },
   originalPrice: number,
-  quantity: number
+  quantity: number,
+  weight?: number
 ): number => {
-  const rate = getDiscountForQuantityForProduct(product, quantity);
-  if (!rate) return originalPrice;
-  return originalPrice * (1 - rate);
+  // Si no es filamento, no aplicar descuento
+  if (!shouldApplyDiscount(product)) return originalPrice;
+  
+  // Si es elegible para descuentos por cantidad (1kg de marcas específicas)
+  if (weight !== undefined && isEligibleForQuantityDiscount(product, weight)) {
+    const rate = getDiscountForQuantityForProduct(product, quantity);
+    return originalPrice * (1 - rate);
+  }
+  
+  // Si es filamento pero no elegible para descuentos por cantidad, aplicar solo descuento base del 15%
+  return originalPrice * (1 - BASE_FILAMENT_DISCOUNT);
 };
 
-export const getDiscountPercentageForProduct = (product: { category: string }, quantity: number): string => {
-  const rate = getDiscountForQuantityForProduct(product, quantity);
-  return `${Math.round(rate * 100)}%`;
+export const getDiscountPercentageForProduct = (
+  product: { id: string; category: string },
+  quantity: number,
+  weight?: number
+): string => {
+  if (!shouldApplyDiscount(product)) return '0%';
+  
+  // Si es elegible para descuentos por cantidad
+  if (weight !== undefined && isEligibleForQuantityDiscount(product, weight)) {
+    const rate = getDiscountForQuantityForProduct(product, quantity);
+    return `${Math.round(rate * 100)}%`;
+  }
+  
+  // Si es filamento pero no elegible, mostrar descuento base
+  return `${Math.round(BASE_FILAMENT_DISCOUNT * 100)}%`;
 };
 
 export const isDiscountAppliedForProduct = (product: { category: string }, quantity: number): boolean => {
@@ -104,18 +157,33 @@ export const getNextDiscountLevel = (currentQuantity: number): { quantity: numbe
 
 // Versiones product-aware de ahorro y siguiente nivel
 export const calculateSavingsForProduct = (
-  product: { category: string },
+  product: { id: string; category: string },
   originalPrice: number,
-  quantity: number
+  quantity: number,
+  weight?: number
 ): number => {
-  const rate = getDiscountForQuantityForProduct(product, quantity);
-  return originalPrice * quantity * rate;
+  if (!shouldApplyDiscount(product)) return 0;
+  
+  // Si es elegible para descuentos por cantidad
+  if (weight !== undefined && isEligibleForQuantityDiscount(product, weight)) {
+    const rate = getDiscountForQuantityForProduct(product, quantity);
+    return originalPrice * quantity * rate;
+  }
+  
+  // Si es filamento pero no elegible, calcular ahorro con descuento base
+  return originalPrice * quantity * BASE_FILAMENT_DISCOUNT;
 };
 
 export const getNextDiscountLevelForProduct = (
-  product: { category: string },
-  currentQuantity: number
+  product: { id: string; category: string },
+  currentQuantity: number,
+  weight?: number
 ): { quantity: number; discount: string } | null => {
+  // Solo mostrar siguiente nivel si es elegible para descuentos por cantidad
+  if (weight === undefined || !isEligibleForQuantityDiscount(product, weight)) {
+    return null;
+  }
+  
   const rule = DISCOUNT_RULES[product.category];
   if (!rule) return null;
   const thresholds = Object.keys(rule.discounts)

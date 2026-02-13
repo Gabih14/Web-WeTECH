@@ -35,6 +35,12 @@ export const CheckoutAdress = ({
   const [shippingInfoChecked, setShippingInfoChecked] = useState(false);
   const [showShippingErrorModal, setShowShippingErrorModal] = useState(false);
   const [shippingError, setShippingError] = useState<{ message: string; retryable: boolean } | null>(null);
+  const isShippingFormComplete = Boolean(
+    formData.street &&
+    formData.number &&
+    formData.city &&
+    formData.postalCode
+  );
   // Función para calcular el costo de envío
   const calculateShippingCost = async (distance: number): Promise<{ itemId: string; costoTotal: number } | null> => {
     try {
@@ -55,6 +61,15 @@ export const CheckoutAdress = ({
   const fetchDistance = async () => {
     setCalculatingShipping(true);
     try {
+      if (!isShippingFormComplete) {
+        setShippingError({
+          message: "Completa calle, numero, ciudad y codigo postal para calcular el envio.",
+          retryable: true,
+        });
+        setShowShippingErrorModal(true);
+        return;
+      }
+
       let data;
       
       // Simulación en desarrollo
@@ -360,7 +375,8 @@ export const CheckoutAdress = ({
               disabled={
                 calculatingShipping ||
                 !formData.postalCode ||
-                !shippingInfoChecked
+                !shippingInfoChecked ||
+                !isShippingFormComplete
               }
               className="w-full bg-yellow-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
