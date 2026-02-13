@@ -60,7 +60,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
     
     if (originalPrice) {
       if (shouldApplyDiscount(product)) {
-        return calculateDiscountedPriceForProduct(product, originalPrice, quantity);
+        return calculateDiscountedPriceForProduct(product, originalPrice, quantity, weight);
       }
       return originalPrice;
     }
@@ -166,7 +166,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                                     })}
                                   </span>
                                    <span className="text-xs bg-red-500 text-white px-2 py-1 rounded-full font-medium">
-                                     -{getDiscountPercentageForProduct(item.product, item.quantity)}
+                                     -{getDiscountPercentageForProduct(item.product, item.quantity, item.weight)}
                                   </span>
                                 </div>
                               </>

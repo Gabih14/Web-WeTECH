@@ -107,7 +107,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const originalPrice = weightData ? weightData.price : item.product.price;
     
     if (originalPrice) {
-      return calculateDiscountedPriceForProduct(item.product, originalPrice, item.quantity);
+      return calculateDiscountedPriceForProduct(
+        item.product,
+        originalPrice,
+        item.quantity,
+        item.weight
+      );
     }
     
     return 0;

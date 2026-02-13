@@ -40,7 +40,7 @@ export default function Checkout() {
   );
   const [sameBillingAddress] = useState(true); // por defecto sí
   const [isLoading, setIsLoading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<"online" | "transfer">("online");
+  const [paymentMethod, setPaymentMethod] = useState<"online" | "transfer">("transfer");
   const [formData, setFormData] = useState({
     cuit: "",
     name: "",
@@ -172,7 +172,8 @@ export default function Checkout() {
         return calculateDiscountedPriceForProduct(
           product,
           originalPrice,
-          quantity
+          quantity,
+          weight
         );
       }
       return originalPrice;
@@ -195,7 +196,8 @@ export default function Checkout() {
         return calculateDiscountedPriceForProduct(
           product,
           originalPrice,
-          quantity
+          quantity,
+          weight
         );
       }
       return originalPrice;
@@ -526,37 +528,6 @@ export default function Checkout() {
               Método de Pago
             </h3>
             <div className="space-y-3">
-              {/* Opción Pago en línea (Nave) */}
-              <label
-                className={`flex items-start p-3 sm:p-4 border-2 rounded-lg cursor-pointer transition-all hover:border-gray-400 hover:bg-gray-50/60 bg-white ${
-                  paymentMethod === "online"
-                    ? "border-yellow-400"
-                    : "border-gray-200"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="online"
-                  checked={paymentMethod === "online"}
-                  onChange={(e) => setPaymentMethod(e.target.value as "online" | "transfer")}
-                  className="mt-1 h-4 w-4 text-yellow-600 focus:ring-yellow-500 flex-shrink-0"
-                />
-                <div className="ml-3 flex-1 min-w-0">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                    <span className="font-medium text-gray-900 text-sm sm:text-base">
-                      Pago en línea
-                    </span>
-                    <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium w-fit">
-                      Inmediato
-                    </span>
-                  </div>
-                  <p className="text-xs sm:text-sm text-gray-500 mt-1 leading-relaxed">
-                    Tarjeta de crédito/débito o billeteras virtuales
-                  </p>
-                </div>
-              </label>
-
               {/* Opción Transferencia (Habilitada con descuento) */}
               <label
                 className={`flex items-start p-3 sm:p-4 border-2 rounded-lg cursor-pointer transition-all hover:border-gray-400 hover:bg-gray-50/60 bg-white ${
@@ -586,6 +557,37 @@ export default function Checkout() {
                   </div>
                   <p className="text-xs sm:text-sm text-gray-600 mt-2 leading-relaxed">
                     Descuentos por cantidad en productos seleccionados
+                  </p>
+                </div>
+              </label>
+
+              {/* Opción Pago en línea (Nave) */}
+              <label
+                className={`flex items-start p-3 sm:p-4 border-2 rounded-lg cursor-pointer transition-all hover:border-gray-400 hover:bg-gray-50/60 bg-white ${
+                  paymentMethod === "online"
+                    ? "border-yellow-400"
+                    : "border-gray-200"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="online"
+                  checked={paymentMethod === "online"}
+                  onChange={(e) => setPaymentMethod(e.target.value as "online" | "transfer")}
+                  className="mt-1 h-4 w-4 text-yellow-600 focus:ring-yellow-500 flex-shrink-0"
+                />
+                <div className="ml-3 flex-1 min-w-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <span className="font-medium text-gray-900 text-sm sm:text-base">
+                      Pago en línea
+                    </span>
+                    <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium w-fit">
+                      Inmediato
+                    </span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-gray-500 mt-1 leading-relaxed">
+                    Tarjeta de crédito/débito o billeteras virtuales
                   </p>
                 </div>
               </label>
@@ -917,7 +919,8 @@ export default function Checkout() {
                                     -
                                     {getDiscountPercentageForProduct(
                                       item.product,
-                                      item.quantity
+                                      item.quantity,
+                                      item.weight
                                     )}
                                     % OFF
                                   </span>

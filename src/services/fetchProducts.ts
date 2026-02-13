@@ -125,7 +125,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
 
         // Crear el producto principal
         groupedProducts[groupingKey] = {
-          id: item.id, // considerar cambiar por productName
+          id: groupingKey, // Usar groupingKey (ej: "GRILON3-PLA BOUTIQUE") para identificación consistente
           name: productName,
           description: item.descripcion,
           image: primaryImage, // Se actualizará después con la primera imagen de color para filamentos
@@ -271,6 +271,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
       }
     });
 
+    console.log("Productos transformados:", transformedProducts);
     return transformedProducts;
   } catch (error: any) {
     console.error("Error al obtener los productos:", error.message);

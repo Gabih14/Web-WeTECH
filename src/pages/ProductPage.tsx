@@ -108,13 +108,23 @@ export function ProductPage() {
             );
             if (weightData) {
               const originalPrice = weightData.price;
-              const discountedPrice = calculateDiscountedPriceForProduct(product, originalPrice, quantity);
+              const discountedPrice = calculateDiscountedPriceForProduct(
+                product,
+                originalPrice,
+                quantity,
+                selectedWeight
+              );
               setCurrentPrice(originalPrice);
               setCurrentPromotionalPrice(discountedPrice);
             }
           } else if (product.price) {
             const originalPrice = product.price;
-            const discountedPrice = calculateDiscountedPriceForProduct(product, originalPrice, quantity);
+            const discountedPrice = calculateDiscountedPriceForProduct(
+              product,
+              originalPrice,
+              quantity,
+              selectedWeight || 0
+            );
             setCurrentPrice(originalPrice);
             setCurrentPromotionalPrice(discountedPrice);
           }
@@ -294,27 +304,23 @@ export function ProductPage() {
                     })}
                   </span>
                   <span className="text-sm bg-red-500 text-white px-2 py-1 rounded-full font-medium">
-                    -{getDiscountPercentageForProduct(product, quantity)} OFF
+                    -{getDiscountPercentageForProduct(product, quantity, selectedWeight || undefined)} OFF
                   </span>
                 </div>
                 <div className="mt-2 text-sm text-green-600 font-medium">
-                  Ahorras: ${calculateSavingsForProduct(product, currentPrice || 0, quantity).toLocaleString("es-ES", {
+                  Ahorras: ${calculateSavingsForProduct(product, currentPrice || 0, quantity, selectedWeight || undefined).toLocaleString("es-ES", {
                     minimumFractionDigits: 0,
                     maximumFractionDigits: 0,
                   })}
                 </div>
                 {/* Mostrar información del siguiente nivel de descuento */}
                 {(() => {
-                  const nextLevel = getNextDiscountLevelForProduct(product, quantity);
+                  const nextLevel = getNextDiscountLevelForProduct(product, quantity, selectedWeight || undefined);
                   return nextLevel ? (
                     <div className="mt-1 text-sm text-blue-600">
                       🎯 Compra {nextLevel.quantity - quantity} más para obtener {nextLevel.discount} de descuento
                     </div>
-                  ) : (
-                    <div className="mt-1 text-sm text-purple-600">
-                      🎉 ¡Máximo descuento alcanzado!
-                    </div>
-                  );
+                  ) : null;
                 })()}
               </>
             ) : (
