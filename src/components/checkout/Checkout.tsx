@@ -411,6 +411,12 @@ export default function Checkout() {
     const cuit = formData.cuit.trim().replace(/\D/g, ''); 
     if (!cuit) return;
 
+    // Validar que el CUIT tenga exactamente 11 dígitos
+    if (cuit.length !== 11) {
+      alert('El CUIT debe tener 11 dígitos');
+      return;
+    }
+
     const clienteData = await fetchClienteByCuit(cuit);
 
     if (clienteData) {
