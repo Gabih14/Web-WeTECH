@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Product } from "../../types";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Check } from "lucide-react";
 import { useCart } from "../../context/CartContext";
 import { Link } from "react-router-dom";
 import {
@@ -48,6 +48,7 @@ export function ProductCard({ product }: ProductCardProps) {
     product.weights?.[0]?.weight || null
   );
   const [quantity, setQuantity] = useState(1);
+  const [justAdded, setJustAdded] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 const getStockStatus = () => {
   if (availableStock === 0) return { label: "Sin stock", color: "text-red-600" };
@@ -107,6 +108,14 @@ const getStockStatus = () => {
   }, [selectedWeight, quantity, product]);
 
   const handleAddToCart = () => {
+    const added =
+      (selectedColor &&
+        selectedWeight !== null &&
+        quantity + cartQuantity <= availableStock) ||
+      (!product.colors &&
+        !product.weights &&
+        quantity + cartQuantity <= (product.stock ?? 0));
+
     if (
       selectedColor &&
       selectedWeight !== null &&
@@ -120,6 +129,11 @@ const getStockStatus = () => {
       quantity + cartQuantity <= (product.stock ?? 0)
     ) {
       addToCart(product, "", 0, quantity);
+    }
+
+    if (added) {
+      setJustAdded(true);
+      setTimeout(() => setJustAdded(false), 1500);
     }
   };
 
@@ -328,16 +342,25 @@ const getStockStatus = () => {
           <button
             onClick={handleAddToCart}
             disabled={!canAddToCart || quantity + cartQuantity > availableStock}
-            className={`w-full px-2 py-1.5 sm:px-3 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors
+            className={`w-full px-2 py-1.5 sm:px-3 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-300 flex items-center justify-center gap-1
                 ${
-                  canAddToCart && quantity + cartQuantity <= availableStock
-                    ? "bg-yellow-400 hover:bg-yellow-500 text-black"
+                  justAdded
+                    ? "bg-green-500 text-white scale-95"
+                    : canAddToCart && quantity + cartQuantity <= availableStock
+                    ? "bg-yellow-400 hover:bg-yellow-500 text-black active:scale-95"
                     : "bg-gray-300 text-gray-500 cursor-not-allowed"
                 }`}
           >
-            {canAddToCart && quantity + cartQuantity <= availableStock
-              ? "Agregar"
-              : "Sin stock"}
+            {justAdded ? (
+              <>
+                <Check className="w-3.5 h-3.5" />
+                <span>¡Agregado!</span>
+              </>
+            ) : canAddToCart && quantity + cartQuantity <= availableStock ? (
+              "Agregar"
+            ) : (
+              "Sin stock"
+            )}
           </button>
           
           {/* Selector de cantidad - Solo para productos con colores y pesos */}
