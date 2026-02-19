@@ -18,6 +18,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const { addToCart, items } = useCart();
   const FILAMENT_GROUP = "FILAMENTO 3D";
   const isFilament = product.category === FILAMENT_GROUP;
+  const nextDiscountPlaceholderText = "Compra 4 más para obtener 17% de descuento";
 
   // Función para obtener el primer color con stock disponible
   const getFirstColorWithStock = () => {
@@ -317,11 +318,13 @@ const getStockStatus = () => {
                 {/* Mostrar información del siguiente nivel de descuento */}
                 {(() => {
                   const nextLevel = getNextDiscountLevelForProduct(product, quantity, selectedWeight || undefined);
-                  return nextLevel ? (
-                    <div className="text-xs text-gray-600">
-                      Compra {nextLevel.quantity - quantity} más para obtener {nextLevel.discount} de descuento
+                  return (
+                    <div className={`text-xs ${nextLevel ? "text-gray-600" : "text-transparent select-none"}`}>
+                      {nextLevel
+                        ? `Compra ${nextLevel.quantity - quantity} más para obtener ${nextLevel.discount} de descuento`
+                        : nextDiscountPlaceholderText}
                     </div>
-                  ) : null;
+                  );
                 })()}
               </>
             ) : (

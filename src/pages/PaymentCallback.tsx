@@ -36,6 +36,7 @@ interface PedidoData {
   observaciones_direccion?: string | null;
   payment_method?: string;
   metodo_pago?: string;
+  comprobante_numero?: string;
 }
 
 const PaymentCallback = () => {
@@ -295,6 +296,7 @@ const PaymentCallback = () => {
       setIsRefreshing(true);
       const data: PedidoData = await apiFetch(`/pedido/${externalId}`);
       setPedidoData(data);
+      console.log("Pedido refreshed:", data);
       if (data.estado === "APROBADO") setStatus(PaymentStatus.SUCCESS);
       else if (data.estado === "RECHAZADO" || data.estado === "CANCELADO") setStatus(PaymentStatus.FAIL);
       else setStatus(PaymentStatus.LOADING);
@@ -394,10 +396,10 @@ const PaymentCallback = () => {
         Para confirmar tu pedido, transferí el importe y mandanos el comprobante por WhatsApp.
       </p>
       <div className="transfer-data">
-        Alias: <strong>WE.TECH</strong><br />
+        Alias: <strong>WE.TECH</strong>
+        CBU: 0150516001000141430202<br />
         <strong>Datos de cuenta ICBC</strong>
         Titular: FEDERICO ERNESTO POLIZZI<br />
-        CBU: 0150516001000141430202<br />
       </div>
       <button className="btn btn-green" onClick={openWhatsApp}>
         <span>💬</span> Enviar comprobante por WhatsApp
@@ -425,7 +427,7 @@ const PaymentCallback = () => {
               <p className="card-title">Tu pedido</p>
               <div className="order-row">
                 <span className="order-row-label">Número</span>
-                <span className="order-row-value">#{pedidoData.id}</span>
+                <span className="order-row-value">{pedidoData.comprobante_numero}</span>
               </div>
               <div className="order-row">
                 <span className="order-row-label">Cliente</span>
@@ -561,7 +563,7 @@ const PaymentCallback = () => {
 
         {pedidoData && (
           <div className="card">
-            <p className="card-title">Pedido #{pedidoData.id}</p>
+            <p className="card-title">Pedido {pedidoData.comprobante_numero}</p>
             <div className="order-row">
               <span className="order-row-label">Cliente</span>
               <span className="order-row-value">{pedidoData.cliente_nombre}</span>
