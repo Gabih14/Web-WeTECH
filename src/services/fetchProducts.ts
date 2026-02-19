@@ -199,7 +199,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
         const colorData = colors.find(
           (color) => color.name.toLowerCase() === colorName.toLowerCase()
         );
-        const hexValue = colorData ? colorData.hex : "#000000"; // Usar el valor encontrado o un valor predeterminado
+        const hexValue = colorData ? colorData.hex : ""; // Usar el valor encontrado o un valor predeterminado
 
         const existingColor = groupedProducts[groupingKey].colors?.find(
           (color) => color.name === colorName
