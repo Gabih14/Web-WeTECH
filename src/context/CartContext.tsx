@@ -8,6 +8,11 @@ import React, {
 } from "react";
 import { Product, CartItem, CartContextType } from "../types";
 import { calculateDiscountedPriceForProduct } from "../utils/discounts";
+import {
+  canPurchaseWithStock,
+  getFilamentVariantStock,
+  isFilamentProduct,
+} from "../utils/stockRules";
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
@@ -30,6 +35,20 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             item.color === color &&
             item.weight === weight
         );
+
+        if (isFilamentProduct(product)) {
+          const availableStock = getFilamentVariantStock(product, color, weight);
+          const alreadyInCart = existingItem?.quantity ?? 0;
+
+          if (!canPurchaseWithStock(product, availableStock)) {
+            return currentItems;
+          }
+
+          if (alreadyInCart + quantity > availableStock) {
+            return currentItems;
+          }
+        }
+
         if (existingItem) {
           return currentItems.map((item) =>
             item.product.id === product.id &&

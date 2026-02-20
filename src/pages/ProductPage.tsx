@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useLocation, useNavigate } from "react-router-dom";
 import { fetchProducts } from "../services/fetchProducts";
 import { useCart } from "../context/CartContext";
 import Isologo from "../assets/Isologo Fondo Negro SVG.svg";
@@ -15,6 +15,8 @@ import {
 
 export function ProductPage() {
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
+  const navigate = useNavigate();
   const { addToCart, items } = useCart();
   const FILAMENT_GROUP = "FILAMENTO 3D";
   const [products, setProducts] = useState<Product[]>([]);
@@ -41,6 +43,10 @@ export function ProductPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, []);
+  
   const product = products.find((p) => p.id === id);
   const isFilament = product?.category === FILAMENT_GROUP;
   // Inicializa los estados dependientes de product cuando product cambia
@@ -145,6 +151,15 @@ export function ProductPage() {
       }
   }, [product, selectedWeight, quantity, isFilament]);
 
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <div className="h-10 w-10 rounded-full border-4 border-gray-200 border-t-yellow-600 animate-spin" />
+        <p className="text-sm text-gray-500">Cargando producto...</p>
+      </div>
+    );
+  }
+
   /* Si el producto no existe mostrar mensaje de error */
   if (!product) {
     return (
@@ -216,12 +231,33 @@ export function ProductPage() {
     }
   };
 
-  if (loading) {
-    return <div className="text-center py-10">Cargando producto...</div>;
-  }
+  const handleBackToStore = () => {
+    const from = (location.state as { from?: string } | null)?.from;
+
+    if (from) {
+      navigate(from);
+      return;
+    }
+
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+
+    navigate("/products");
+  };
 
   return (
-    <section className="container flex-grow mx-auto max-w-[1200px] border-b py-5 lg:grid lg:grid-cols-2 lg:py-10">
+    <section className="container flex-grow mx-auto max-w-[1200px] border-b py-5 lg:py-10">
+      <div className="px-4 mb-4 lg:px-0">
+        <button
+          onClick={handleBackToStore}
+          className="inline-flex items-center rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+        >
+          ← Volver a la tienda
+        </button>
+      </div>
+      <div className="lg:grid lg:grid-cols-2">
       {/* image gallery */}
       <div className="container mx-auto px-4">
         <div className="mb-4">
@@ -336,6 +372,16 @@ export function ProductPage() {
         <p className="pt-5 text-sm leading-5 text-gray-500 mb-5">
           {product.description}
         </p>
+        {product.observaciones && (
+          <div className="mb-5">
+            <h3 className="text-sm font-semibold text-gray-900 mb-2">
+              Observaciones
+            </h3>
+            <p className="text-sm leading-6 text-gray-600 whitespace-pre-line">
+              {product.observaciones}
+            </p>
+          </div>
+        )}
         {product.weights && (
           <div className="mb-3">
             <div className="flex flex-wrap gap-2 mt-1">
@@ -481,6 +527,7 @@ export function ProductPage() {
             Wishlist
           </button> */}
         </div>
+      </div>
       </div>
     </section>
   );

@@ -86,5 +86,6 @@ export const colors: Colors[] = [
   { name: "Acqua", hex: "#00FFFF" },
   { name: "Dorado", hex: "#D4AF37" },
   { name: "Pino", hex: "#EDC698" },
-  { name: "Bordo", hex: "#9D2235" }
+  { name: "Bordo", hex: "#9D2235" },
+  { name: "Carbon", hex: "#222223" }
 ];
