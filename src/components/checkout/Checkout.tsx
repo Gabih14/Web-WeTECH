@@ -206,6 +206,24 @@ export default function Checkout() {
     return originalPrice;
   };
 
+  const calculateItemAdjustmentPercentageForCheckout = (
+    product: Product,
+    weight: number,
+    quantity: number
+  ): number => {
+    if (paymentMethod !== "transfer") return 0;
+    if (!shouldApplyDiscount(product)) return 0;
+
+    const discountPercentage = getDiscountPercentageForProduct(
+      product,
+      quantity,
+      weight
+    );
+    const numericPercentage = Number(discountPercentage.replace("%", ""));
+
+    return Number.isFinite(numericPercentage) ? numericPercentage : 0;
+  };
+
   if (items.length === 0) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-8">
@@ -293,6 +311,11 @@ export default function Checkout() {
               ) ??
               getPrice(item.product, item.weight) ??
               0,
+            ajuste_porcentaje: calculateItemAdjustmentPercentageForCheckout(
+              item.product,
+              item.weight,
+              item.quantity
+            ),
           };
         }),
         // Agregar shipping como producto si aplica
@@ -302,6 +325,7 @@ export default function Checkout() {
                 nombre: shippingData.itemId,
                 cantidad: 1,
                 precio_unitario: shippingData.costoTotal,
+                ajuste_porcentaje: 0,
               },
             ]
           : []),
