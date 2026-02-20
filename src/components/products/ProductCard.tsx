@@ -298,7 +298,7 @@ export function ProductCard({ product }: ProductCardProps) {
             )}
           </div>
           {/* Siempre ocupa la misma altura, con o sin mensaje */}
-          <p className="text-[11px] text-gray-500 leading-tight min-h-[1rem] mt-0.5">
+          <p className="text-[11px] text-amber-600 font-medium leading-tight min-h-[1rem] mt-0.5">
             {applyDiscount && nextLevel
               ? `Comprá ${nextLevel.quantity - quantity} más → ${nextLevel.discount} off`
               : ""}
