@@ -2,6 +2,7 @@ export interface Product {
   id: string;
   name: string;
   description: string;
+  observaciones?: string;
   image: string; // Imagen principal (primera del array)
   images?: string[]; // Array de todas las imágenes
   category: string;

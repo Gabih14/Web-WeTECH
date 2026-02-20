@@ -3,7 +3,6 @@ import { Product } from "../types";
 import { colors } from "../data/colors";
 import { shouldExcludeFamily } from "../data/excludedFamilies";
 
-
 export const fetchProducts = async (): Promise<Product[]> => {
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
   const FILAMENT_GROUP = "FILAMENTO 3D";
@@ -21,13 +20,18 @@ export const fetchProducts = async (): Promise<Product[]> => {
     // Petición
     // Usando apiFetch con token incluido
     const rawProducts = await apiFetch("/stk-item");
-
+    console.log("Productos crudos recibidos:", rawProducts);
     // Transformar los datos
     const groupedProducts: { [key: string]: Product } = {};
 
     rawProducts.forEach((item: any) => {
       // Ignorar productos cuya descripción termina en "mm" (diámetros, etc)
-      if (String(item.descripcion || "").trim().toLowerCase().endsWith("mm")) {
+      if (
+        String(item.descripcion || "")
+          .trim()
+          .toLowerCase()
+          .endsWith("mm")
+      ) {
         return;
       }
 
@@ -65,7 +69,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
 
       // Usar familia original para verificar exclusiones
       const familia = item.familia || item.id;
-      
+
       // Ignorar familias en la lista de exclusión
       if (shouldExcludeFamily(familia)) {
         return; // Salir de esta iteración
@@ -82,7 +86,10 @@ export const fetchProducts = async (): Promise<Product[]> => {
       }
 
       // Ignorar ítems con precio 0 o menor
-      if (!item.precioVtaCotizadoMin || parseFloat(item.precioVtaCotizadoMin) <= 0) {
+      if (
+        !item.precioVtaCotizadoMin ||
+        parseFloat(item.precioVtaCotizadoMin) <= 0
+      ) {
         return; // Salir de esta iteración
       }
 
@@ -92,11 +99,18 @@ export const fetchProducts = async (): Promise<Product[]> => {
       }
 
       // Ignorar impresoras con precio < 300.000 ARS
-      if (item.grupo?.toUpperCase() === "IMPRESORAS" && parseFloat(item.precioVtaCotizadoMin) < 300000) {
+      if (
+        item.category?.toUpperCase() === "IMPRESORAS 3D" &&
+        parseFloat(item.precioVtaCotizadoMin) < 300000
+      ) {
         return; // Salir de esta iteración
       }
-
-      const itemImageUrl = typeof item.fotoUrl === "string" ? item.fotoUrl : null;
+      // Ignorar impresoras BORRAR
+      if (item.grupo?.toUpperCase() === "IMPRESORAS 3D") {
+        return; // Salir de esta iteración
+      }
+      const itemImageUrl =
+        typeof item.fotoUrl === "string" ? item.fotoUrl : null;
 
       // Ignorar productos sin fotoUrl
       if (!itemImageUrl || itemImageUrl.trim() === "") {
@@ -128,6 +142,10 @@ export const fetchProducts = async (): Promise<Product[]> => {
           id: groupingKey, // Usar groupingKey (ej: "GRILON3-PLA BOUTIQUE") para identificación consistente
           name: productName,
           description: item.descripcion,
+          observaciones:
+            typeof item.observaciones === "string" && item.observaciones.trim()
+              ? item.observaciones
+              : undefined,
           image: primaryImage, // Se actualizará después con la primera imagen de color para filamentos
           images: productImages.length ? productImages : undefined, // Array completo de imágenes
           category: normalizedGroup,
@@ -147,6 +165,14 @@ export const fetchProducts = async (): Promise<Product[]> => {
       const currentImages = groupedProducts[groupingKey].images || [];
       if (itemImageUrl && !currentImages.includes(itemImageUrl)) {
         groupedProducts[groupingKey].images = [...currentImages, itemImageUrl];
+      }
+
+      if (
+        !groupedProducts[groupingKey].observaciones &&
+        typeof item.observaciones === "string" &&
+        item.observaciones.trim()
+      ) {
+        groupedProducts[groupingKey].observaciones = item.observaciones;
       }
 
       // Si el grupo es "FILAMENTOS", manejar los weights y precios
@@ -170,7 +196,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
 
         // Verificar si el peso ya existe en `weights`
         const existingWeight = groupedProducts[groupingKey].weights?.find(
-          (w) => w.weight === weight
+          (w) => w.weight === weight,
         );
 
         if (!existingWeight) {
@@ -192,17 +218,19 @@ export const fetchProducts = async (): Promise<Product[]> => {
           return parts.length > 0 ? parts[parts.length - 1] : "Sin color";
         })();
         const cantidad = parseFloat(item.stkExistencias?.[0]?.cantidad || "0");
-        const comprometido = parseFloat(item.stkExistencias?.[0]?.comprometido || "0");
+        const comprometido = parseFloat(
+          item.stkExistencias?.[0]?.comprometido || "0",
+        );
         const stock = Math.max(0, cantidad - comprometido); // Stock disponible = cantidad - comprometido (mínimo 0)
 
         // Buscar el color en el array `colors` para obtener su valor `hex`
         const colorData = colors.find(
-          (color) => color.name.toLowerCase() === colorName.toLowerCase()
+          (color) => color.name.toLowerCase() === colorName.toLowerCase(),
         );
         const hexValue = colorData ? colorData.hex : ""; // Usar el valor encontrado o un valor predeterminado
 
         const existingColor = groupedProducts[groupingKey].colors?.find(
-          (color) => color.name === colorName
+          (color) => color.name === colorName,
         );
 
         if (existingColor) {
@@ -224,7 +252,6 @@ export const fetchProducts = async (): Promise<Product[]> => {
           // Generar imágenes específicas para este color usando fotoUrl del item (si existe)
           const colorImages = itemImageUrl ? [itemImageUrl] : [];
 
-
           // Si el color no existe, agregarlo
           groupedProducts[groupingKey].colors?.push({
             name: colorName,
@@ -239,7 +266,9 @@ export const fetchProducts = async (): Promise<Product[]> => {
       } else {
         // Para otras categorías, sumar el stock de forma general (cantidad - comprometido)
         const cantidad = parseFloat(item.stkExistencias?.[0]?.cantidad || "0");
-        const comprometido = parseFloat(item.stkExistencias?.[0]?.comprometido || "0");
+        const comprometido = parseFloat(
+          item.stkExistencias?.[0]?.comprometido || "0",
+        );
         const stockDisponible = Math.max(0, cantidad - comprometido);
 
         groupedProducts[groupingKey].stock =
@@ -251,12 +280,20 @@ export const fetchProducts = async (): Promise<Product[]> => {
     const transformedProducts = Object.values(groupedProducts);
 
     // Para filamentos, actualizar la imagen principal con la primera imagen de color disponible
-    transformedProducts.forEach(product => {
-      if (product.category === FILAMENT_GROUP && product.colors && product.colors.length > 0) {
+    transformedProducts.forEach((product) => {
+      if (
+        product.category === FILAMENT_GROUP &&
+        product.colors &&
+        product.colors.length > 0
+      ) {
         // Ordenar colores alfabéticamente para consistencia
-        const sortedColors = product.colors.sort((a, b) => a.name.localeCompare(b.name));
+        const sortedColors = product.colors.sort((a, b) =>
+          a.name.localeCompare(b.name),
+        );
 
-        const colorWithImage = sortedColors.find(c => c.images && c.images.length > 0);
+        const colorWithImage = sortedColors.find(
+          (c) => c.images && c.images.length > 0,
+        );
         if (colorWithImage && colorWithImage.images) {
           product.image = colorWithImage.images[0];
         } else if (!product.image) {
@@ -265,7 +302,11 @@ export const fetchProducts = async (): Promise<Product[]> => {
 
         // Actualizar el array de colores con el orden alfabético
         product.colors = sortedColors;
-      } else if (!product.image && product.images && product.images.length > 0) {
+      } else if (
+        !product.image &&
+        product.images &&
+        product.images.length > 0
+      ) {
         // Para otros productos, si no se asignó imagen principal usar la primera disponible
         product.image = product.images[0];
       }
@@ -276,7 +317,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
   } catch (error: any) {
     console.error("Error al obtener los productos:", error.message);
     throw new Error(
-      "No se pudieron obtener los productos. Intenta nuevamente más tarde."
+      "No se pudieron obtener los productos. Intenta nuevamente más tarde.",
     );
   }
 };

@@ -1,397 +1,368 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Product } from "../../types";
-import { ChevronDown, Check } from "lucide-react";
+import { ChevronDown, ShoppingCart, Check, Zap } from "lucide-react";
 import { useCart } from "../../context/CartContext";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   shouldApplyDiscount,
   calculateDiscountedPriceForProduct,
   getDiscountPercentageForProduct,
-  getNextDiscountLevelForProduct
+  getNextDiscountLevelForProduct,
 } from "../../utils/discounts";
+import {
+  canPurchaseWithStock,
+  FILAMENT_MIN_STOCK_TO_PURCHASE,
+} from "../../utils/stockRules";
 
 interface ProductCardProps {
   product: Product;
 }
 
+const QUANTITY_OPTIONS = [1, 5, 10, 50];
+
+function formatPrice(price: number) {
+  return price.toLocaleString("es-ES", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  });
+}
+
 export function ProductCard({ product }: ProductCardProps) {
   const { addToCart, items } = useCart();
-  const FILAMENT_GROUP = "FILAMENTO 3D";
-  const isFilament = product.category === FILAMENT_GROUP;
-  const nextDiscountPlaceholderText = "Compra 4 más para obtener 17% de descuento";
+  const location = useLocation();
 
-  // Función para obtener el primer color con stock disponible
-  const getFirstColorWithStock = () => {
-    if (!product.colors || !product.weights) return product.colors?.[0]?.name || null;
-    
-    const defaultWeight = product.weights[0]?.weight || 0;
-    
-    // Buscar el primer color que tenga stock
-    const colorWithStock = product.colors.find(color => {
-      return (color.stock[defaultWeight.toString()] || 0) > 0;
-    });
-    
-    // Si encuentra un color con stock, usarlo, sino usar el primero disponible
-    return colorWithStock?.name || product.colors[0]?.name || null;
-  };
+  const isFilament = product.category === "FILAMENTO 3D";
 
-  const [currentPrice, setCurrentPrice] = useState<number | undefined>(
-    product.price
+  // ── Helpers ──────────────────────────────────────────────────────────────
+  const getFirstColorWithStock = useCallback(() => {
+    if (!product.colors || !product.weights) return product.colors?.[0]?.name ?? null;
+    const defaultWeight = product.weights[0]?.weight ?? 0;
+    return (
+      product.colors.find((c) => (c.stock[defaultWeight.toString()] ?? 0) > 0)?.name ??
+      product.colors[0]?.name ??
+      null
+    );
+  }, [product.colors, product.weights]);
+
+  const getStock = useCallback(
+    (color: string, weight: number) =>
+      product.colors?.find((c) => c.name === color)?.stock[weight.toString()] ?? 0,
+    [product.colors]
   );
-  const [currentPromotionalPrice, setCurrentPromotionalPrice] = useState<
-    number | undefined
-  >(isFilament ? product.promotionalPrice : undefined);
-  const [isColorMenuOpen, setIsColorMenuOpen] = useState(false);
-  const [selectedColor, setSelectedColor] = useState<string | null>(
-    getFirstColorWithStock()
+
+  const getCartQuantity = useCallback(
+    (productId: string, color: string, weight: number) =>
+      items.find(
+        (item) =>
+          item.product.id === productId && item.color === color && item.weight === weight
+      )?.quantity ?? 0,
+    [items]
   );
+
+  // ── State ─────────────────────────────────────────────────────────────────
+  const [selectedColor, setSelectedColor] = useState<string | null>(getFirstColorWithStock);
   const [selectedWeight, setSelectedWeight] = useState<number | null>(
-    product.weights?.[0]?.weight || null
+    product.weights?.[0]?.weight ?? null
   );
   const [quantity, setQuantity] = useState(1);
+  const [isColorMenuOpen, setIsColorMenuOpen] = useState(false);
   const [justAdded, setJustAdded] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-const getStockStatus = () => {
-  if (availableStock === 0) return { label: "Sin stock", color: "text-red-600" };
-  if (availableStock <= 5) return { label: "Últimas unidades", color: "text-yellow-600" };
-  return { label: "En stock", color: "text-green-600" };
-};
+  const [currentPrice, setCurrentPrice] = useState<number | undefined>(product.price);
+  const [currentPromotionalPrice, setCurrentPromotionalPrice] = useState<number | undefined>(
+    isFilament ? product.promotionalPrice : undefined
+  );
 
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // ── Derived values ────────────────────────────────────────────────────────
+  const availableStock =
+    selectedColor && selectedWeight !== null
+      ? getStock(selectedColor, selectedWeight)
+      : product.stock ?? 0;
+
+  const cartQuantity =
+    selectedColor && selectedWeight !== null
+      ? getCartQuantity(product.id, selectedColor, selectedWeight)
+      : getCartQuantity(product.id, "", 0);
+
+  const canAdd =
+    selectedColor && selectedWeight !== null
+      ? canPurchaseWithStock(product, availableStock)
+      : canPurchaseWithStock(product, product.stock ?? 0);
+
+  const isOverStock = quantity + cartQuantity > availableStock;
+
+  const stockStatus =
+    availableStock === 0
+      ? { label: "Sin stock", color: "text-red-500" }
+      : isFilament && availableStock < FILAMENT_MIN_STOCK_TO_PURCHASE
+      ? {
+          label: `Mínimo ${FILAMENT_MIN_STOCK_TO_PURCHASE} unidades`,
+          color: "text-red-500",
+        }
+      : availableStock <= 5
+      ? { label: `Últimas ${availableStock}`, color: "text-amber-500" }
+      : { label: "En stock", color: "text-emerald-600" };
+
+  // ── Effects ───────────────────────────────────────────────────────────────
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
+    const handleOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node))
         setIsColorMenuOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    };
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
   }, []);
 
   useEffect(() => {
-    if (shouldApplyDiscount(product) && selectedWeight !== null && product.weights) {
-      const weightData = product.weights.find(
-        (w) => w.weight === selectedWeight
+    if (shouldApplyDiscount(product)) {
+      const base =
+        selectedWeight !== null && product.weights
+          ? product.weights.find((w) => w.weight === selectedWeight)?.price ?? product.price ?? 0
+          : product.price ?? 0;
+
+      setCurrentPrice(base);
+      setCurrentPromotionalPrice(
+        calculateDiscountedPriceForProduct(product, base, quantity, selectedWeight ?? 0)
       );
-      if (weightData) {
-        const originalPrice = weightData.price;
-        const discountedPrice = calculateDiscountedPriceForProduct(
-          product,
-          originalPrice,
-          quantity,
-          selectedWeight
-        );
-        setCurrentPrice(originalPrice);
-        setCurrentPromotionalPrice(discountedPrice);
-      }
-    } else if (shouldApplyDiscount(product) && product.price) {
-      const originalPrice = product.price;
-      const discountedPrice = calculateDiscountedPriceForProduct(
-        product,
-        originalPrice,
-        quantity,
-        selectedWeight || 0
-      );
-      setCurrentPrice(originalPrice);
-      setCurrentPromotionalPrice(discountedPrice);
     } else {
-      // No aplicar descuentos para categorías que no son filamento
-      if (selectedWeight !== null && product.weights) {
-        const weightData = product.weights.find((w) => w.weight === selectedWeight);
-        if (weightData) setCurrentPrice(weightData.price);
-      } else if (product.price) {
-        setCurrentPrice(product.price);
-      }
+      const weightPrice =
+        selectedWeight !== null && product.weights
+          ? product.weights.find((w) => w.weight === selectedWeight)?.price
+          : undefined;
+      setCurrentPrice(weightPrice ?? product.price);
       setCurrentPromotionalPrice(undefined);
     }
   }, [selectedWeight, quantity, product]);
 
+  // ── Handlers ──────────────────────────────────────────────────────────────
   const handleAddToCart = () => {
-    const added =
-      (selectedColor &&
-        selectedWeight !== null &&
-        quantity + cartQuantity <= availableStock) ||
-      (!product.colors &&
-        !product.weights &&
-        quantity + cartQuantity <= (product.stock ?? 0));
-
-    if (
-      selectedColor &&
-      selectedWeight !== null &&
-      quantity + cartQuantity <= availableStock
-    ) {
-      console.log("Adding to cart:", { product, selectedColor, selectedWeight, quantity });
+    if (selectedColor && selectedWeight !== null && canAdd && !isOverStock) {
       addToCart(product, selectedColor, selectedWeight, quantity);
-    } else if (
-      !product.colors &&
-      !product.weights &&
-      quantity + cartQuantity <= (product.stock ?? 0)
-    ) {
+      setJustAdded(true);
+      setTimeout(() => setJustAdded(false), 1500);
+    } else if (!product.colors && !product.weights && canAdd && !isOverStock) {
       addToCart(product, "", 0, quantity);
-    }
-
-    if (added) {
       setJustAdded(true);
       setTimeout(() => setJustAdded(false), 1500);
     }
   };
 
-  const getStock = (color: string, weight: number) => {
-    const colorData = product.colors?.find((c) => c.name === color);
-    return colorData ? colorData.stock[weight.toString()] || 0 : 0;
-  };
+  const sortedColors = product.colors
+    ? [...product.colors].sort((a, b) => {
+        const wa = getStock(a.name, selectedWeight ?? product.weights?.[0]?.weight ?? 0);
+        const wb = getStock(b.name, selectedWeight ?? product.weights?.[0]?.weight ?? 0);
+        if (wa > 0 && wb === 0) return -1;
+        if (wa === 0 && wb > 0) return 1;
+        return a.name.localeCompare(b.name);
+      })
+    : [];
 
-  const getCartQuantity = (
-    productId: string,
-    color: string,
-    weight: number
-  ) => {
-    const cartItem = items.find(
-      (item) =>
-        item.product.id === productId &&
-        item.color === color &&
-        item.weight === weight
-    );
-    return cartItem ? cartItem.quantity : 0;
-  };
+  const applyDiscount = shouldApplyDiscount(product) && !!currentPromotionalPrice;
+  const nextLevel = applyDiscount
+    ? getNextDiscountLevelForProduct(product, quantity, selectedWeight ?? undefined)
+    : null;
+  const from = `${location.pathname}${location.search}`;
 
-  const canAddToCart =
-    selectedColor && selectedWeight !== null
-      ? getStock(selectedColor, selectedWeight) > 0
-      : (product.stock ?? 0) > 0;
-  const availableStock =
-    selectedColor && selectedWeight !== null
-      ? getStock(selectedColor, selectedWeight)
-      : product.stock || 0;
-  const cartQuantity =
-    selectedColor && selectedWeight !== null
-      ? getCartQuantity(product.id, selectedColor, selectedWeight)
-      : getCartQuantity(product.id, "", 0);
-      const stockStatus = getStockStatus();
-
-
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-visible hover:shadow-lg transition-shadow flex flex-col">
-      <Link to={`/product/${product.id}`} className="aspect-square overflow-hidden rounded-t-lg">
+    <article className="group relative bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col overflow-visible">
+      {/* Discount badge */}
+      {applyDiscount && (
+        <div className="absolute top-3 left-3 z-10 flex items-center gap-1 bg-black text-white text-[10px] font-semibold px-2 py-1 rounded-full tracking-wide">
+          <Zap className="w-2.5 h-2.5 fill-yellow-400 text-yellow-400" />
+          -{getDiscountPercentageForProduct(product, quantity, selectedWeight ?? undefined)}
+        </div>
+      )}
+
+      {/* Image */}
+      <Link
+        to={`/product/${product.id}`}
+        state={{ from }}
+        className="block aspect-square overflow-hidden rounded-t-2xl bg-gray-50"
+      >
         <img
           src={product.image}
           alt={product.name}
-          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+          loading="lazy"
+          className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-500 ease-out"
         />
       </Link>
-      <div className="p-1.5 sm:p-3 flex flex-col flex-grow space-y-1.5 sm:space-y-2">
-        <Link to={`/product/${product.id}`}>
-          <h3 className="text-xs sm:text-sm lg:text-base font-semibold line-clamp-2 hover:text-yellow-600 transition-colors leading-tight">
-            {product.name}
-          </h3>
-          <p className={`text-xs font-medium ${stockStatus.color}`}>
-  {stockStatus.label}
-</p>
 
+      {/* Body */}
+      <div className="flex flex-col flex-grow p-3 sm:p-4 gap-3">
 
-        </Link>
+        {/* Name + stock — min-h para alinear cards vecinos */}
+        <div className="min-h-[3.5rem]">
+          <Link to={`/product/${product.id}`} state={{ from }}>
+            <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 leading-snug hover:text-yellow-500 transition-colors">
+              {product.name}
+            </h3>
+          </Link>
+          <p className={`mt-0.5 text-[11px] font-medium ${stockStatus.color}`}>
+            {stockStatus.label}
+          </p>
+        </div>
 
+        {/* Color selector */}
         {product.colors && (
-          <div className="mb-2">
-            <div className="relative" ref={dropdownRef}>
-              <button
-                onClick={() => setIsColorMenuOpen(!isColorMenuOpen)}
-                className="w-full px-2 py-1.5 text-xs sm:text-sm border rounded-md bg-white flex items-center justify-between hover:border-gray-400 transition-colors"
-              >
-                <span className="flex items-center gap-1.5 truncate">
-                  {selectedColor && (
-                    <span
-                      className="w-3 h-3 sm:w-4 sm:h-4 rounded-full border border-gray-300 flex-shrink-0"
-                      style={{
-                        backgroundColor: product.colors.find(
-                          (c) => c.name === selectedColor
-                        )?.hex,
-                      }}
-                    />
-                  )}
-                  <span className="truncate">{selectedColor || "Color"}</span>
-                </span>
-                <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-              </button>
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setIsColorMenuOpen((v) => !v)}
+              className="w-full flex items-center justify-between px-3 py-2 text-xs border border-gray-200 rounded-xl bg-white hover:border-gray-400 transition-colors"
+            >
+              <span className="flex items-center gap-2 truncate">
+                {selectedColor && !!product.colors.find((c) => c.name === selectedColor)?.hex?.trim() && (
+                  <span
+                    className="w-3.5 h-3.5 rounded-full border border-gray-200 flex-shrink-0 shadow-sm"
+                    style={{
+                      backgroundColor: product.colors.find((c) => c.name === selectedColor)!.hex,
+                    }}
+                  />
+                )}
+                <span className="truncate text-gray-700">{selectedColor ?? "Seleccionar color"}</span>
+              </span>
+              <ChevronDown
+                className={`w-3.5 h-3.5 text-gray-400 flex-shrink-0 transition-transform duration-200 ${
+                  isColorMenuOpen ? "rotate-180" : ""
+                }`}
+              />
+            </button>
 
-              {isColorMenuOpen && (
-                <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-40 overflow-y-auto left-0 right-0">
-                  {product.colors
-                    .sort((a, b) => {
-                      // Obtener el stock para cada color
-                      const stockA = getStock(
-                        a.name,
-                        selectedWeight || product.weights?.[0]?.weight || 0
-                      );
-                      const stockB = getStock(
-                        b.name,
-                        selectedWeight || product.weights?.[0]?.weight || 0
-                      );
-                      
-                      // Primero ordenar por stock (con stock primero)
-                      if (stockA > 0 && stockB === 0) return -1;
-                      if (stockA === 0 && stockB > 0) return 1;
-                      
-                      // Si ambos tienen stock o ambos no tienen, ordenar alfabéticamente
-                      return a.name.localeCompare(b.name);
-                    })
-                    .map((color) => (
-                      <button
-                        key={color.name}
-                        onClick={() => {
-                          setSelectedColor(color.name);
-                          setIsColorMenuOpen(false);
-                        }}
-                        className={`w-full px-2 py-1.5 text-xs sm:text-sm text-left hover:bg-gray-50 flex items-center gap-1.5 ${
-                          getStock(
-                            color.name,
-                            selectedWeight || product.weights?.[0]?.weight || 0
-                          ) === 0
-                            ? "opacity-50"
-                            : ""
-                        }`}
-                      >
-                      <span
-                        className="w-3 h-3 sm:w-4 sm:h-4 rounded-full border border-gray-300 flex-shrink-0"
-                        style={{ backgroundColor: color.hex }}
-                      />
-                      <span className="truncate">{color.name}</span>
-                      <span className="text-xs text-gray-500 ml-auto flex-shrink-0">
-                        ({getStock(
-                          color.name,
-                          selectedWeight || product.weights?.[0]?.weight || 0
-                        )})
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {product.weights && (
-          <div className="mb-2">
-            <div className="flex flex-wrap gap-1">
-              {product.weights.map((weight) => (
-                <button
-                  key={weight.weight}
-                  onClick={() => setSelectedWeight(weight.weight)}
-                  className={`px-2 py-1 text-xs border rounded ${
-                    selectedWeight === weight.weight
-                      ? "bg-black text-white border-black"
-                      : "bg-white text-black border-gray-300 hover:border-gray-400"
-                  } transition-colors`}
-                >
-                  {weight.weight}kg
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="mt-auto">
-          <div className="flex flex-col gap-1 mb-1.5 sm:mb-3">
-            {shouldApplyDiscount(product) && currentPromotionalPrice ? (
-              <>
-                <div className="flex items-baseline gap-1 flex-wrap">
-                  <span className="text-base sm:text-lg lg:text-xl font-bold ">
-                    $
-                    {currentPromotionalPrice.toLocaleString("es-ES", {
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0,
-                    })}
-                  </span>
-                  <span className="text-xs sm:text-sm lg:text-base text-gray-400 font-medium line-through">
-                    $
-                    {currentPrice?.toLocaleString("es-ES", {
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0,
-                    })}
-                  </span>
-                  <span className="text-xs bg-red-500 text-white px-1.5 py-0.5 rounded-full font-medium">
-                    -{getDiscountPercentageForProduct(product, quantity, selectedWeight || undefined)}
-                  </span>
-                </div>
-                {/* Mostrar información del siguiente nivel de descuento */}
-                {(() => {
-                  const nextLevel = getNextDiscountLevelForProduct(product, quantity, selectedWeight || undefined);
-                  return (
-                    <div className={`text-xs ${nextLevel ? "text-gray-600" : "text-transparent select-none"}`}>
-                      {nextLevel
-                        ? `Compra ${nextLevel.quantity - quantity} más para obtener ${nextLevel.discount} de descuento`
-                        : nextDiscountPlaceholderText}
-                    </div>
+            {isColorMenuOpen && (
+              <div className="absolute z-50 left-0 right-0 mt-1.5 bg-white border border-gray-100 rounded-xl shadow-xl max-h-44 overflow-y-auto">
+                {sortedColors.map((color) => {
+                  const stock = getStock(
+                    color.name,
+                    selectedWeight ?? product.weights?.[0]?.weight ?? 0
                   );
-                })()}
-              </>
-            ) : (
-              <div>
-                <span className="text-base sm:text-lg lg:text-xl font-bold">
-                  $
-                  {currentPrice?.toLocaleString("es-ES", {
-                    minimumFractionDigits: 0,
-                    maximumFractionDigits: 0,
-                  })}
-                </span>
+                  const isColorDisabled = isFilament
+                    ? stock < FILAMENT_MIN_STOCK_TO_PURCHASE
+                    : stock === 0;
+                  return (
+                    <button
+                      key={color.name}
+                      onClick={() => {
+                        setSelectedColor(color.name);
+                        setIsColorMenuOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-50 transition-colors ${
+                        isColorDisabled ? "opacity-40" : ""
+                      } ${selectedColor === color.name ? "bg-gray-50 font-medium" : ""}`}
+                    >
+                      {!!color.hex?.trim() && (
+                        <span
+                          className="w-3.5 h-3.5 rounded-full border border-gray-200 flex-shrink-0 shadow-sm"
+                          style={{ backgroundColor: color.hex }}
+                        />
+                      )}
+                      <span className="truncate text-gray-700">{color.name}</span>
+                      <span className="ml-auto text-gray-400 tabular-nums">({stock})</span>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
-        </div>
-        <div className="space-y-2">
-          {/* Botón principal */}
-          <button
-            onClick={handleAddToCart}
-            disabled={!canAddToCart || quantity + cartQuantity > availableStock}
-            className={`w-full px-2 py-1.5 sm:px-3 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-300 flex items-center justify-center gap-1
-                ${
-                  justAdded
-                    ? "bg-green-500 text-white scale-95"
-                    : canAddToCart && quantity + cartQuantity <= availableStock
-                    ? "bg-yellow-400 hover:bg-yellow-500 text-black active:scale-95"
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+        )}
+
+        {/* Weight selector */}
+        {product.weights && (
+          <div className="flex flex-wrap gap-1.5">
+            {product.weights.map((w) => (
+              <button
+                key={w.weight}
+                onClick={() => setSelectedWeight(w.weight)}
+                className={`px-2.5 py-1 text-xs rounded-lg border font-medium transition-all duration-150 ${
+                  selectedWeight === w.weight
+                    ? "bg-gray-900 text-white border-gray-900"
+                    : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
                 }`}
-          >
-            {justAdded ? (
-              <>
-                <Check className="w-3.5 h-3.5" />
-                <span>¡Agregado!</span>
-              </>
-            ) : canAddToCart && quantity + cartQuantity <= availableStock ? (
-              "Agregar"
-            ) : (
-              "Sin stock"
+              >
+                {w.weight}kg
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Price — altura fija para alinear con/sin descuento */}
+        <div className="min-h-[3rem]">
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <span className="text-base font-bold text-gray-900 whitespace-nowrap">
+              ${formatPrice(applyDiscount ? currentPromotionalPrice! : currentPrice!)}
+            </span>
+            {applyDiscount && (
+              <span className="text-xs text-gray-400 line-through whitespace-nowrap">
+                ${formatPrice(currentPrice!)}
+              </span>
             )}
-          </button>
-          
-          {/* Selector de cantidad - Solo para productos con colores y pesos */}
-          {canAddToCart && product.colors && product.weights && (
-            <div className="flex justify-center">
-              <div className="flex items-center gap-0.5 sm:gap-1">
-                <span className="text-xs text-gray-600 mr-1 hidden sm:inline">Cant:</span>
-                {[1, 5, 10, 50].map((qty) => (
-                  <button
-                    key={qty}
-                    className={`px-1.5 py-0.5 sm:px-2 sm:py-1 text-xs border rounded ${
-                      quantity === qty
-                        ? "bg-black text-white border-black"
-                        : qty + cartQuantity > availableStock
-                        ? "bg-gray-200 text-gray-400 cursor-not-allowed border-gray-200"
-                        : "bg-white text-black border-gray-300 hover:border-gray-400"
-                    } transition-colors`}
-                    onClick={() => setQuantity(qty)}
-                    disabled={qty + cartQuantity > availableStock}
-                  >
-                    {qty}
-                  </button>
-                ))}
+          </div>
+          {/* Siempre ocupa la misma altura, con o sin mensaje */}
+          <p className="text-[11px] text-gray-500 leading-tight min-h-[1rem] mt-0.5">
+            {applyDiscount && nextLevel
+              ? `Comprá ${nextLevel.quantity - quantity} más → ${nextLevel.discount} off`
+              : ""}
+          </p>
+        </div>
+
+        {/* Quantity + Add to cart */}
+        <div className="space-y-2">
+          {canAdd && product.colors && product.weights && (
+            <div className="flex flex-col gap-1">
+              <span className="text-[11px] text-gray-400">Cantidad</span>
+              <div className="grid grid-cols-4 gap-1">
+                {QUANTITY_OPTIONS.map((qty) => {
+                  const disabled = qty + cartQuantity > availableStock;
+                  return (
+                    <button
+                      key={qty}
+                      onClick={() => !disabled && setQuantity(qty)}
+                      disabled={disabled}
+                      className={`w-full py-1.5 text-xs rounded-lg border font-medium transition-all duration-150 ${
+                        quantity === qty
+                          ? "bg-gray-900 text-white border-gray-900"
+                          : disabled
+                          ? "bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed"
+                          : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
+                      }`}
+                    >
+                      {qty}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
+
+          <button
+            onClick={handleAddToCart}
+            disabled={!canAdd || isOverStock}
+            className={`w-full flex items-center justify-center gap-2 py-2 sm:py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 active:scale-[0.97] ${
+              justAdded
+                ? "bg-emerald-500 text-white"
+                : canAdd && !isOverStock
+                ? "bg-yellow-400 hover:bg-yellow-500 text-gray-900"
+                : "bg-gray-100 text-gray-400 cursor-not-allowed"
+            }`}
+          >
+            {justAdded ? (
+              <>
+                <Check className="w-4 h-4" />
+                ¡Agregado!
+              </>
+            ) : canAdd && !isOverStock ? (
+              <>
+                <ShoppingCart className="w-4 h-4" />
+                Agregar
+              </>
+            ) : (
+              isFilament && availableStock > 0 && availableStock < FILAMENT_MIN_STOCK_TO_PURCHASE
+                ? `Mínimo ${FILAMENT_MIN_STOCK_TO_PURCHASE}`
+                : "Sin stock"
+            )}
+          </button>
         </div>
       </div>
-    </div>
+    </article>
   );
 }

@@ -29,6 +29,8 @@ export function ProductsPage() {
     window.open(whatsappUrl, "_blank");
   };
 
+  
+
   useEffect(() => {
     fetchProducts()
       .then((data) => {
