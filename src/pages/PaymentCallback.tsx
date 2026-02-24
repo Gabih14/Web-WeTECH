@@ -521,8 +521,6 @@ const PaymentCallback = () => {
             )}
           </div>
 
-          {paymentMethod === "transfer" && <TransferBlock />}
-
           {/* Feedback */}
           <div className="feedback-card">
             <p>¿Cómo fue tu experiencia de compra? Tu opinión nos ayuda mucho 💙</p>
