@@ -268,14 +268,15 @@ export default function Checkout() {
 
     const couponDiscount = calculateCouponDiscount();
     const finalTotal = checkoutTotal + (shippingData?.costoTotal || 0) - couponDiscount;
+    const roundDisplayedPrice = (value: number) => Math.round(value);
     const cleanCuit = formData.cuit.trim().replace(/\D/g, ''); // Remover guiones y caracteres no numéricos
 
     const body = {
       cliente_nombre: formData.name,
       cliente_cuit: cleanCuit,
-      total: Number(finalTotal.toFixed(2)),
-      costo_envio: Number((shippingData?.costoTotal || 0).toFixed(2)),
-      descuento_cupon: Number(couponDiscount.toFixed(2)),
+      total: roundDisplayedPrice(finalTotal),
+      costo_envio: roundDisplayedPrice(shippingData?.costoTotal || 0),
+      descuento_cupon: roundDisplayedPrice(couponDiscount),
       codigo_cupon: appliedCoupon?.code || "",
       metodo_pago: paymentMethod,
       email: formData.email,
@@ -303,14 +304,15 @@ export default function Checkout() {
           return {
             nombre,
             cantidad: item.quantity,
-            precio_unitario:
+            precio_unitario: roundDisplayedPrice(
               calculateItemPriceForCheckout(
                 item.product,
                 item.weight,
                 item.quantity
               ) ??
-              getPrice(item.product, item.weight) ??
-              0,
+                getPrice(item.product, item.weight) ??
+                0
+            ),
             ajuste_porcentaje: calculateItemAdjustmentPercentageForCheckout(
               item.product,
               item.weight,
@@ -324,7 +326,7 @@ export default function Checkout() {
               {
                 nombre: shippingData.itemId,
                 cantidad: 1,
-                precio_unitario: shippingData.costoTotal,
+                precio_unitario: roundDisplayedPrice(shippingData.costoTotal),
                 ajuste_porcentaje: 0,
               },
             ]
