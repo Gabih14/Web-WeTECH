@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Tag, AlertCircle, X, ChevronRight, ChevronLeft} from "lucide-react";
 import { useCart } from "../../context/CartContext";
-import {  Product } from "../../types";
+import { Product, Coupon } from "../../types";
 import { CheckoutPersonal } from "./CheckoutPersonal";
 import { CheckoutAdress } from "./CheckoutAdress";
 import { StepIndicator } from "./StepIndicator";
@@ -97,7 +97,7 @@ export default function Checkout() {
   ]);
 
   const [couponCode, setCouponCode] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [couponError, setCouponError] = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
 
@@ -110,7 +110,10 @@ export default function Checkout() {
     setCouponLoading(true);
     setCouponError("");
 
-    const couponData = await verifyCoupon(couponCode.toUpperCase());
+    const normalizedCouponCode = couponCode.trim().toUpperCase();
+    setCouponCode(normalizedCouponCode);
+
+    const couponData = await verifyCoupon(normalizedCouponCode);
     
     if (couponData) {
       // Verificar que el cupón esté activo
@@ -145,7 +148,7 @@ export default function Checkout() {
   const calculateCouponDiscount = () => {
     if (!appliedCoupon) return 0;
     // El cupón ahora siempre es un porcentaje
-    return (total * appliedCoupon.porcentajeDescuento) / 100;
+    return (checkoutTotal * appliedCoupon.porcentajeDescuento) / 100;
   };
 
   const getPrice = (product: Product, weight: number): number | undefined => {
@@ -356,9 +359,9 @@ export default function Checkout() {
       if (data?.naveUrl) {
         // Si hay un cupón aplicado, usarlo después de crear la orden
         if (appliedCoupon && data?.id) {
-          const cleanCuit = formData.cuit.trim().replace(/\D/g, '');
+          const cuitForCouponUse = formData.cuit.trim();
           try {
-            await useCoupon(appliedCoupon.id, cleanCuit, data.id);
+            await useCoupon(appliedCoupon.code, cuitForCouponUse, data.id);
             console.log("Cupón utilizado exitosamente");
           } catch (error) {
             console.error("Error al usar el cupón:", error);
@@ -1002,55 +1005,55 @@ export default function Checkout() {
                     );
                   })}
                 </ul>
-                {currentStep === 4 && (
-                  <div className="mt-6">
-                    <div className="flex items-center space-x-2">
-                      <div className="flex-1">
-                        <input
-                          type="text"
-                          value={couponCode}
-                          onChange={(e) => setCouponCode(e.target.value)}
-                          placeholder="Código de cupón"
-                          className="w-full px-3 py-2 border rounded-md"
-                        />
-                      </div>
+                <div className="mt-6">
+                  <div className="flex items-center space-x-2">
+                    <div className="flex-1">
+                      <input
+                        type="text"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value)}
+                        placeholder="Código de cupón"
+                        className="w-full px-3 py-2 border rounded-md"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={applyCoupon}
+                      disabled={couponLoading}
+                      className="bg-gray-100 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-200 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {couponLoading ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-gray-700 border-t-transparent rounded-full animate-spin mr-2"></div>
+                          Verificando...
+                        </>
+                      ) : (
+                        <>
+                          <Tag className="h-4 w-4 mr-2" />
+                          Aplicar
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  {couponError && (
+                    <p className="text-red-500 text-sm mt-1">{couponError}</p>
+                  )}
+                  {appliedCoupon && (
+                    <div className="mt-2 flex items-center justify-between bg-green-50 p-2 rounded-md">
+                      <span className="text-green-700 text-sm">
+                        Cupón aplicado: {appliedCoupon.code} (
+                        {appliedCoupon.porcentajeDescuento}%)
+                      </span>
                       <button
-                        onClick={applyCoupon}
-                        disabled={couponLoading}
-                        className="bg-gray-100 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-200 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                        type="button"
+                        onClick={removeCoupon}
+                        className="text-green-700 hover:text-green-800 text-sm"
                       >
-                        {couponLoading ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-gray-700 border-t-transparent rounded-full animate-spin mr-2"></div>
-                            Verificando...
-                          </>
-                        ) : (
-                          <>
-                            <Tag className="h-4 w-4 mr-2" />
-                            Aplicar
-                          </>
-                        )}
+                        Eliminar
                       </button>
                     </div>
-                    {couponError && (
-                      <p className="text-red-500 text-sm mt-1">{couponError}</p>
-                    )}
-                    {appliedCoupon && (
-                      <div className="mt-2 flex items-center justify-between bg-green-50 p-2 rounded-md">
-                        <span className="text-green-700 text-sm">
-                          Cupón aplicado: {appliedCoupon.id} (
-                          {appliedCoupon.porcentajeDescuento}%)
-                        </span>
-                        <button
-                          onClick={removeCoupon}
-                          className="text-green-700 hover:text-green-800 text-sm"
-                        >
-                          Eliminar
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
+                  )}
+                </div>
                 <dl className="border-t border-gray-200 py-4 space-y-2">
                   <div className="flex items-center justify-between">
                     <dt className="text-sm text-gray-600">Subtotal</dt>

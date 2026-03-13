@@ -63,10 +63,12 @@ export interface ShippingCost {
 }
 
 export interface Coupon {
-  id: string;
   code: string;
-  discount: number;
-  type: "percentage" | "fixed";
+  porcentajeDescuento: number;
+  activo: boolean;
+  fechaDesde: Date;
+  fechaHasta: Date;
+  descripcion?: string;
 }
 
 export interface Colors {

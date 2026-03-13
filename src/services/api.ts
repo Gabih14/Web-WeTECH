@@ -1,4 +1,5 @@
 // src/services/api.ts
+import { Coupon } from "../types";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const BEARER_TOKEN = import.meta.env.VITE_API_BEARER_TOKEN; 
@@ -43,12 +44,13 @@ export async function fetchClienteByCuit(cuit: string) {
   }
 }
 
-export async function verifyCoupon(couponCode: string) {
+export async function verifyCoupon(couponCode: string): Promise<Coupon | null> {
   try {
-    const data = await apiFetch(`/cupones/${couponCode}`);
+    const normalizedCode = couponCode.trim().toUpperCase();
+    const data = await apiFetch(`/cupones/${normalizedCode}`);
     if (!data) return null;
     return {
-      id: data.id,
+      code: String(data.id ?? normalizedCode).trim().toUpperCase(),
       descripcion: data.descripcion,
       porcentajeDescuento: parseFloat(data.porcentajeDescuento),
       activo: data.activo,
@@ -61,12 +63,13 @@ export async function verifyCoupon(couponCode: string) {
   }
 }
 
-export async function useCoupon(cuponId: string, cuit: string, pedidoId: string) {
+export async function useCoupon(cuponCode: string, cuit: string, pedidoId: string) {
   try {
+    const normalizedCouponCode = cuponCode.trim().toUpperCase();
     const data = await apiFetch(`/cupones/usar`, {
       method: "POST",
       body: JSON.stringify({
-        cupon_id: cuponId,
+        cupon_id: normalizedCouponCode,
         cuit,
         pedido_id: pedidoId,
       }),
