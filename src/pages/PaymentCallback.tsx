@@ -418,7 +418,7 @@ const PaymentCallback = () => {
           <h1 className="page-title">Verificando tu pago</h1>
           <p className="page-sub">
             {pedidoData
-              ? "Tu pedido está pendiente de confirmación. Revisamos el estado cada pocos segundos."
+              ? "Tu pedido está pendiente de confirmación."
               : "Estamos buscando tu pedido…"}
           </p>
 
