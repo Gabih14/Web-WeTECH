@@ -1,6 +1,6 @@
 import { Product } from "../types";
 
-export const FILAMENT_MIN_STOCK_TO_PURCHASE = 2;
+export const FILAMENT_MIN_STOCK_TO_PURCHASE = 3;
 
 export const isFilamentProduct = (product: Product): boolean =>
   product.category === "FILAMENTO 3D";
