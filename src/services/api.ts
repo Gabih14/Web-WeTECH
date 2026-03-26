@@ -49,10 +49,26 @@ export async function verifyCoupon(couponCode: string): Promise<Coupon | null> {
     const normalizedCode = couponCode.trim().toUpperCase();
     const data = await apiFetch(`/cupones/${normalizedCode}`);
     if (!data) return null;
+
+    const parsePercent = (value: unknown, fallback = 0) => {
+      const numeric = Number.parseFloat(String(value));
+      return Number.isFinite(numeric) ? numeric : fallback;
+    };
+
+    const defaultDiscount = parsePercent(data.porcentajeDescuento, 0);
+
     return {
       code: String(data.id ?? normalizedCode).trim().toUpperCase(),
       descripcion: data.descripcion,
-      porcentajeDescuento: parseFloat(data.porcentajeDescuento),
+      porcentajeDescuento: defaultDiscount,
+      porcentajeDescuentoTarjeta: parsePercent(
+        data.porcentajeDescuentoTarjeta,
+        defaultDiscount
+      ),
+      porcentajeDescuentoTransferencia: parsePercent(
+        data.porcentajeDescuentoTransferencia,
+        defaultDiscount
+      ),
       activo: data.activo,
       fechaDesde: new Date(data.fechaDesde),
       fechaHasta: new Date(data.fechaHasta),
