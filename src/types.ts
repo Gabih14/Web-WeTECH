@@ -65,6 +65,8 @@ export interface ShippingCost {
 export interface Coupon {
   code: string;
   porcentajeDescuento: number;
+  porcentajeDescuentoTarjeta?: number;
+  porcentajeDescuentoTransferencia?: number;
   activo: boolean;
   fechaDesde: Date;
   fechaHasta: Date;
