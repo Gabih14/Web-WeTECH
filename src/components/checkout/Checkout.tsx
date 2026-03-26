@@ -145,16 +145,24 @@ export default function Checkout() {
     setCouponError("");
   };
 
-  const calculateCouponDiscount = () => {
-    if (!appliedCoupon) return 0;
-    // El cupón ahora siempre es un porcentaje
-    return (checkoutTotal * appliedCoupon.porcentajeDescuento) / 100;
-  };
-
   const getPrice = (product: Product, weight: number): number | undefined => {
     const weightData = product.weights?.find((w) => w.weight === weight);
     return weightData ? weightData.price : product.price;
   };
+
+  const getEffectiveCouponPercentage = (coupon: Coupon | null): number => {
+    if (!coupon) return 0;
+
+    if (paymentMethod === "transfer") {
+      return (
+        coupon.porcentajeDescuentoTransferencia ?? coupon.porcentajeDescuento
+      );
+    }
+
+    return coupon.porcentajeDescuento;
+  };
+
+  const effectiveCouponPercentage = getEffectiveCouponPercentage(appliedCoupon);
   /*   const getPromotionalPrice = (
     product: Product,
     weight: number
@@ -193,17 +201,21 @@ export default function Checkout() {
   ): number | undefined => {
     const originalPrice = getPrice(product, weight);
 
-    if (originalPrice) {
-      // Solo aplicar descuento si el método de pago es transferencia
-      if (paymentMethod === "transfer" && shouldApplyDiscount(product)) {
-        return calculateDiscountedPriceForProduct(
-          product,
-          originalPrice,
-          quantity,
-          weight
-        );
-      }
-      return originalPrice;
+    if (!originalPrice) return originalPrice;
+
+    // Si gana cupón, cada línea sale con precio neto por cupón.
+    if (isCouponWinningDiscount && appliedCoupon) {
+      return originalPrice * (1 - effectiveCouponPercentage / 100);
+    }
+
+    // Si no gana cupón, aplicar descuento por transferencia cuando corresponda.
+    if (shouldApplyTransferDiscountToCheckout && shouldApplyDiscount(product)) {
+      return calculateDiscountedPriceForProduct(
+        product,
+        originalPrice,
+        quantity,
+        weight
+      );
     }
 
     return originalPrice;
@@ -214,7 +226,12 @@ export default function Checkout() {
     weight: number,
     quantity: number
   ): number => {
-    if (paymentMethod !== "transfer") return 0;
+    // Cupón ganador: ajuste uniforme para todas las líneas.
+    if (isCouponWinningDiscount && appliedCoupon) {
+      return effectiveCouponPercentage;
+    }
+
+    if (!shouldApplyTransferDiscountToCheckout) return 0;
     if (!shouldApplyDiscount(product)) return 0;
 
     const discountPercentage = getDiscountPercentageForProduct(
@@ -269,8 +286,6 @@ export default function Checkout() {
       postal_code: formData.billingPostalCode,
     };
 
-    const couponDiscount = calculateCouponDiscount();
-    const finalTotal = checkoutTotal + (shippingData?.costoTotal || 0) - couponDiscount;
     const roundDisplayedPrice = (value: number) => Math.round(value);
     const cleanCuit = formData.cuit.trim().replace(/\D/g, ''); // Remover guiones y caracteres no numéricos
 
@@ -278,9 +293,9 @@ export default function Checkout() {
       cliente_nombre: formData.name,
       cliente_cuit: cleanCuit,
       total: roundDisplayedPrice(finalTotal),
-      costo_envio: roundDisplayedPrice(shippingData?.costoTotal || 0),
+      costo_envio: roundDisplayedPrice(shippingTotal),
       descuento_cupon: roundDisplayedPrice(couponDiscount),
-      codigo_cupon: appliedCoupon?.code || "",
+      codigo_cupon: shouldSendCouponInOrder ? appliedCoupon?.code || "" : "",
       metodo_pago: paymentMethod,
       email: formData.email,
       telefono: formData.phone,
@@ -304,6 +319,8 @@ export default function Checkout() {
 
           const nombre = colorData?.itemId || item.product.id;
 
+          const originalUnitPrice = roundDisplayedPrice(getPrice(item.product, item.weight) ?? 0);
+
           return {
             nombre,
             cantidad: item.quantity,
@@ -316,6 +333,7 @@ export default function Checkout() {
                 getPrice(item.product, item.weight) ??
                 0
             ),
+            subtotal: originalUnitPrice * item.quantity,
             ajuste_porcentaje: calculateItemAdjustmentPercentageForCheckout(
               item.product,
               item.weight,
@@ -357,8 +375,8 @@ export default function Checkout() {
       }
       // Manejo de la respuesta exitosa
       if (data?.naveUrl) {
-        // Si hay un cupón aplicado, usarlo después de crear la orden
-        if (appliedCoupon && data?.id) {
+        // Si el cupón fue el descuento ganador, usarlo después de crear la orden
+        if (shouldSendCouponInOrder && appliedCoupon && data?.id) {
           const cuitForCouponUse = formData.cuit.trim();
           try {
             await useCoupon(appliedCoupon.code, cuitForCouponUse, data.id);
@@ -494,10 +512,35 @@ export default function Checkout() {
     }, 0);
   };
 
+  const calculateTransferDiscountedTotal = () => {
+    return items.reduce((sum, item) => {
+      const price = calculateItemPriceWithDiscount(item.product, item.weight, item.quantity);
+      const itemTotal = price ? price * item.quantity : 0;
+      return sum + itemTotal;
+    }, 0);
+  };
+
   const originalTotal = calculateOriginalTotal();
+  const transferDiscountedTotal = calculateTransferDiscountedTotal();
+  const transferDiscountAmount =
+    paymentMethod === "transfer"
+      ? Math.max(originalTotal - transferDiscountedTotal, 0)
+      : 0;
+  const transferDiscountPercentage =
+    originalTotal > 0 ? (transferDiscountAmount / originalTotal) * 100 : 0;
+  const isCouponWinningDiscount =
+    !!appliedCoupon && effectiveCouponPercentage > transferDiscountPercentage;
+  const shouldApplyTransferDiscountToCheckout =
+    paymentMethod === "transfer" && !isCouponWinningDiscount;
+
+  // checkoutTotal ya queda neto por línea con el descuento ganador.
   const checkoutTotal = calculateCheckoutTotal();
+  const appliedDiscountAmount = Math.max(originalTotal - checkoutTotal, 0);
+  const couponDiscount = isCouponWinningDiscount ? appliedDiscountAmount : 0;
+  const shippingTotal = shippingData?.costoTotal || 0;
+  const finalTotal = checkoutTotal + shippingTotal;
+  const shouldSendCouponInOrder = isCouponWinningDiscount;
   const discount = originalTotal - total;
-  const checkoutDiscount = paymentMethod === "transfer" ? discount : 0;
 
   // Funciones de navegación del wizard
   const canProceedToNextStep = (): boolean => {
@@ -1042,7 +1085,7 @@ export default function Checkout() {
                     <div className="mt-2 flex items-center justify-between bg-green-50 p-2 rounded-md">
                       <span className="text-green-700 text-sm">
                         Cupón aplicado: {appliedCoupon.code} (
-                        {appliedCoupon.porcentajeDescuento}%)
+                        {effectiveCouponPercentage}%)
                       </span>
                       <button
                         type="button"
@@ -1079,7 +1122,7 @@ export default function Checkout() {
                     <span className="text-lg font-medium">Descuento:</span>
                     <span className="text-lg font-bold text-red-500">
                       -$
-                      {checkoutDiscount.toLocaleString("es-ES", {
+                      {appliedDiscountAmount.toLocaleString("es-ES", {
                         minimumFractionDigits: 0,
                         maximumFractionDigits: 0,
                       })}
@@ -1097,12 +1140,12 @@ export default function Checkout() {
                       </span>
                     </div>
                   )}
-                  {appliedCoupon && (
+                  {isCouponWinningDiscount && appliedCoupon && (
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-sm font-medium text-green-700">Cupón {appliedCoupon.code}:</span>
                       <span className="text-sm font-bold text-green-700">
                         -$
-                        {calculateCouponDiscount().toLocaleString("es-ES", {
+                        {couponDiscount.toLocaleString("es-ES", {
                           minimumFractionDigits: 0,
                           maximumFractionDigits: 0,
                         })}
@@ -1115,7 +1158,7 @@ export default function Checkout() {
                     </dt>
                     <dd className="text-xl font-bold text-black">
                       $
-                      {(checkoutTotal + (shippingData?.costoTotal || 0) - calculateCouponDiscount()).toLocaleString("es-ES", {
+                      {finalTotal.toLocaleString("es-ES", {
                         minimumFractionDigits: 0,
                         maximumFractionDigits: 0,
                       })}
