@@ -348,6 +348,7 @@ export default function Checkout() {
                 nombre: shippingData.itemId,
                 cantidad: 1,
                 precio_unitario: roundDisplayedPrice(shippingData.costoTotal),
+                subtotal: roundDisplayedPrice(shippingData.costoTotal),
                 ajuste_porcentaje: 0,
               },
             ]
