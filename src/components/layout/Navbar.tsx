@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ShoppingCart } from "lucide-react"; // UserCircle
 import { FaWhatsapp } from "react-icons/fa"; // FaMapMarkerAlt
 import { useCart } from "../../context/CartContext";
@@ -11,6 +11,7 @@ import Isologo from "../../assets/Isologo Fondo Negro SVG.svg";
 export default function Navbar() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isBadgeBumping, setIsBadgeBumping] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   //const [selectedProvince, setSelectedProvince] = useState("Mendoza");
   const { items } = useCart();
@@ -19,6 +20,21 @@ export default function Navbar() {
   const location = useLocation();
 
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+  const previousItemCount = useRef(itemCount);
+
+  useEffect(() => {
+    if (itemCount > previousItemCount.current) {
+      setIsBadgeBumping(true);
+      const timer = window.setTimeout(() => {
+        setIsBadgeBumping(false);
+      }, 450);
+
+      previousItemCount.current = itemCount;
+      return () => window.clearTimeout(timer);
+    }
+
+    previousItemCount.current = itemCount;
+  }, [itemCount]);
 
   // Verificar si estamos en la página de franquicias
   const isInFranquiciasPage = location.pathname === '/franquicias';
@@ -129,7 +145,11 @@ export default function Navbar() {
               >
                 <ShoppingCart className="h-6 w-6" />
                 {itemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                  <span
+                    className={`absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white ${
+                      isBadgeBumping ? "animate-badgePop" : ""
+                    }`}
+                  >
                     {itemCount}
                   </span>
                 )}
