@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { RefreshCw } from "lucide-react";
 import { apiFetch } from "../services/api";
+import SurveyModal from "../components/SurveyModal";
 
 const PaymentStatus = {
   LOADING: "loading",
@@ -48,6 +49,7 @@ const PaymentCallback = () => {
   // Controla la animación de pantalla completa
   const [splashVisible, setSplashVisible] = useState(true);
   const [splashExiting, setSplashExiting] = useState(false);
+  const [isSurveyOpen, setIsSurveyOpen] = useState(false);
 
   const paymentMethod = pedidoData?.payment_method ?? pedidoData?.metodo_pago;
   const isTransferPending =
@@ -60,6 +62,8 @@ const PaymentCallback = () => {
     searchParams.get("payment_id") ||
     searchParams.get("preference_id") ||
     searchParams.get("collection_id");
+
+  const surveyOrderKey = externalId || "sin-id";
 
   // Inyectar estilos de animación
   useEffect(() => {
@@ -289,6 +293,22 @@ const PaymentCallback = () => {
     }, 1800);
     return () => clearTimeout(timer);
   }, [status, pedidoData]);
+
+  useEffect(() => {
+    if (splashVisible) {
+      return;
+    }
+
+    const storageKey = `survey_modal_seen_${surveyOrderKey}`;
+    const alreadySeen = localStorage.getItem(storageKey);
+
+    if (alreadySeen) {
+      return;
+    }
+
+    setIsSurveyOpen(true);
+    localStorage.setItem(storageKey, "1");
+  }, [splashVisible, surveyOrderKey]);
 
   const refreshPedidoStatus = async () => {
     if (!externalId || isRefreshing) return;
@@ -588,6 +608,12 @@ const PaymentCallback = () => {
 
   return (
     <div className="pago-root">
+      <SurveyModal
+        isOpen={isSurveyOpen}
+        onClose={() => setIsSurveyOpen(false)}
+        clientName={pedidoData?.cliente_nombre}
+      />
+
       {/* SPLASH de pantalla completa */}
       {splashVisible && (
         <div className={`splash ${splashClass} ${splashExiting ? "exiting" : ""}`}>
