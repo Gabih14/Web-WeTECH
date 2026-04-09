@@ -122,8 +122,8 @@ export function ProductPage() {
       const originalPrice =
         selectedWeight !== null && product.weights
           ? product.weights.find((weight) => weight.weight === selectedWeight)?.price ??
-            product.price ??
-            0
+          product.price ??
+          0
           : product.price ?? 0;
 
       setCurrentPrice(originalPrice);
@@ -190,21 +190,21 @@ export function ProductPage() {
 
   const sortedColors = product.colors
     ? [...product.colors].sort((a, b) => {
-        const stockA = getVariantStock(
-          product,
-          a.name,
-          selectedWeight ?? product.weights?.[0]?.weight ?? 0
-        );
-        const stockB = getVariantStock(
-          product,
-          b.name,
-          selectedWeight ?? product.weights?.[0]?.weight ?? 0
-        );
+      const stockA = getVariantStock(
+        product,
+        a.name,
+        selectedWeight ?? product.weights?.[0]?.weight ?? 0
+      );
+      const stockB = getVariantStock(
+        product,
+        b.name,
+        selectedWeight ?? product.weights?.[0]?.weight ?? 0
+      );
 
-        if (stockA > 0 && stockB === 0) return -1;
-        if (stockA === 0 && stockB > 0) return 1;
-        return a.name.localeCompare(b.name);
-      })
+      if (stockA > 0 && stockB === 0) return -1;
+      if (stockA === 0 && stockB > 0) return 1;
+      return a.name.localeCompare(b.name);
+    })
     : [];
 
   const nextLevel = getNextDiscountLevelForProduct(
@@ -217,16 +217,16 @@ export function ProductPage() {
     availableStock === 0
       ? { text: "Sin stock", tone: "text-red-600 bg-red-50 border-red-200" }
       : isFilament && availableStock < FILAMENT_MIN_STOCK_TO_PURCHASE
-      ? {
+        ? {
           text: `Mínimo ${FILAMENT_MIN_STOCK_TO_PURCHASE} unidades para comprar`,
           tone: "text-red-600 bg-red-50 border-red-200",
         }
-      : availableStock <= 5
-      ? {
-          text: `Últimas ${availableStock} unidades`,
-          tone: "text-amber-700 bg-amber-50 border-amber-200",
-        }
-      : { text: "Disponible", tone: "text-emerald-700 bg-emerald-50 border-emerald-200" };
+        : availableStock <= 5
+          ? {
+            text: `Últimas ${availableStock} unidades`,
+            tone: "text-amber-700 bg-amber-50 border-amber-200",
+          }
+          : { text: "Disponible", tone: "text-emerald-700 bg-emerald-50 border-emerald-200" };
 
   const handleAddToCart = () => {
     if (variantSelectionIncomplete || !canAddToCart || isOverStock) {
@@ -294,11 +294,10 @@ export function ProductPage() {
                   <button
                     key={index}
                     onClick={() => setCurrentImageIndex(index)}
-                    className={`overflow-hidden rounded-xl border-2 transition-all duration-200 ${
-                      currentImageIndex === index
-                        ? "border-yellow-500 shadow-md shadow-yellow-200"
-                        : "border-gray-200 hover:border-gray-400"
-                    }`}
+                    className={`overflow-hidden rounded-xl border-2 transition-all duration-200 ${currentImageIndex === index
+                      ? "border-yellow-500 shadow-md shadow-yellow-200"
+                      : "border-gray-200 hover:border-gray-400"
+                      }`}
                     aria-label={`Ver imagen ${index + 1}`}
                   >
                     <img
@@ -392,11 +391,10 @@ export function ProductPage() {
                       <button
                         key={weight.weight}
                         onClick={() => setSelectedWeight(weight.weight)}
-                        className={`rounded-xl border px-3 py-2 text-sm font-semibold transition-all ${
-                          selectedWeight === weight.weight
-                            ? "border-gray-900 bg-gray-900 text-white"
-                            : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"
-                        }`}
+                        className={`rounded-xl border px-3 py-2 text-sm font-semibold transition-all ${selectedWeight === weight.weight
+                          ? "border-gray-900 bg-gray-900 text-white"
+                          : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"
+                          }`}
                       >
                         {weight.weight}kg
                       </button>
@@ -429,9 +427,8 @@ export function ProductPage() {
                       {selectedColor || "Seleccionar color"}
                     </span>
                     <ChevronDown
-                      className={`h-4 w-4 text-gray-500 transition-transform ${
-                        isColorMenuOpen ? "rotate-180" : ""
-                      }`}
+                      className={`h-4 w-4 text-gray-500 transition-transform ${isColorMenuOpen ? "rotate-180" : ""
+                        }`}
                     />
                   </button>
 
@@ -455,9 +452,8 @@ export function ProductPage() {
                               setSelectedColor(color.name);
                               setIsColorMenuOpen(false);
                             }}
-                            className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-gray-50 ${
-                              disabledByStock ? "opacity-45" : ""
-                            } ${selectedColor === color.name ? "bg-gray-50" : ""}`}
+                            className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-gray-50 ${disabledByStock ? "opacity-45" : ""
+                              } ${selectedColor === color.name ? "bg-gray-50" : ""}`}
                           >
                             {!!color.hex?.trim() && (
                               <span
@@ -488,13 +484,12 @@ export function ProductPage() {
                           key={qty}
                           onClick={() => !disabled && setQuantity(qty)}
                           disabled={disabled}
-                          className={`rounded-xl border px-3 py-2 text-sm font-semibold transition-all ${
-                            quantity === qty
-                              ? "border-gray-900 bg-gray-900 text-white"
-                              : disabled
+                          className={`rounded-xl border px-3 py-2 text-sm font-semibold transition-all ${quantity === qty
+                            ? "border-gray-900 bg-gray-900 text-white"
+                            : disabled
                               ? "cursor-not-allowed border-gray-100 bg-gray-50 text-gray-300"
                               : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"
-                          }`}
+                            }`}
                         >
                           {qty}
                         </button>
@@ -509,20 +504,19 @@ export function ProductPage() {
                   En carrito: <span className="font-semibold text-gray-700">{cartQuantity}</span>
                 </p>
                 <p className="text-xs text-gray-500">
-                  Stock: <span className="font-semibold text-gray-700">{availableStock}</span>
+                  {/* Stock: <span className="font-semibold text-gray-700">{availableStock}</span> */}
                 </p>
               </div>
 
               <button
                 onClick={handleAddToCart}
                 disabled={isAddDisabled}
-                className={`mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold text-white transition-all duration-200 active:scale-[0.98] ${
-                  justAdded
-                    ? "bg-emerald-500"
-                    : !isAddDisabled
+                className={`mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold text-white transition-all duration-200 active:scale-[0.98] ${justAdded
+                  ? "bg-emerald-500"
+                  : !isAddDisabled
                     ? "bg-yellow-600 hover:bg-yellow-700"
                     : "cursor-not-allowed bg-gray-300"
-                }`}
+                  }`}
               >
                 {justAdded ? (
                   <>
