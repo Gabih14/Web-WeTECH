@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Filter, X, AlertCircle } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa";
 import { useSearchParams } from "react-router-dom";
@@ -42,6 +42,40 @@ export function ProductsPage() {
         setLoading(false);
       });
   }, []);
+
+  const categoriesWithFilamentSubcategories = useMemo(() => {
+    const filamentCategoryId = "FILAMENTO 3D";
+
+    const filamentSubcategories = Array.from(
+      new Set(
+        products
+          .filter(
+            (product) =>
+              product.category === filamentCategoryId &&
+              typeof product.subcategory === "string" &&
+              product.subcategory.trim() !== ""
+          )
+          .map((product) => product.subcategory!.trim().toUpperCase())
+      )
+    )
+      .sort((a, b) => a.localeCompare(b))
+      .map((subcategory) => ({
+        id: subcategory,
+        name: subcategory,
+      }));
+
+    return categories.map((category) => {
+      if (category.id !== filamentCategoryId) {
+        return category;
+      }
+
+      return {
+        ...category,
+        subcategories: filamentSubcategories,
+      };
+    });
+  }, [products]);
+
   const filteredProducts = products.filter((product: any) => {
     if (!selectedCategory) return true;
     if (!selectedSubcategory)
@@ -210,7 +244,7 @@ export function ProductsPage() {
         {/* Desktop Sidebar */}
         <div className="hidden lg:block w-64 flex-shrink-0">
           <CategoryFilter
-            categories={categories}
+            categories={categoriesWithFilamentSubcategories}
             selectedCategory={selectedCategory}
             selectedSubcategory={selectedSubcategory}
             onCategoryChange={handleCategoryChange}
@@ -298,7 +332,7 @@ export function ProductsPage() {
             </button>
           </div>
           <CategoryFilter
-            categories={categories}
+            categories={categoriesWithFilamentSubcategories}
             selectedCategory={selectedCategory}
             selectedSubcategory={selectedSubcategory}
             onCategoryChange={(category) => {
