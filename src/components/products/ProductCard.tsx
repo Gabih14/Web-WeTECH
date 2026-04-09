@@ -9,6 +9,12 @@ import {
   getDiscountPercentageForProduct,
   getNextDiscountLevelForProduct,
 } from "../../utils/discounts";
+import { useAddToCartFeedback } from "../../hooks/useAddToCartFeedback";
+import {
+  getFirstColorWithStock,
+  getPurchaseState,
+  getVariantStock,
+} from "../../utils/cartPurchase";
 import {
   canPurchaseWithStock,
   FILAMENT_MIN_STOCK_TO_PURCHASE,
@@ -30,43 +36,25 @@ function formatPrice(price: number) {
 export function ProductCard({ product }: ProductCardProps) {
   const { addToCart, items } = useCart();
   const location = useLocation();
+  const { justAdded, triggerAddedFeedback } = useAddToCartFeedback();
 
   const isFilament = product.category === "FILAMENTO 3D";
 
   // ── Helpers ──────────────────────────────────────────────────────────────
-  const getFirstColorWithStock = useCallback(() => {
-    if (!product.colors || !product.weights) return product.colors?.[0]?.name ?? null;
-    const defaultWeight = product.weights[0]?.weight ?? 0;
-    return (
-      product.colors.find((c) => (c.stock[defaultWeight.toString()] ?? 0) > 0)?.name ??
-      product.colors[0]?.name ??
-      null
-    );
-  }, [product.colors, product.weights]);
-
-  const getStock = useCallback(
-    (color: string, weight: number) =>
-      product.colors?.find((c) => c.name === color)?.stock[weight.toString()] ?? 0,
-    [product.colors]
-  );
-
-  const getCartQuantity = useCallback(
-    (productId: string, color: string, weight: number) =>
-      items.find(
-        (item) =>
-          item.product.id === productId && item.color === color && item.weight === weight
-      )?.quantity ?? 0,
-    [items]
+  const selectedStock = useCallback(
+    (color: string, weight: number) => getVariantStock(product, color, weight),
+    [product]
   );
 
   // ── State ─────────────────────────────────────────────────────────────────
-  const [selectedColor, setSelectedColor] = useState<string | null>(getFirstColorWithStock);
+  const [selectedColor, setSelectedColor] = useState<string | null>(() =>
+    getFirstColorWithStock(product)
+  );
   const [selectedWeight, setSelectedWeight] = useState<number | null>(
     product.weights?.[0]?.weight ?? null
   );
   const [quantity, setQuantity] = useState(1);
   const [isColorMenuOpen, setIsColorMenuOpen] = useState(false);
-  const [justAdded, setJustAdded] = useState(false);
   const [currentPrice, setCurrentPrice] = useState<number | undefined>(product.price);
   const [currentPromotionalPrice, setCurrentPromotionalPrice] = useState<number | undefined>(
     isFilament ? product.promotionalPrice : undefined
@@ -75,22 +63,15 @@ export function ProductCard({ product }: ProductCardProps) {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // ── Derived values ────────────────────────────────────────────────────────
-  const availableStock =
-    selectedColor && selectedWeight !== null
-      ? getStock(selectedColor, selectedWeight)
-      : product.stock ?? 0;
+  const { availableStock, cartQuantity, canAddToCart, isOverStock } = getPurchaseState({
+    product,
+    items,
+    selectedColor,
+    selectedWeight,
+    quantity,
+  });
 
-  const cartQuantity =
-    selectedColor && selectedWeight !== null
-      ? getCartQuantity(product.id, selectedColor, selectedWeight)
-      : getCartQuantity(product.id, "", 0);
-
-  const canAdd =
-    selectedColor && selectedWeight !== null
-      ? canPurchaseWithStock(product, availableStock)
-      : canPurchaseWithStock(product, product.stock ?? 0);
-
-  const isOverStock = quantity + cartQuantity > availableStock;
+  const canAdd = canPurchaseWithStock(product, availableStock);
 
   const stockStatus =
     availableStock === 0
@@ -139,19 +120,17 @@ export function ProductCard({ product }: ProductCardProps) {
   const handleAddToCart = () => {
     if (selectedColor && selectedWeight !== null && canAdd && !isOverStock) {
       addToCart(product, selectedColor, selectedWeight, quantity);
-      setJustAdded(true);
-      setTimeout(() => setJustAdded(false), 1500);
+      triggerAddedFeedback();
     } else if (!product.colors && !product.weights && canAdd && !isOverStock) {
       addToCart(product, "", 0, quantity);
-      setJustAdded(true);
-      setTimeout(() => setJustAdded(false), 1500);
+      triggerAddedFeedback();
     }
   };
 
   const sortedColors = product.colors
     ? [...product.colors].sort((a, b) => {
-        const wa = getStock(a.name, selectedWeight ?? product.weights?.[0]?.weight ?? 0);
-        const wb = getStock(b.name, selectedWeight ?? product.weights?.[0]?.weight ?? 0);
+        const wa = selectedStock(a.name, selectedWeight ?? product.weights?.[0]?.weight ?? 0);
+        const wb = selectedStock(b.name, selectedWeight ?? product.weights?.[0]?.weight ?? 0);
         if (wa > 0 && wb === 0) return -1;
         if (wa === 0 && wb > 0) return 1;
         return a.name.localeCompare(b.name);
@@ -232,7 +211,7 @@ export function ProductCard({ product }: ProductCardProps) {
             {isColorMenuOpen && (
               <div className="absolute z-50 left-0 right-0 mt-1.5 bg-white border border-gray-100 rounded-xl shadow-xl max-h-44 overflow-y-auto">
                 {sortedColors.map((color) => {
-                  const stock = getStock(
+                  const stock = selectedStock(
                     color.name,
                     selectedWeight ?? product.weights?.[0]?.weight ?? 0
                   );
@@ -336,11 +315,11 @@ export function ProductCard({ product }: ProductCardProps) {
 
           <button
             onClick={handleAddToCart}
-            disabled={!canAdd || isOverStock}
+            disabled={!canAddToCart || isOverStock}
             className={`w-full flex items-center justify-center gap-2 py-2 sm:py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 active:scale-[0.97] ${
               justAdded
                 ? "bg-emerald-500 text-white"
-                : canAdd && !isOverStock
+                : canAddToCart && !isOverStock
                 ? "bg-yellow-400 hover:bg-yellow-500 text-gray-900"
                 : "bg-gray-100 text-gray-400 cursor-not-allowed"
             }`}
@@ -350,7 +329,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 <Check className="w-4 h-4" />
                 ¡Agregado!
               </>
-            ) : canAdd && !isOverStock ? (
+            ) : canAddToCart && !isOverStock ? (
               <>
                 <ShoppingCart className="w-4 h-4" />
                 Agregar
