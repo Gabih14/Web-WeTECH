@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Tag, AlertCircle, X, ChevronRight, ChevronLeft} from "lucide-react";
+import { ArrowLeft, Tag, AlertCircle, X, ChevronRight, ChevronLeft, Lock } from "lucide-react";
 import { useCart } from "../../context/CartContext";
 import { Product, Coupon } from "../../types";
 import { CheckoutPersonal } from "./CheckoutPersonal";
@@ -61,6 +61,9 @@ export default function Checkout() {
 
   const [error, setError] = useState<{ code: string; message: string; retryable: boolean } | null>(null);
   const [showErrorModal, setShowErrorModal] = useState(false);
+  const [showDevelopmentModal, setShowDevelopmentModal] = useState(false);
+  const [checkoutPassword, setCheckoutPassword] = useState("");
+  const [checkoutPasswordError, setCheckoutPasswordError] = useState("");
 
   // Estados para el wizard de pasos
   const [currentStep, setCurrentStep] = useState(1);
@@ -72,6 +75,8 @@ export default function Checkout() {
   ];
 
   const BEARER_TOKEN = import.meta.env.VITE_API_BEARER_TOKEN; // Se usará cuando el pago esté activo
+  const CHECKOUT_ACCESS_PASSWORD =
+    import.meta.env.VITE_CHECKOUT_ACCESS_PASSWORD || "desarrollo";
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
@@ -420,16 +425,7 @@ export default function Checkout() {
     }
   }; */
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    // Advertencia y confirmación antes de continuar
-    const proceed = window.confirm(
-      "Advertencia: esta es una simulación. La compra que estás por realizar no es real. Al presionar Aceptar confirmás que entendés y aceptás esta condición. ¿Deseás continuar?"
-    );
-    if (!proceed) {
-      return; // Aborta el flujo si el usuario no acepta
-    }
-
+  const completeCheckout = async () => {
     setIsLoading(true);
     //navigate("/under-development");
     // Forzar redibujado
@@ -448,6 +444,27 @@ export default function Checkout() {
     if (false) {
       await createPaymentRequest();
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCheckoutPassword("");
+    setCheckoutPasswordError("");
+    setShowDevelopmentModal(true);
+  };
+
+  const handleDevelopmentPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (checkoutPassword !== CHECKOUT_ACCESS_PASSWORD) {
+      setCheckoutPasswordError("Contraseña incorrecta. Intenta nuevamente.");
+      return;
+    }
+
+    setShowDevelopmentModal(false);
+    setCheckoutPassword("");
+    setCheckoutPasswordError("");
+    await completeCheckout();
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1207,6 +1224,103 @@ export default function Checkout() {
           </div>
         </div>
       </div>
+
+      {/* Modal de desarrollo */}
+      {showDevelopmentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div
+            className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 transform transition-all animate-slideUp"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="development-title"
+          >
+            <form onSubmit={handleDevelopmentPasswordSubmit}>
+              <div className="relative px-6 pt-6 pb-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDevelopmentModal(false);
+                    setCheckoutPassword("");
+                    setCheckoutPasswordError("");
+                  }}
+                  className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
+                  aria-label="Cerrar"
+                  disabled={isLoading}
+                >
+                  <X size={20} />
+                </button>
+
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0 w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                    <Lock className="text-yellow-700" size={24} />
+                  </div>
+
+                  <div className="flex-1 pt-1">
+                    <h3
+                      id="development-title"
+                      className="text-xl font-semibold text-gray-900 mb-1"
+                    >
+                      Página en desarrollo
+                    </h3>
+                    <p className="text-gray-600 leading-relaxed">
+                      Esta página aún no está disponible. Si deseas realizar un pedido, por favor contáctanos por WhatsApp o acercate a la tienda.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="px-6 pb-6">
+                <label
+                  htmlFor="checkout-password"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Contraseña
+                </label>
+                <input
+                  id="checkout-password"
+                  type="password"
+                  value={checkoutPassword}
+                  onChange={(e) => {
+                    setCheckoutPassword(e.target.value);
+                    setCheckoutPasswordError("");
+                  }}
+                  className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
+                  autoComplete="off"
+                  autoFocus
+                  disabled={isLoading}
+                />
+                {checkoutPasswordError && (
+                  <p className="text-sm text-red-600 mt-2">
+                    {checkoutPasswordError}
+                  </p>
+                )}
+              </div>
+
+              <div className="px-6 pb-6 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDevelopmentModal(false);
+                    setCheckoutPassword("");
+                    setCheckoutPasswordError("");
+                  }}
+                  className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all font-medium"
+                  disabled={isLoading}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-3 text-gray-900 bg-yellow-400 rounded-lg hover:bg-yellow-500 transition-all font-medium disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
+                  disabled={isLoading || !checkoutPassword}
+                >
+                  {isLoading ? "Procesando..." : "Continuar"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Modal de error mejorado */}
       {showErrorModal && error && (
