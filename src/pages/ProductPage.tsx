@@ -213,21 +213,6 @@ export function ProductPage() {
     selectedWeight ?? undefined
   );
 
-  const stockStatus =
-    availableStock === 0
-      ? { text: "Sin stock", tone: "text-red-600 bg-red-50 border-red-200" }
-      : isFilament && availableStock < FILAMENT_MIN_STOCK_TO_PURCHASE
-        ? {
-          text: `Mínimo ${FILAMENT_MIN_STOCK_TO_PURCHASE} unidades para comprar`,
-          tone: "text-red-600 bg-red-50 border-red-200",
-        }
-        : availableStock <= 5
-          ? {
-            text: `Últimas ${availableStock} unidades`,
-            tone: "text-amber-700 bg-amber-50 border-amber-200",
-          }
-          : { text: "Disponible", tone: "text-emerald-700 bg-emerald-50 border-emerald-200" };
-
   const handleAddToCart = () => {
     if (variantSelectionIncomplete || !canAddToCart || isOverStock) {
       return;
@@ -316,16 +301,13 @@ export function ProductPage() {
 
           <aside className="lg:sticky lg:top-24 lg:self-start">
             <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-xl shadow-yellow-100/20 sm:p-7">
-              <div className="mb-4 flex flex-wrap items-center gap-2">
-                <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${stockStatus.tone}`}>
-                  {stockStatus.text}
-                </span>
-                {justAdded && (
+              {justAdded && (
+                <div className="mb-4 flex flex-wrap items-center gap-2">
                   <span className="animate-fadeIn rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
                     Agregado al carrito
                   </span>
-                )}
-              </div>
+                </div>
+              )}
 
               <h1 className="text-2xl font-extrabold leading-tight text-gray-900 sm:text-3xl">
                 {product.name}
@@ -462,7 +444,9 @@ export function ProductPage() {
                               />
                             )}
                             <span className="text-gray-700">{color.name}</span>
-                            <span className="ml-auto text-xs text-gray-500">({stock})</span>
+                            <span className="ml-auto text-xs text-gray-500">
+                              {disabledByStock ? "Sin stock" : `(${stock})`}
+                            </span>
                           </button>
                         );
                       })}
@@ -527,11 +511,7 @@ export function ProductPage() {
                   <>
                     <ShoppingCart className="h-5 w-5" />
                     {isAddDisabled
-                      ? isFilament &&
-                        availableStock > 0 &&
-                        availableStock < FILAMENT_MIN_STOCK_TO_PURCHASE
-                        ? `Mínimo ${FILAMENT_MIN_STOCK_TO_PURCHASE}`
-                        : "Sin stock"
+                      ? "Sin stock"
                       : "Agregar al carrito"}
                   </>
                 )}

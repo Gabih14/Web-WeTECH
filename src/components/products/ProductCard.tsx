@@ -74,13 +74,8 @@ export function ProductCard({ product }: ProductCardProps) {
   const canAdd = canPurchaseWithStock(product, availableStock);
 
   const stockStatus =
-    availableStock === 0
+    availableStock === 0 || (isFilament && availableStock < FILAMENT_MIN_STOCK_TO_PURCHASE)
       ? { label: "Sin stock", color: "text-red-500" }
-      : isFilament && availableStock < FILAMENT_MIN_STOCK_TO_PURCHASE
-      ? {
-          label: `Mínimo ${FILAMENT_MIN_STOCK_TO_PURCHASE} unidades`,
-          color: "text-red-500",
-        }
       : availableStock <= 5
       ? { label: `Últimas ${availableStock}`, color: "text-amber-500" }
       : { label: "En stock", color: "text-emerald-600" };
@@ -236,7 +231,9 @@ export function ProductCard({ product }: ProductCardProps) {
                         />
                       )}
                       <span className="truncate text-gray-700">{color.name}</span>
-                      <span className="ml-auto text-gray-400 tabular-nums">({stock})</span>
+                      <span className="ml-auto text-gray-400 tabular-nums">
+                        {isColorDisabled ? "Sin stock" : `(${stock})`}
+                      </span>
                     </button>
                   );
                 })}
@@ -335,9 +332,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 Agregar
               </>
             ) : (
-              isFilament && availableStock > 0 && availableStock < FILAMENT_MIN_STOCK_TO_PURCHASE
-                ? `Mínimo ${FILAMENT_MIN_STOCK_TO_PURCHASE}`
-                : "Sin stock"
+              "Sin stock"
             )}
           </button>
         </div>
