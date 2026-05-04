@@ -75,6 +75,8 @@ export default function Checkout() {
   ];
 
   const BEARER_TOKEN = import.meta.env.VITE_API_BEARER_TOKEN; // Se usará cuando el pago esté activo
+  const IS_CHECKOUT_PASSWORD_ENABLED =
+    import.meta.env.VITE_CHECKOUT_PASSWORD_ENABLED !== "false";
   const CHECKOUT_ACCESS_PASSWORD =
     import.meta.env.VITE_CHECKOUT_ACCESS_PASSWORD || "desarrollo";
 
@@ -448,6 +450,12 @@ export default function Checkout() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!IS_CHECKOUT_PASSWORD_ENABLED) {
+      await completeCheckout();
+      return;
+    }
+
     setCheckoutPassword("");
     setCheckoutPasswordError("");
     setShowDevelopmentModal(true);
