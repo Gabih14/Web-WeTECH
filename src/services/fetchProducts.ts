@@ -20,7 +20,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
     // Petición
     // Usando apiFetch con token incluido
     const rawProducts = await apiFetch("/stk-item");
-    console.log("Productos crudos recibidos:", rawProducts);
+    //console.log("Productos crudos recibidos:", rawProducts);
     // Transformar los datos
     const groupedProducts: { [key: string]: Product } = {};
 
@@ -312,7 +312,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
       }
     });
 
-    console.log("Productos transformados:", transformedProducts);
+    //console.log("Productos transformados:", transformedProducts);
     return transformedProducts;
   } catch (error: any) {
     console.error("Error al obtener los productos:", error.message);
