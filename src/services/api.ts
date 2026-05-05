@@ -83,7 +83,7 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
 export async function fetchClienteByCuit(cuit: string) {
   try {
     const data = await apiFetch(`/vta-cliente/${cuit}`);
-    console.log(`Respuesta de la API para CUIT ${cuit}:`, data);
+    //console.log(`Respuesta de la API para CUIT ${cuit}:`, data);
     if (!data) return null;
     const parsedAddress = parseAddress(data.direccion);
 
