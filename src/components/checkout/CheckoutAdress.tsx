@@ -1,4 +1,4 @@
-import { MapPin, Store, Truck, AlertCircle, X } from "lucide-react"; //MapPin,
+import { MapPin, Store, Truck, AlertCircle, X, CheckCircle } from "lucide-react"; //MapPin,
 import { useState } from "react";
 import { ShippingInfoModal } from "./ShippingInfoModal";
 import { apiFetch } from "../../services/api";
@@ -57,6 +57,11 @@ export const CheckoutAdress = ({
   const [calculatingShipping, setCalculatingShipping] = useState(false);
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
   const BEARER_TOKEN = import.meta.env.VITE_API_BEARER_TOKEN;
+  const isCalculateShippingDisabled =
+    calculatingShipping || !shippingInfoChecked || !isShippingFormComplete;
+  const calculateShippingHelpText = isCalculateShippingDisabled
+    ? "Completá la dirección y aceptá la información de envíos."
+    : "Calculamos distancia y costo antes de continuar.";
   // Función para obtener la distancia desde la API de Google
   const fetchDistance = async () => {
     setCalculatingShipping(true);
@@ -369,21 +374,65 @@ export const CheckoutAdress = ({
                 </button>
               </label>
             </div>
-            <button
-              type="button"
-              onClick={fetchDistance}
-              disabled={
-                calculatingShipping ||
-                !formData.postalCode ||
-                !shippingInfoChecked ||
-                !isShippingFormComplete
-              }
-              className="w-full bg-yellow-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {calculatingShipping
-                ? "Calculando..."
-                : "Calcular Costo de Envío"}
-            </button>
+            <div className="space-y-2">
+             <button
+  type="button"
+  onClick={fetchDistance}
+  disabled={isCalculateShippingDisabled || calculatingShipping}
+  aria-busy={calculatingShipping}
+  className="
+    group inline-flex min-h-12 w-full items-center justify-center gap-2
+    rounded-lg border-2 border-yellow-500 bg-yellow-300
+    px-4 py-3 text-sm font-semibold text-gray-900
+    shadow-lg shadow-yellow-300/40
+    transition-all duration-200
+    hover:-translate-y-0.5 hover:bg-yellow-400 hover:shadow-xl hover:shadow-yellow-300/50
+    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-500 focus-visible:ring-offset-2
+    active:scale-[0.98]
+    disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-400 disabled:shadow-none
+    disabled:hover:translate-y-0 disabled:active:scale-100
+    motion-reduce:transform-none motion-reduce:transition-none
+    sm:min-h-14 sm:px-5 sm:text-base
+  "
+>
+  {calculatingShipping ? (
+    <>
+      <span
+        className="h-4 w-4 rounded-full border-2 border-gray-700 border-t-transparent animate-spin motion-reduce:animate-none sm:h-5 sm:w-5"
+        aria-hidden="true"
+      />
+      <span>Calculando envío...</span>
+    </>
+  ) : confirmedAddress ? (
+    <>
+      <CheckCircle
+        className="h-5 w-5 flex-shrink-0 text-green-700 transition-transform duration-200 group-hover:scale-105 group-disabled:text-gray-400 motion-reduce:transition-none"
+        aria-hidden="true"
+      />
+      <span>Recalcular envío</span>
+    </>
+  ) : (
+    <>
+      <Truck
+        className="h-5 w-5 flex-shrink-0 transition-transform duration-200 group-hover:translate-x-0.5 group-disabled:text-gray-400 motion-reduce:transform-none motion-reduce:transition-none"
+        aria-hidden="true"
+      />
+      <span>Calcular costo de envío</span>
+    </>
+  )}
+</button>
+              {!confirmedAddress && (
+                <p
+                  className={`text-xs leading-5 sm:text-sm ${
+                    isCalculateShippingDisabled
+                      ? "text-gray-500"
+                      : "text-gray-700"
+                  }`}
+                >
+                  {calculateShippingHelpText}
+                </p>
+              )}
+            </div>
             {confirmedAddress && (
               <div className="mt-2 p-3 rounded bg-green-50 border border-green-200 text-green-700 text-sm">
                 <strong>Ubicación confirmada:</strong>
