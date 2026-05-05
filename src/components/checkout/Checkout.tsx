@@ -491,7 +491,7 @@ export default function Checkout() {
     }
 
     const clienteData = await fetchClienteByCuit(cuit);
-
+    console.log("Datos del cliente obtenidos por CUIT:", clienteData);
     if (clienteData) {
       setFormData((prev) => ({
         ...prev,
