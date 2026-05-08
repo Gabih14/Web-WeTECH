@@ -228,29 +228,6 @@ export default function Checkout() {
     return originalPrice;
   };
 
-  const calculateItemAdjustmentPercentageForCheckout = (
-    product: Product,
-    weight: number,
-    quantity: number
-  ): number => {
-    // Cupón ganador: ajuste uniforme para todas las líneas.
-    if (isCouponWinningDiscount && appliedCoupon) {
-      return effectiveCouponPercentage;
-    }
-
-    if (!shouldApplyTransferDiscountToCheckout) return 0;
-    if (!shouldApplyDiscount(product)) return 0;
-
-    const discountPercentage = getDiscountPercentageForProduct(
-      product,
-      quantity,
-      weight
-    );
-    const numericPercentage = Number(discountPercentage.replace("%", ""));
-
-    return Number.isFinite(numericPercentage) ? numericPercentage : 0;
-  };
-
   if (items.length === 0) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-8">
@@ -293,74 +270,39 @@ export default function Checkout() {
       postal_code: formData.billingPostalCode,
     };
 
-    const roundDisplayedPrice = (value: number) => Math.round(value);
     const cleanCuit = formData.cuit.trim().replace(/\D/g, ''); // Remover guiones y caracteres no numéricos
 
     const body = {
       cliente_nombre: formData.name,
       cliente_cuit: cleanCuit,
-      total: roundDisplayedPrice(finalTotal),
-      costo_envio: roundDisplayedPrice(shippingTotal),
-      descuento_cupon: roundDisplayedPrice(couponDiscount),
-      codigo_cupon: shouldSendCouponInOrder ? appliedCoupon?.code || "" : "",
-      metodo_pago: paymentMethod,
       email: formData.email,
       telefono: formData.phone,
+      metodo_pago: paymentMethod,
+      tipo_envio: deliveryMethod,
+      ...(shouldSendCouponInOrder && appliedCoupon
+        ? { codigo_cupon: appliedCoupon.code }
+        : {}),
       calle,
       ciudad,
       region,
       pais,
       codigo_postal,
-      tipo_envio: deliveryMethod,
       observaciones: formData.observaciones,
       direccion: confirmedAddress || "",
       mobile: isMobile,
-      productos: [
-        ...items.map((item) => {
-          // Buscar el ID original del ítem según el color seleccionado (si aplica)
-          const colorData = item.color
-            ? item.product.colors?.find(
-              (c) => c.name.toLowerCase() === item.color.toLowerCase()
-            )
-            : undefined;
+      productos: items.map((item) => {
+        // Buscar el ID original del ítem según el color seleccionado (si aplica)
+        const colorData = item.color
+          ? item.product.colors?.find(
+            (c) => c.name.toLowerCase() === item.color.toLowerCase()
+          )
+          : undefined;
 
-          const nombre = colorData?.itemId || item.product.id;
-
-          const originalUnitPrice = roundDisplayedPrice(getPrice(item.product, item.weight) ?? 0);
-
-          return {
-            nombre,
-            cantidad: item.quantity,
-            precio_unitario: roundDisplayedPrice(
-              calculateItemPriceForCheckout(
-                item.product,
-                item.weight,
-                item.quantity
-              ) ??
-                getPrice(item.product, item.weight) ??
-                0
-            ),
-            subtotal: originalUnitPrice * item.quantity,
-            ajuste_porcentaje: calculateItemAdjustmentPercentageForCheckout(
-              item.product,
-              item.weight,
-              item.quantity
-            ),
-          };
-        }),
-        // Agregar shipping como producto si aplica
-        ...(deliveryMethod === "shipping" && shippingData
-          ? [
-              {
-                nombre: shippingData.itemId,
-                cantidad: 1,
-                precio_unitario: roundDisplayedPrice(shippingData.costoTotal),
-                subtotal: roundDisplayedPrice(shippingData.costoTotal),
-                ajuste_porcentaje: 0,
-              },
-            ]
-          : []),
-      ],
+        return {
+          nombre: colorData?.itemId || item.product.id,
+          cantidad: item.quantity,
+        };
+      }),
       billing_address,
     };
     const API_URL = import.meta.env.VITE_API_URL; // Se usará cuando el pago esté activo
