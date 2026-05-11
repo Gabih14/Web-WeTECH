@@ -30,6 +30,12 @@ export const CheckoutPersonal = ({ formData, handleInputChange, handleCuitBlur }
             value={formData.cuit}
             onChange={handleInputChange}
             onBlur={handleCuitBlur}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                e.currentTarget.blur();
+              }
+            }}
             required
             className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
             placeholder="Ej: 20-12345678-9"
