@@ -361,7 +361,7 @@ const PaymentCallback = () => {
           if (data.estado === "APROBADO") setStatus(PaymentStatus.SUCCESS);
           else if (data.estado === "RECHAZADO" || data.estado === "CANCELADO") setStatus(PaymentStatus.FAIL);
         } catch {/* silent */}
-      }, 5000);
+      }, 30000);
     }
     return () => { if (interval) clearInterval(interval); };
   }, [pedidoData, externalId]);
@@ -593,7 +593,7 @@ const PaymentCallback = () => {
           </div>
         )}
 
-        <div className="btn-group">
+        {/* <div className="btn-group">
           <button className="btn btn-blue" onClick={refreshPedidoStatus} disabled={isRefreshing}>
             <RefreshCw style={{ width: 16, height: 16, ...(isRefreshing ? { animation: "spin 0.9s linear infinite" } : {}) }} />
             {isRefreshing ? "Verificando…" : "Volver a verificar"}
@@ -601,7 +601,7 @@ const PaymentCallback = () => {
           <button className="btn btn-outline" onClick={() => (window.location.href = "/")}>
             Ir al inicio
           </button>
-        </div>
+        </div> */}
       </>
     );
   };
