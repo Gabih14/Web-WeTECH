@@ -1026,7 +1026,7 @@ export default function Checkout() {
                                       item.quantity,
                                       item.weight
                                     )}
-                                    % OFF
+                                     OFF
                                   </span>
                                 )}
                             </div>
