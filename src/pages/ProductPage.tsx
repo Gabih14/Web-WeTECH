@@ -82,7 +82,6 @@ export function ProductPage() {
     if (!product) {
       return;
     }
-
     setCurrentPrice(product.price);
     setCurrentPromotionalPrice(isFilament ? product.promotionalPrice : undefined);
     setSelectedColor(getFirstColorWithStock(product));
@@ -361,7 +360,9 @@ export function ProductPage() {
                 )}
               </div>
 
-              <p className="mt-5 text-sm leading-6 text-gray-600">{product.description}</p>
+              <p className="mt-5 whitespace-pre-line text-sm leading-6 text-gray-600">
+                {product.observaciones}
+              </p>
 
               {product.weights && (
                 <div className="mt-6 space-y-2">
