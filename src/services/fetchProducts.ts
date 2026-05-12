@@ -183,14 +183,15 @@ export const fetchProducts = async (): Promise<Product[]> => {
           .map((p: string) => p.trim());
         const thirdPartUpper = (descParts[2] || "").toUpperCase();
         const weightMatch = thirdPartUpper.match(/(\d+\.?\d*)\s*(KG|G)/);
-        let weight = 0;
 
-        if (weightMatch) {
-          const value = parseFloat(weightMatch[1]);
-          const unit = weightMatch[2]; // already uppercase KG/G
-          // Convertir a kilogramos si es necesario
-          weight = unit === "G" ? value / 1000 : value;
+        if (!weightMatch) {
+          return;
         }
+
+        const value = parseFloat(weightMatch[1]);
+        const unit = weightMatch[2]; // already uppercase KG/G
+        // Convertir a kilogramos si es necesario
+        const weight = unit === "G" ? value / 1000 : value;
         const price = parseFloat(item.precioVtaCotizadoMin || "0"); // Usar precioVtaCotizadoMin como precio
         const promotionalPrice = price - price * 0.15; // Calcular el precio promocional (15% de descuento)
 
