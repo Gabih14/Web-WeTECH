@@ -416,10 +416,10 @@ const PaymentCallback = () => {
         Para confirmar tu pedido, transferí el importe y mandanos el comprobante por WhatsApp.
       </p>
       <div className="transfer-data">
-        Alias: <strong>WE.TECH</strong>
-        CBU: 0150516001000141430202<br />
+        Alias: <strong>WEICBC</strong>
+        CBU: 0150516002000111877146<br />
         <strong>Datos de cuenta ICBC</strong>
-        Titular: FEDERICO ERNESTO POLIZZI<br />
+        Titular: HELLO SRL<br />
       </div>
       <button className="btn btn-green" onClick={openWhatsApp}>
         <span>💬</span> Enviar comprobante por WhatsApp

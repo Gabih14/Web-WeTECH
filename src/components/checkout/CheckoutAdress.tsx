@@ -78,7 +78,7 @@ export const CheckoutAdress = ({
       let data;
       
       // Simulación en desarrollo
-      if (import.meta.env.DEV) {
+      if (false) {
         // Simular respuesta de la API
         data = {
           distance: "3.6 km",
