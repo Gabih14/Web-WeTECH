@@ -45,21 +45,21 @@ export const ShippingInfoModal: React.FC<ShippingInfoModalProps> = ({
                     confirma el pago
                     <strong className="text-green-700">
                       {" "}
-                      antes de las 16:00 hs
+                      antes de las 17:00 hs
                     </strong>
                     .
                   </span>
                 </p>
                 <p className="flex items-start gap-2">
                   <span className="text-green-600 mt-1">•</span>
-                  Los pedidos procesados después de ese horario no siempre
-                  podrán ser despachados el mismo día.
+                  Los pedidos procesados después del horario comercial siempre
+                  serán despachados al día siguiente hábil.
                 </p>
               </div>
             </div>
 
             {/* Resto de la Provincia */}
-            <div className="border-l-4 border-blue-500 pl-4">
+           {/*  <div className="border-l-4 border-blue-500 pl-4">
               <h4 className="font-semibold text-blue-700 mb-2 flex items-center gap-2">
                 📍 Resto de la Provincia
               </h4>
@@ -90,10 +90,10 @@ export const ShippingInfoModal: React.FC<ShippingInfoModalProps> = ({
                   </span>
                 </p>
               </div>
-            </div>
+            </div> */}
 
             {/* Lugares Alejados */}
-            <div className="border-l-4 border-orange-500 pl-4">
+            {/* <div className="border-l-4 border-orange-500 pl-4">
               <h4 className="font-semibold text-orange-700 mb-2 flex items-center gap-2">
                 📍 Lugares Alejados
               </h4>
@@ -105,7 +105,7 @@ export const ShippingInfoModal: React.FC<ShippingInfoModalProps> = ({
                   realizar tu compra.
                 </p>
               </div>
-            </div>
+            </div> */}
 
             {/* Mensaje Importante */}
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">

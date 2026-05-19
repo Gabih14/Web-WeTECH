@@ -184,6 +184,12 @@ const PaymentCallback = () => {
         border-top: 2px solid #111;
         font-weight: 700; font-size: 1.05rem;
       }
+      .order-summary-note {
+        font-size: 0.82rem;
+        color: #6b7280;
+        line-height: 1.45;
+        margin: 12px 0 0;
+      }
 
       .product-item {
         display: flex; justify-content: space-between;
@@ -539,6 +545,9 @@ const PaymentCallback = () => {
                 🚚 {deliveryLabel}
               </p>
             )}
+            <p className="order-summary-note">
+              Los pedidos procesados después del horario comercial siempre serán despachados al día siguiente hábil.
+            </p>
           </div>
 
           {/* Feedback */}
