@@ -22,6 +22,7 @@ import {
   FILAMENT_MIN_STOCK_TO_PURCHASE,
   isFilamentProduct,
 } from "../utils/stockRules";
+import { getVariantPrice } from "../utils/pricing";
 
 const QUANTITY_OPTIONS = [1, 5, 10, 50];
 
@@ -119,11 +120,7 @@ export function ProductPage() {
 
     if (shouldApplyDiscount(product)) {
       const originalPrice =
-        selectedWeight !== null && product.weights
-          ? product.weights.find((weight) => weight.weight === selectedWeight)?.price ??
-          product.price ??
-          0
-          : product.price ?? 0;
+        getVariantPrice(product, selectedColor, selectedWeight) ?? 0;
 
       setCurrentPrice(originalPrice);
       setCurrentPromotionalPrice(
@@ -138,14 +135,13 @@ export function ProductPage() {
     }
 
     if (selectedWeight !== null && product.weights) {
-      const weightData = product.weights.find((weight) => weight.weight === selectedWeight);
-      setCurrentPrice(weightData?.price ?? product.price);
+      setCurrentPrice(getVariantPrice(product, selectedColor, selectedWeight) ?? product.price);
     } else {
-      setCurrentPrice(product.price);
+      setCurrentPrice(getVariantPrice(product, selectedColor, selectedWeight) ?? product.price);
     }
 
     setCurrentPromotionalPrice(undefined);
-  }, [product, quantity, selectedWeight]);
+  }, [product, quantity, selectedColor, selectedWeight]);
 
   if (loading) {
     return (

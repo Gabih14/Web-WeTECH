@@ -12,6 +12,7 @@ import {
   getDiscountPercentageForProduct,
   shouldApplyDiscount,
 } from "../../utils/discounts";
+import { getVariantItemId, getVariantPrice } from "../../utils/pricing";
 
 import { fetchClienteByCuit, verifyCoupon, useCoupon } from "../../services/api";
 
@@ -152,9 +153,12 @@ export default function Checkout() {
     setCouponError("");
   };
 
-  const getPrice = (product: Product, weight: number): number | undefined => {
-    const weightData = product.weights?.find((w) => w.weight === weight);
-    return weightData ? weightData.price : product.price;
+  const getPrice = (
+    product: Product,
+    color: string,
+    weight: number
+  ): number | undefined => {
+    return getVariantPrice(product, color, weight);
   };
 
   const getEffectiveCouponPercentage = (coupon: Coupon | null): number => {
@@ -180,10 +184,11 @@ export default function Checkout() {
 
   const calculateItemPriceWithDiscount = (
     product: Product,
+    color: string,
     weight: number,
     quantity: number
   ): number | undefined => {
-    const originalPrice = getPrice(product, weight);
+    const originalPrice = getPrice(product, color, weight);
 
     if (originalPrice) {
       if (shouldApplyDiscount(product)) {
@@ -203,10 +208,11 @@ export default function Checkout() {
   // Calcular precio para checkout considerando método de pago
   const calculateItemPriceForCheckout = (
     product: Product,
+    color: string,
     weight: number,
     quantity: number
   ): number | undefined => {
-    const originalPrice = getPrice(product, weight);
+    const originalPrice = getPrice(product, color, weight);
 
     if (!originalPrice) return originalPrice;
 
@@ -318,15 +324,11 @@ export default function Checkout() {
       productos: [
         ...items.map((item) => {
           // Buscar el ID original del ítem según el color seleccionado (si aplica)
-          const colorData = item.color
-            ? item.product.colors?.find(
-              (c) => c.name.toLowerCase() === item.color.toLowerCase()
-            )
-            : undefined;
+          const nombre = getVariantItemId(item.product, item.color, item.weight);
 
-          const nombre = colorData?.itemId || item.product.id;
-
-          const originalUnitPrice = roundDisplayedPrice(getPrice(item.product, item.weight) ?? 0);
+          const originalUnitPrice = roundDisplayedPrice(
+            getPrice(item.product, item.color, item.weight) ?? 0
+          );
 
           return {
             nombre,
@@ -334,10 +336,11 @@ export default function Checkout() {
             precio_unitario: roundDisplayedPrice(
               calculateItemPriceForCheckout(
                 item.product,
+                item.color,
                 item.weight,
                 item.quantity
               ) ??
-                getPrice(item.product, item.weight) ??
+                getPrice(item.product, item.color, item.weight) ??
                 0
             ),
             subtotal: originalUnitPrice * item.quantity,
@@ -523,7 +526,7 @@ export default function Checkout() {
 
   const calculateOriginalTotal = () => {
     return items.reduce((sum, item) => {
-      const price = getPrice(item.product, item.weight);
+      const price = getPrice(item.product, item.color, item.weight);
       const itemTotal = price ? price * item.quantity : 0;
       return sum + itemTotal;
     }, 0);
@@ -532,7 +535,12 @@ export default function Checkout() {
   // Calcular total del checkout según método de pago
   const calculateCheckoutTotal = () => {
     return items.reduce((sum, item) => {
-      const price = calculateItemPriceForCheckout(item.product, item.weight, item.quantity);
+      const price = calculateItemPriceForCheckout(
+        item.product,
+        item.color,
+        item.weight,
+        item.quantity
+      );
       const itemTotal = price ? price * item.quantity : 0;
       return sum + itemTotal;
     }, 0);
@@ -540,7 +548,12 @@ export default function Checkout() {
 
   const calculateTransferDiscountedTotal = () => {
     return items.reduce((sum, item) => {
-      const price = calculateItemPriceWithDiscount(item.product, item.weight, item.quantity);
+      const price = calculateItemPriceWithDiscount(
+        item.product,
+        item.color,
+        item.weight,
+        item.quantity
+      );
       const itemTotal = price ? price * item.quantity : 0;
       return sum + itemTotal;
     }, 0);
@@ -966,9 +979,10 @@ export default function Checkout() {
               <div className="flow-root">
                 <ul className="divide-y divide-gray-200">
                   {items.map((item, index) => {
-                    const price = getPrice(item.product, item.weight);
+                    const price = getPrice(item.product, item.color, item.weight);
                     const discountedPrice = calculateItemPriceWithDiscount(
                       item.product,
+                      item.color,
                       item.weight,
                       item.quantity
                     );

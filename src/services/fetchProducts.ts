@@ -238,6 +238,18 @@ export const fetchProducts = async (): Promise<Product[]> => {
           // Si el color ya existe, sumar el stock para el peso específico
           existingColor.stock[weight] =
             (existingColor.stock[weight] || 0) + stock;
+          existingColor.prices = {
+            ...(existingColor.prices || {}),
+            [weight]: price,
+          };
+          existingColor.promotionalPrices = {
+            ...(existingColor.promotionalPrices || {}),
+            [weight]: promotionalPrice,
+          };
+          existingColor.itemIds = {
+            ...(existingColor.itemIds || {}),
+            [weight]: item.id,
+          };
           // Asegurar que conservamos el ID original del ítem
           if (!existingColor.itemId) {
             existingColor.itemId = item.id;
@@ -259,6 +271,15 @@ export const fetchProducts = async (): Promise<Product[]> => {
             hex: hexValue, // Puedes asignar un color genérico o específico
             stock: {
               [weight]: stock, // Manejar el stock por peso
+            },
+            prices: {
+              [weight]: price,
+            },
+            promotionalPrices: {
+              [weight]: promotionalPrice,
+            },
+            itemIds: {
+              [weight]: item.id,
             },
             images: colorImages, // Solo una imagen por color para filamentos
             itemId: item.id, // Guardar el ID original del item para la variante de color

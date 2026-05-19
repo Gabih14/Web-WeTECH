@@ -7,6 +7,7 @@ import {
   getDiscountPercentageForProduct,
   shouldApplyDiscount
 } from "../../utils/discounts";
+import { getVariantPrice } from "../../utils/pricing";
 
 interface CartModalProps {
   isOpen: boolean;
@@ -38,9 +39,12 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
     return product.stock ?? 0;
   };
 
-  const getPrice = (product: Product, weight: number): number | undefined => {
-    const weightData = product.weights?.find((w) => w.weight === weight);
-    return weightData ? weightData.price : product.price;
+  const getPrice = (
+    product: Product,
+    color: string,
+    weight: number
+  ): number | undefined => {
+    return getVariantPrice(product, color, weight);
   };
 
 /*   const getPromotionalPrice = (
@@ -53,10 +57,11 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
  */
   const calculateItemDiscountedPrice = (
     product: Product,
+    color: string,
     weight: number,
     quantity: number
   ): number | undefined => {
-    const originalPrice = getPrice(product, weight);
+    const originalPrice = getPrice(product, color, weight);
     
     if (originalPrice) {
       if (shouldApplyDiscount(product)) {
@@ -70,7 +75,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
 
   const calculateOriginalTotal = () => {
     return items.reduce((sum, item) => {
-      const price = getPrice(item.product, item.weight);
+      const price = getPrice(item.product, item.color, item.weight);
       const itemTotal = price ? price * item.quantity : 0;
       return sum + itemTotal;
     }, 0);
@@ -121,9 +126,10 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                     item.color,
                     item.weight
                   );
-                  const price = getPrice(item.product, item.weight);
+                  const price = getPrice(item.product, item.color, item.weight);
                   const discountedPrice = calculateItemDiscountedPrice(
                     item.product,
+                    item.color,
                     item.weight,
                     item.quantity
                   );
