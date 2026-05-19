@@ -19,6 +19,9 @@ export interface Product {
     name: string;
     hex: string;
     stock: { [weight: string]: number };
+    prices?: { [weight: string]: number };
+    promotionalPrices?: { [weight: string]: number };
+    itemIds?: { [weight: string]: string };
     images?: string[]; // Imágenes específicas por color
     itemId?: string; // ID original del ítem para este color (variante)
   }[];

@@ -13,6 +13,7 @@ import {
   getFilamentVariantStock,
   isFilamentProduct,
 } from "../utils/stockRules";
+import { getCartItemPrice } from "../utils/pricing";
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
@@ -120,10 +121,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const calculateItemPrice = (item: CartItem) => {
-    const weightData = item.product.weights?.find(
-      (w) => w.weight === item.weight
-    );
-    const originalPrice = weightData ? weightData.price : item.product.price;
+    const originalPrice = getCartItemPrice(item);
     
     if (originalPrice) {
       return calculateDiscountedPriceForProduct(

@@ -19,6 +19,7 @@ import {
   canPurchaseWithStock,
   FILAMENT_MIN_STOCK_TO_PURCHASE,
 } from "../../utils/stockRules";
+import { getVariantPrice } from "../../utils/pricing";
 
 interface ProductCardProps {
   product: Product;
@@ -93,9 +94,7 @@ export function ProductCard({ product }: ProductCardProps) {
   useEffect(() => {
     if (shouldApplyDiscount(product)) {
       const base =
-        selectedWeight !== null && product.weights
-          ? product.weights.find((w) => w.weight === selectedWeight)?.price ?? product.price ?? 0
-          : product.price ?? 0;
+        getVariantPrice(product, selectedColor, selectedWeight) ?? 0;
 
       setCurrentPrice(base);
       setCurrentPromotionalPrice(
@@ -103,13 +102,11 @@ export function ProductCard({ product }: ProductCardProps) {
       );
     } else {
       const weightPrice =
-        selectedWeight !== null && product.weights
-          ? product.weights.find((w) => w.weight === selectedWeight)?.price
-          : undefined;
+        getVariantPrice(product, selectedColor, selectedWeight);
       setCurrentPrice(weightPrice ?? product.price);
       setCurrentPromotionalPrice(undefined);
     }
-  }, [selectedWeight, quantity, product]);
+  }, [selectedWeight, selectedColor, quantity, product]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleAddToCart = () => {
