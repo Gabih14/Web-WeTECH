@@ -7,6 +7,13 @@ import { fetchProducts } from "../services/fetchProducts";
 import { categories } from "../data/categories";
 import type { Product } from "../types";
 
+const normalizeSearchText = (value: string) =>
+  value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+
 export default function SearchResultsPage() {
   const location = useLocation();
   const query = new URLSearchParams(location.search).get("query") || "";
@@ -39,8 +46,16 @@ export default function SearchResultsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const normalizedQuery = normalizeSearchText(query);
+
   const filteredProducts = products.filter((product) => {
-    const matchesQuery = product.name.toLowerCase().includes(query.toLowerCase());
+    const matchesQuery =
+      normalizedQuery === "" ||
+      normalizeSearchText(product.name).includes(normalizedQuery) ||
+      (product.colors?.some((color) =>
+        normalizeSearchText(color.name).includes(normalizedQuery)
+      ) ??
+        false);
     const matchesCategory = !selectedCategory || 
       product.category === selectedCategory.toUpperCase();
     const matchesSubcategory = !selectedSubcategory || 

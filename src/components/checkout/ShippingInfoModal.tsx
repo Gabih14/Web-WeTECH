@@ -45,7 +45,7 @@ export const ShippingInfoModal: React.FC<ShippingInfoModalProps> = ({
                     confirma el pago
                     <strong className="text-green-700">
                       {" "}
-                      antes de las 17:00 hs
+                      antes de las 17:30 hs
                     </strong>
                     .
                   </span>
