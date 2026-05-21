@@ -277,15 +277,11 @@ export default function Checkout() {
 
   /* PAYMENT REQUEST */
   const createPaymentRequest = async () => {
-    const isShipping = deliveryMethod === "shipping";
-
     // Dirección de envío
-    const calle = isShipping ? formData.street : formData.billingStreet;
-    // const numero = isShipping ? formData.number : formData.billingNumber;
-    const ciudad = isShipping ? formData.city : formData.billingCity;
-    const codigo_postal = isShipping
-      ? formData.postalCode
-      : formData.billingPostalCode;
+    const calle = formData.street;
+    // const numero = formData.number;
+    const ciudad = formData.city;
+    const codigo_postal = formData.postalCode;
     const region = "Mendoza";
     const pais = "AR";
 
@@ -594,15 +590,20 @@ export default function Checkout() {
       case 2: // Método de Pago
         return !!paymentMethod;
       case 3: // Entrega
+        if (
+          !formData.street ||
+          !formData.number ||
+          !formData.city ||
+          !formData.postalCode
+        ) {
+          return false;
+        }
+
         if (deliveryMethod === "pickup") {
           return true;
         }
         // Si es shipping, debe tener dirección confirmada y costo calculado
         return !!(
-          formData.street &&
-          formData.number &&
-          formData.city &&
-          formData.postalCode &&
           shippingData &&
           confirmedAddress
         );
@@ -952,13 +953,18 @@ export default function Checkout() {
             </div>
 
             {/* Mensaje de validación para paso 3 */}
-            {currentStep === 3 && deliveryMethod === "shipping" && !isLoading && (
+            {currentStep === 3 && !canProceedToNextStep() && !isLoading && (
               <div className="mt-2 text-center text-sm text-red-600 font-semibold">
-                {!shippingData
-                  ? "Debes calcular el costo de envío antes de continuar."
-                  : !confirmedAddress
-                    ? "Debes confirmar tu dirección antes de continuar."
-                    : null}
+                {!formData.street ||
+                !formData.number ||
+                !formData.city ||
+                !formData.postalCode
+                  ? "Debes completar la dirección antes de continuar."
+                  : deliveryMethod === "shipping" && !shippingData
+                    ? "Debes calcular el costo de envío antes de continuar."
+                    : deliveryMethod === "shipping" && !confirmedAddress
+                      ? "Debes confirmar tu dirección antes de continuar."
+                      : null}
               </div>
             )}
 
