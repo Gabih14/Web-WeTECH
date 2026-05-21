@@ -78,7 +78,7 @@ export const CheckoutAdress = ({
       let data;
       
       // Simulación en desarrollo
-      if (false) {
+      if (import.meta.env.DEV) {
         // Simular respuesta de la API
         data = {
           distance: "3.6 km",
@@ -224,12 +224,17 @@ export const CheckoutAdress = ({
           </div>
         )}
 
-        {deliveryMethod === "shipping" && (
-          <div className="space-y-4">
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600 bg-blue-50 p-3 rounded-md border border-blue-100">
+            <MapPin className="inline-block h-4 w-4 mr-1 text-blue-500" />
+            Completá tu dirección para que podamos registrar correctamente el pedido.
+          </p>
+          {deliveryMethod === "shipping" && (
             <p className="text-sm text-gray-600 bg-blue-50 p-3 rounded-md border border-blue-100">
               <MapPin className="inline-block h-4 w-4 mr-1 text-blue-500" />
               Solo se muestran las provincias donde se realizan envíos
             </p>
+          )}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label
@@ -276,7 +281,7 @@ export const CheckoutAdress = ({
                   name="street"
                   value={formData.street}
                   onChange={handleInputChange}
-                  required={deliveryMethod === "shipping"}
+                  required
                   className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
                   placeholder="Ej: Santiago de Liniers"
                 />
@@ -294,7 +299,7 @@ export const CheckoutAdress = ({
                   name="number"
                   value={formData.number}
                   onChange={handleInputChange}
-                  required={deliveryMethod === "shipping"}
+                  required
                   className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
                   placeholder="Ej: 670"
                 />
@@ -314,7 +319,7 @@ export const CheckoutAdress = ({
                   name="city"
                   value={formData.city}
                   onChange={handleInputChange}
-                  required={deliveryMethod === "shipping"}
+                  required
                   className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
                   placeholder="Ej: Godoy Cruz"
                 />
@@ -332,7 +337,7 @@ export const CheckoutAdress = ({
                   name="postalCode"
                   value={formData.postalCode}
                   onChange={handleInputChange}
-                  required={deliveryMethod === "shipping"}
+                  required
                   className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                   placeholder="Ej: 5501"
                 />
@@ -355,6 +360,8 @@ export const CheckoutAdress = ({
                 placeholder="Ej: Casa con portón azul, timbre 2B"
               />
             </div>
+            {deliveryMethod === "shipping" && (
+              <>
             <div className="flex items-center space-x-2">
               <input
                 type="checkbox"
@@ -439,6 +446,8 @@ export const CheckoutAdress = ({
                 <div>{confirmedAddress}</div>
               </div>
             )}
+              </>
+            )}
             {/* Modal */}
             {showShippingInfo && (
               <ShippingInfoModal
@@ -506,7 +515,6 @@ export const CheckoutAdress = ({
               </div>
             )}
           </div>
-        )}
       </div>
     </div>
   );
