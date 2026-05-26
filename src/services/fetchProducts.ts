@@ -1,7 +1,22 @@
 import { apiFetch } from "../services/api";
-import { Product } from "../types";
-import { colors } from "../data/colors";
+import { Colors, Product } from "../types";
 import { shouldExcludeFamily } from "../data/excludedFamilies";
+
+const fetchColors = async (): Promise<Colors[]> => {
+  const colorData = await apiFetch("/colors");
+
+  return Array.isArray(colorData)
+    ? colorData
+        .filter(
+          (color): color is Colors =>
+            typeof color?.name === "string" && typeof color?.hex === "string",
+        )
+        .map((color) => ({
+          name: color.name.trim(),
+          hex: color.hex.trim(),
+        }))
+    : [];
+};
 
 export const fetchProducts = async (): Promise<Product[]> => {
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
@@ -19,7 +34,10 @@ export const fetchProducts = async (): Promise<Product[]> => {
   try {
     // Petición
     // Usando apiFetch con token incluido
-    const rawProducts = await apiFetch("/stk-item");
+    const [rawProducts, colors] = await Promise.all([
+      apiFetch("/stk-item"),
+      fetchColors(),
+    ]);
     //console.log("Productos crudos recibidos:", rawProducts);
     // Transformar los datos
     const groupedProducts: { [key: string]: Product } = {};
