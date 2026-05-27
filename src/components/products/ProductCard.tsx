@@ -15,10 +15,6 @@ import {
   getPurchaseState,
   getVariantStock,
 } from "../../utils/cartPurchase";
-import {
-  canPurchaseWithStock,
-  FILAMENT_MIN_STOCK_TO_PURCHASE,
-} from "../../utils/stockRules";
 import { getVariantPrice } from "../../utils/pricing";
 
 interface ProductCardProps {
@@ -72,10 +68,10 @@ export function ProductCard({ product }: ProductCardProps) {
     quantity,
   });
 
-  const canAdd = canPurchaseWithStock(product, availableStock);
+  const canAdd = availableStock > 0;
 
   const stockStatus =
-    availableStock === 0 || (isFilament && availableStock < FILAMENT_MIN_STOCK_TO_PURCHASE)
+    availableStock === 0
       ? { label: "Sin stock", color: "text-red-500" }
       : availableStock <= 5
       ? { label: `Últimas ${availableStock}`, color: "text-amber-500" }
@@ -207,9 +203,7 @@ export function ProductCard({ product }: ProductCardProps) {
                     color.name,
                     selectedWeight ?? product.weights?.[0]?.weight ?? 0
                   );
-                  const isColorDisabled = isFilament
-                    ? stock < FILAMENT_MIN_STOCK_TO_PURCHASE
-                    : stock === 0;
+                  const isColorDisabled = stock === 0;
                   return (
                     <button
                       key={color.name}
