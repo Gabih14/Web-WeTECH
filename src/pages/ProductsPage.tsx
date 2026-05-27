@@ -278,7 +278,7 @@ export function ProductsPage() {
     return (
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Banner de desarrollo */}
-        <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start gap-3">
+        {/* <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start gap-3">
           <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
           <div className="flex-1">
             <h3 className="text-sm font-medium text-yellow-800 mb-1">
@@ -296,7 +296,7 @@ export function ProductsPage() {
               Contactar por WhatsApp
             </button>
           </div>
-        </div>
+        </div> */}
 
         <div className="flex gap-8 min-h-screen">
           {/* Desktop Sidebar Skeleton */}
