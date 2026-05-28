@@ -15,6 +15,7 @@ import {
 import { useAddToCartFeedback } from "../hooks/useAddToCartFeedback";
 import {
   getFirstColorWithStock,
+  hasPurchasableStockInOtherColor,
   getPurchaseState,
   getVariantStock,
 } from "../utils/cartPurchase";
@@ -182,6 +183,11 @@ export function ProductPage() {
   const variantSelectionIncomplete = hasVariants && (!selectedColor || selectedWeight === null);
   const isAddDisabled = variantSelectionIncomplete || !canAddToCart || isOverStock;
   const applyDiscount = shouldApplyDiscount(product) && !!currentPromotionalPrice;
+  const hasStockInOtherColor = hasPurchasableStockInOtherColor(
+    product,
+    selectedColor,
+    selectedWeight
+  );
 
   const sortedColors = product.colors
     ? [...product.colors].sort((a, b) => {
@@ -508,7 +514,9 @@ export function ProductPage() {
                   <>
                     <ShoppingCart className="h-5 w-5" />
                     {isAddDisabled
-                      ? "Sin stock"
+                      ? hasStockInOtherColor
+                        ? "Sin stock en este color"
+                        : "Sin stock"
                       : "Agregar al carrito"}
                   </>
                 )}
