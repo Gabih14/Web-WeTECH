@@ -16,10 +16,6 @@ import {
   getPurchaseState,
   getVariantStock,
 } from "../../utils/cartPurchase";
-import {
-  canPurchaseWithStock,
-  FILAMENT_MIN_STOCK_TO_PURCHASE,
-} from "../../utils/stockRules";
 import { getVariantPrice } from "../../utils/pricing";
 
 interface ProductCardProps {
@@ -78,7 +74,8 @@ export function ProductCard({ product, selectedColorFilter = null }: ProductCard
     quantity,
   });
 
-  const canAdd = canPurchaseWithStock(product, availableStock);
+
+  const canAdd = availableStock > 0;
   const hasStockInOtherColor = hasPurchasableStockInOtherColor(
     product,
     selectedColor,
@@ -236,9 +233,7 @@ export function ProductCard({ product, selectedColorFilter = null }: ProductCard
                     color.name,
                     selectedWeight ?? product.weights?.[0]?.weight ?? 0
                   );
-                  const isColorDisabled = isFilament
-                    ? stock < FILAMENT_MIN_STOCK_TO_PURCHASE
-                    : stock === 0;
+                  const isColorDisabled = stock === 0;
                   return (
                     <button
                       key={color.name}
