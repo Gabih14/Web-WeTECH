@@ -1,9 +1,19 @@
 import { CartItem, Product } from "../types";
-import {
-  canPurchaseWithStock,
-  getFilamentVariantStock,
-  isFilamentProduct,
-} from "./stockRules";
+
+export const isFilamentProduct = (product: Product): boolean =>
+  product.category === "FILAMENTO 3D";
+
+function getFilamentVariantStock(
+  product: Product,
+  color: string,
+  weight: number
+): number {
+  return (
+    product.colors?.find((variantColor) => variantColor.name === color)?.stock[
+      weight.toString()
+    ] ?? 0
+  );
+}
 
 export function getFirstColorWithStock(product: Product): string | null {
   if (!product.colors || !product.weights) {
@@ -73,7 +83,7 @@ export function getPurchaseState(params: {
     selectedColor,
     selectedWeight
   );
-  const canAddToCart = canPurchaseWithStock(product, availableStock);
+  const canAddToCart = availableStock > 0;
   const isOverStock = quantity + cartQuantity > availableStock;
 
   return {
@@ -98,9 +108,6 @@ export function hasPurchasableStockInOtherColor(
       return false;
     }
 
-    return canPurchaseWithStock(
-      product,
-      getVariantStock(product, color.name, selectedWeight)
-    );
+    return getVariantStock(product, color.name, selectedWeight) > 0;
   });
 }

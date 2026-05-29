@@ -16,13 +16,10 @@ import { useAddToCartFeedback } from "../hooks/useAddToCartFeedback";
 import {
   getFirstColorWithStock,
   hasPurchasableStockInOtherColor,
+  isFilamentProduct,
   getPurchaseState,
   getVariantStock,
 } from "../utils/cartPurchase";
-import {
-  FILAMENT_MIN_STOCK_TO_PURCHASE,
-  isFilamentProduct,
-} from "../utils/stockRules";
 import { getVariantPrice } from "../utils/pricing";
 
 const QUANTITY_OPTIONS = [1, 5, 10, 50];
@@ -426,9 +423,7 @@ export function ProductPage() {
                           selectedWeight ?? product.weights?.[0]?.weight ?? 0
                         );
 
-                        const disabledByStock = isFilament
-                          ? stock < FILAMENT_MIN_STOCK_TO_PURCHASE
-                          : stock === 0;
+                        const disabledByStock = stock === 0;
 
                         return (
                           <button
