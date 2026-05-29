@@ -12,6 +12,7 @@ import {
 import { useAddToCartFeedback } from "../../hooks/useAddToCartFeedback";
 import {
   getFirstColorWithStock,
+  hasPurchasableStockInOtherColor,
   getPurchaseState,
   getVariantStock,
 } from "../../utils/cartPurchase";
@@ -19,6 +20,7 @@ import { getVariantPrice } from "../../utils/pricing";
 
 interface ProductCardProps {
   product: Product;
+  selectedColorFilter?: string | null;
 }
 
 const QUANTITY_OPTIONS = [1, 5, 10, 50];
@@ -30,7 +32,7 @@ function formatPrice(price: number) {
   });
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, selectedColorFilter = null }: ProductCardProps) {
   const { addToCart, items } = useCart();
   const location = useLocation();
   const { justAdded, triggerAddedFeedback } = useAddToCartFeedback();
@@ -44,9 +46,13 @@ export function ProductCard({ product }: ProductCardProps) {
   );
 
   // ── State ─────────────────────────────────────────────────────────────────
-  const [selectedColor, setSelectedColor] = useState<string | null>(() =>
-    getFirstColorWithStock(product)
-  );
+  const [selectedColor, setSelectedColor] = useState<string | null>(() => {
+    const hasFilteredColor = product.colors?.some(
+      (color) => color.name === selectedColorFilter
+    );
+
+    return hasFilteredColor ? selectedColorFilter : getFirstColorWithStock(product);
+  });
   const [selectedWeight, setSelectedWeight] = useState<number | null>(
     product.weights?.[0]?.weight ?? null
   );
@@ -68,11 +74,20 @@ export function ProductCard({ product }: ProductCardProps) {
     quantity,
   });
 
+
   const canAdd = availableStock > 0;
+  const hasStockInOtherColor = hasPurchasableStockInOtherColor(
+    product,
+    selectedColor,
+    selectedWeight
+  );
 
   const stockStatus =
-    availableStock === 0
-      ? { label: "Sin stock", color: "text-red-500" }
+    availableStock === 0 || (isFilament && availableStock < FILAMENT_MIN_STOCK_TO_PURCHASE)
+      ? {
+          label: hasStockInOtherColor ? "Sin stock en este color" : "Sin stock",
+          color: "text-red-500",
+        }
       : availableStock <= 5
       ? { label: `Últimas ${availableStock}`, color: "text-amber-500" }
       : { label: "En stock", color: "text-emerald-600" };
@@ -103,6 +118,21 @@ export function ProductCard({ product }: ProductCardProps) {
       setCurrentPromotionalPrice(undefined);
     }
   }, [selectedWeight, selectedColor, quantity, product]);
+
+  useEffect(() => {
+    if (!selectedColorFilter) {
+      setSelectedColor(getFirstColorWithStock(product));
+      return;
+    }
+
+    const hasFilteredColor = product.colors?.some(
+      (color) => color.name === selectedColorFilter
+    );
+
+    if (hasFilteredColor) {
+      setSelectedColor(selectedColorFilter);
+    }
+  }, [product, selectedColorFilter]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleAddToCart = () => {
@@ -323,7 +353,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 Agregar
               </>
             ) : (
-              "Sin stock"
+              hasStockInOtherColor ? "Sin stock en este color" : "Sin stock"
             )}
           </button>
         </div>

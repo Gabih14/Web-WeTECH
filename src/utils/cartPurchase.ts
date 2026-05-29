@@ -74,3 +74,24 @@ export function getPurchaseState(params: {
     isOverStock,
   };
 }
+
+export function hasPurchasableStockInOtherColor(
+  product: Product,
+  selectedColor: string | null,
+  selectedWeight: number | null
+): boolean {
+  if (!selectedColor || selectedWeight === null || !product.colors) {
+    return false;
+  }
+
+  return product.colors.some((color) => {
+    if (color.name === selectedColor) {
+      return false;
+    }
+
+    return canPurchaseWithStock(
+      product,
+      getVariantStock(product, color.name, selectedWeight)
+    );
+  });
+}
