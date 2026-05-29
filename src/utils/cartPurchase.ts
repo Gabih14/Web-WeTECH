@@ -1,4 +1,9 @@
 import { CartItem, Product } from "../types";
+import {
+  canPurchaseWithStock,
+  getFilamentVariantStock,
+  isFilamentProduct,
+} from "./stockRules";
 
 export function getFirstColorWithStock(product: Product): string | null {
   if (!product.colors || !product.weights) {
@@ -19,6 +24,10 @@ export function getVariantStock(
   weight: number | null
 ): number {
   if (color && weight !== null) {
+    if (isFilamentProduct(product)) {
+      return getFilamentVariantStock(product, color, weight);
+    }
+
     return (
       product.colors?.find((variantColor) => variantColor.name === color)?.stock[
         weight.toString()
@@ -64,7 +73,7 @@ export function getPurchaseState(params: {
     selectedColor,
     selectedWeight
   );
-  const canAddToCart = availableStock > 0;
+  const canAddToCart = canPurchaseWithStock(product, availableStock);
   const isOverStock = quantity + cartQuantity > availableStock;
 
   return {
