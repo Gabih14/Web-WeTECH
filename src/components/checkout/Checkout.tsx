@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Tag, AlertCircle, X, ChevronRight, ChevronLeft, Lock } from "lucide-react";
 import { useCart } from "../../context/CartContext";
@@ -65,6 +65,7 @@ export default function Checkout() {
   const [showDevelopmentModal, setShowDevelopmentModal] = useState(false);
   const [checkoutPassword, setCheckoutPassword] = useState("");
   const [checkoutPasswordError, setCheckoutPasswordError] = useState("");
+  const checkoutInFlightRef = useRef(false);
 
   // Estados para el wizard de pasos
   const [currentStep, setCurrentStep] = useState(1);
@@ -427,6 +428,11 @@ export default function Checkout() {
   }; */
 
   const completeCheckout = async () => {
+    if (checkoutInFlightRef.current) {
+      return;
+    }
+
+    checkoutInFlightRef.current = true;
     setIsLoading(true);
     //navigate("/under-development");
     // Forzar redibujado
@@ -438,6 +444,7 @@ export default function Checkout() {
       clearCart();
       window.location.href = checkoutUrl; // Redirecciona al checkout externo (Agregar timeout si es necesario)
     } else {
+      checkoutInFlightRef.current = false;
       setIsLoading(false);
       console.log("Error al generar el pago");
     }
