@@ -13,6 +13,7 @@ import {
   shouldApplyDiscount,
 } from "../../utils/discounts";
 import { getVariantItemId, getVariantPrice } from "../../utils/pricing";
+import { formatPrice, roundPrice } from "../../utils/money";
 
 import { fetchClienteByCuit, verifyCoupon, useCoupon } from "../../services/api";
 
@@ -200,10 +201,10 @@ export default function Checkout() {
           weight
         );
       }
-      return originalPrice;
+      return roundPrice(originalPrice);
     }
 
-    return originalPrice;
+    return originalPrice === undefined ? originalPrice : roundPrice(originalPrice);
   };
 
   // Calcular precio para checkout considerando método de pago
@@ -219,7 +220,7 @@ export default function Checkout() {
 
     // Si gana cupón, cada línea sale con precio neto por cupón.
     if (isCouponWinningDiscount && appliedCoupon) {
-      return originalPrice * (1 - effectiveCouponPercentage / 100);
+      return roundPrice(originalPrice * (1 - effectiveCouponPercentage / 100));
     }
 
     // Si no gana cupón, aplicar descuento por transferencia cuando corresponda.
@@ -232,7 +233,7 @@ export default function Checkout() {
       );
     }
 
-    return originalPrice;
+    return roundPrice(originalPrice);
   };
 
   const calculateItemAdjustmentPercentageForCheckout = (
@@ -296,7 +297,7 @@ export default function Checkout() {
       postal_code: formData.billingPostalCode,
     };
 
-    const roundDisplayedPrice = (value: number) => Math.round(value);
+    const roundDisplayedPrice = (value: number) => roundPrice(value);
     const cleanCuit = formData.cuit.trim().replace(/\D/g, ''); // Remover guiones y caracteres no numéricos
 
     const body = {
@@ -530,7 +531,7 @@ export default function Checkout() {
   const calculateOriginalTotal = () => {
     return items.reduce((sum, item) => {
       const price = getPrice(item.product, item.color, item.weight);
-      const itemTotal = price ? price * item.quantity : 0;
+      const itemTotal = price ? roundPrice(price) * item.quantity : 0;
       return sum + itemTotal;
     }, 0);
   };
@@ -1063,32 +1064,17 @@ export default function Checkout() {
                                 <div className="flex flex-wrap items-center">
                                   <span className="text-base sm:text-lg font-bold mr-2">
                                     $
-                                    {(
-                                      discountedPrice * item.quantity
-                                    ).toLocaleString("es-ES", {
-                                      minimumFractionDigits: 0,
-                                      maximumFractionDigits: 0,
-                                    })}
+                                    {formatPrice(discountedPrice * item.quantity)}
                                   </span>
                                   <span className="text-sm sm:text-base text-gray-400 font-bold line-through">
                                     $
-                                    {(
-                                      (price ?? 0) * item.quantity
-                                    ).toLocaleString("es-ES", {
-                                      minimumFractionDigits: 0,
-                                      maximumFractionDigits: 0,
-                                    })}
+                                    {formatPrice((price ?? 0) * item.quantity)}
                                   </span>
                                 </div>
                               ) : (
                                 <span className="text-base sm:text-lg font-bold">
                                   $
-                                  {(
-                                    (price ?? 0) * item.quantity
-                                  ).toLocaleString("es-ES", {
-                                    minimumFractionDigits: 0,
-                                    maximumFractionDigits: 0,
-                                  })}
+                                  {formatPrice((price ?? 0) * item.quantity)}
                                 </span>
                               )}
                             </div>
@@ -1155,30 +1141,21 @@ export default function Checkout() {
                     <dt className="text-sm text-gray-600">Subtotal</dt>
                     <dd className="text-sm font-medium text-gray-900">
                       $
-                      {originalTotal.toLocaleString("es-ES", {
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
-                      })}
+                      {formatPrice(originalTotal)}
                     </dd>
                   </div>
                   <div className="flex items-center justify-between">
                     <dt className="text-sm text-gray-600">Envío</dt>
                     <dd className="text-sm font-medium text-gray-900">
                       $
-                      {(shippingData?.costoTotal || 0).toLocaleString("es-ES", {
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
-                      })}
+                      {formatPrice(shippingData?.costoTotal || 0)}
                     </dd>
                   </div>
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-lg font-medium">Descuento:</span>
                     <span className="text-lg font-bold text-red-500">
                       -$
-                      {appliedDiscountAmount.toLocaleString("es-ES", {
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
-                      })}
+                      {formatPrice(appliedDiscountAmount)}
                     </span>
                   </div>
                   {paymentMethod === "online" && discount > 0 && (
@@ -1186,10 +1163,7 @@ export default function Checkout() {
                       <span>Descuento disponible con transferencia:</span>
                       <span className="font-medium">
                         -$
-                        {discount.toLocaleString("es-ES", {
-                          minimumFractionDigits: 0,
-                          maximumFractionDigits: 0,
-                        })}
+                        {formatPrice(discount)}
                       </span>
                     </div>
                   )}
@@ -1198,10 +1172,7 @@ export default function Checkout() {
                       <span className="text-sm font-medium text-green-700">Cupón {appliedCoupon.code}:</span>
                       <span className="text-sm font-bold text-green-700">
                         -$
-                        {couponDiscount.toLocaleString("es-ES", {
-                          minimumFractionDigits: 0,
-                          maximumFractionDigits: 0,
-                        })}
+                        {formatPrice(couponDiscount)}
                       </span>
                     </div>
                   )}
@@ -1211,10 +1182,7 @@ export default function Checkout() {
                     </dt>
                     <dd className="text-xl font-bold text-black">
                       $
-                      {finalTotal.toLocaleString("es-ES", {
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
-                      })}
+                      {formatPrice(finalTotal)}
                     </dd>
                   </div>
                 </dl>

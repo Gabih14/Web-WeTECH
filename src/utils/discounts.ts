@@ -1,3 +1,5 @@
+import { roundPrice } from "./money";
+
 // Configuración de descuentos por cantidad (legacy por compatibilidad)
 export const QUANTITY_DISCOUNTS = {
   1: 0.15,    // 15% descuento base
@@ -82,16 +84,16 @@ export const calculateDiscountedPriceForProduct = (
   weight?: number
 ): number => {
   // Si no es filamento, no aplicar descuento
-  if (!shouldApplyDiscount(product)) return originalPrice;
+  if (!shouldApplyDiscount(product)) return roundPrice(originalPrice);
   
   // Si es elegible para descuentos por cantidad (1kg de marcas específicas)
   if (weight !== undefined && isEligibleForQuantityDiscount(product, weight)) {
     const rate = getDiscountForQuantityForProduct(product, quantity);
-    return originalPrice * (1 - rate);
+    return roundPrice(originalPrice * (1 - rate));
   }
   
   // Si es filamento pero no elegible para descuentos por cantidad, aplicar solo descuento base del 15%
-  return originalPrice * (1 - BASE_FILAMENT_DISCOUNT);
+  return roundPrice(originalPrice * (1 - BASE_FILAMENT_DISCOUNT));
 };
 
 export const getDiscountPercentageForProduct = (
@@ -126,7 +128,7 @@ export const getDiscountForQuantity = (quantity: number): number => {
 // Función para calcular el precio con descuento
 export const calculateDiscountedPrice = (originalPrice: number, quantity: number): number => {
   const discount = getDiscountForQuantity(quantity);
-  return originalPrice * (1 - discount);
+  return roundPrice(originalPrice * (1 - discount));
 };
 
 // Función para obtener el porcentaje de descuento como string

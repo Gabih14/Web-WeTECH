@@ -17,6 +17,7 @@ import {
   getVariantStock,
 } from "../../utils/cartPurchase";
 import { getVariantPrice } from "../../utils/pricing";
+import { formatPrice } from "../../utils/money";
 
 interface ProductCardProps {
   product: Product;
@@ -24,13 +25,6 @@ interface ProductCardProps {
 }
 
 const QUANTITY_OPTIONS = [1, 5, 10, 50];
-
-function formatPrice(price: number) {
-  return price.toLocaleString("es-ES", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  });
-}
 
 export function ProductCard({ product, selectedColorFilter = null }: ProductCardProps) {
   const { addToCart, items } = useCart();
