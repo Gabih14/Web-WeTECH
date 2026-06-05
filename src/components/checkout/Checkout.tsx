@@ -777,7 +777,7 @@ export default function Checkout() {
               </div>
               <dl className="text-sm space-y-1">
                 <div className="flex justify-between">
-                  <dt className="text-gray-600">CUIT:</dt>
+                  <dt className="text-gray-600">CUIT / CUIL:</dt>
                   <dd className="text-gray-900 font-medium">{formData.cuit}</dd>
                 </div>
                 <div className="flex justify-between">
