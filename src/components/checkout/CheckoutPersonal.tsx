@@ -21,7 +21,7 @@ export const CheckoutPersonal = ({ formData, handleInputChange, handleCuitBlur }
             htmlFor="cuit"
             className="block text-sm font-medium text-gray-700"
           >
-            CUIT
+            CUIT / CUIL
           </label>
           <input
             type="text"
