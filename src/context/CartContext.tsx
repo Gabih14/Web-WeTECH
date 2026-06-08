@@ -7,7 +7,7 @@ import React, {
   useEffect,
 } from "react";
 import { Product, CartItem, CartContextType } from "../types";
-import { calculateDiscountedPriceForProduct } from "../utils/discounts";
+import { calculateDiscountedLineTotalForProduct } from "../utils/discounts";
 import {
   getVariantStock,
   isFilamentProduct,
@@ -119,11 +119,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("cartItems");
   }, []);
 
-  const calculateItemPrice = (item: CartItem) => {
+  const calculateItemTotal = (item: CartItem) => {
     const originalPrice = getCartItemPrice(item);
     
     if (originalPrice) {
-      return calculateDiscountedPriceForProduct(
+      return calculateDiscountedLineTotalForProduct(
         item.product,
         originalPrice,
         item.quantity,
@@ -136,9 +136,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const total = useMemo(() => {
     return items.reduce((sum, item) => {
-      const itemPrice = calculateItemPrice(item);
-      const itemTotal = itemPrice ? itemPrice * item.quantity : 0;
-      return sum + itemTotal;
+      return sum + calculateItemTotal(item);
     }, 0);
   }, [items]);
 

@@ -8,6 +8,7 @@ import { CheckoutAdress } from "./CheckoutAdress";
 import { StepIndicator } from "./StepIndicator";
 
 import {
+  calculateDiscountedLineTotalForProduct,
   calculateDiscountedPriceForProduct,
   getDiscountPercentageForProduct,
   shouldApplyDiscount,
@@ -234,6 +235,34 @@ export default function Checkout() {
     }
 
     return roundPrice(originalPrice);
+  };
+
+  const calculateItemTotalForCheckout = (
+    product: Product,
+    color: string,
+    weight: number,
+    quantity: number
+  ): number => {
+    const originalPrice = getPrice(product, color, weight);
+
+    if (!originalPrice) return 0;
+
+    if (isCouponWinningDiscount && appliedCoupon) {
+      return roundPrice(
+        originalPrice * quantity * (1 - effectiveCouponPercentage / 100)
+      );
+    }
+
+    if (shouldApplyTransferDiscountToCheckout && shouldApplyDiscount(product)) {
+      return calculateDiscountedLineTotalForProduct(
+        product,
+        originalPrice,
+        quantity,
+        weight
+      );
+    }
+
+    return roundPrice(originalPrice) * quantity;
   };
 
   const calculateItemAdjustmentPercentageForCheckout = (
@@ -539,27 +568,28 @@ export default function Checkout() {
   // Calcular total del checkout según método de pago
   const calculateCheckoutTotal = () => {
     return items.reduce((sum, item) => {
-      const price = calculateItemPriceForCheckout(
+      const itemTotal = calculateItemTotalForCheckout(
         item.product,
         item.color,
         item.weight,
         item.quantity
       );
-      const itemTotal = price ? price * item.quantity : 0;
       return sum + itemTotal;
     }, 0);
   };
 
   const calculateTransferDiscountedTotal = () => {
     return items.reduce((sum, item) => {
-      const price = calculateItemPriceWithDiscount(
+      const originalPrice = getPrice(item.product, item.color, item.weight);
+
+      if (!originalPrice) return sum;
+
+      return sum + calculateDiscountedLineTotalForProduct(
         item.product,
-        item.color,
-        item.weight,
-        item.quantity
+        originalPrice,
+        item.quantity,
+        item.weight
       );
-      const itemTotal = price ? price * item.quantity : 0;
-      return sum + itemTotal;
     }, 0);
   };
 
@@ -1000,6 +1030,15 @@ export default function Checkout() {
                       item.weight,
                       item.quantity
                     );
+                    const discountedLineTotal =
+                      price !== undefined
+                        ? calculateDiscountedLineTotalForProduct(
+                            item.product,
+                            price,
+                            item.quantity,
+                            item.weight
+                          )
+                        : 0;
                     const colorHex = item.color
                       ? item.product.colors?.find(
                         (c) =>
@@ -1064,7 +1103,7 @@ export default function Checkout() {
                                 <div className="flex flex-wrap items-center">
                                   <span className="text-base sm:text-lg font-bold mr-2">
                                     $
-                                    {formatPrice(discountedPrice * item.quantity)}
+                                    {formatPrice(discountedLineTotal)}
                                   </span>
                                   <span className="text-sm sm:text-base text-gray-400 font-bold line-through">
                                     $

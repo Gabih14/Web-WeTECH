@@ -5,7 +5,11 @@ export function roundPrice(value: number | string): number {
     return 0;
   }
 
-  return Math.round(numericValue);
+  const sign = Math.sign(numericValue) || 1;
+  const absoluteValue = Math.abs(numericValue);
+  const tolerance = Number.EPSILON * Math.max(1, absoluteValue);
+
+  return sign * Math.floor(absoluteValue + 0.5 + tolerance);
 }
 
 export function formatPrice(value: number | string): string {

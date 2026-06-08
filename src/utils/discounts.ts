@@ -77,23 +77,38 @@ export const getDiscountForQuantityForProduct = (product: { category: string }, 
   return getTieredDiscount(rule.discounts, quantity);
 };
 
+export const getDiscountRateForProduct = (
+  product: { id: string; category: string },
+  quantity: number,
+  weight?: number
+): number => {
+  if (!shouldApplyDiscount(product)) return 0;
+
+  if (weight !== undefined && isEligibleForQuantityDiscount(product, weight)) {
+    return getDiscountForQuantityForProduct(product, quantity);
+  }
+
+  return BASE_FILAMENT_DISCOUNT;
+};
+
 export const calculateDiscountedPriceForProduct = (
   product: { id: string; category: string },
   originalPrice: number,
   quantity: number,
   weight?: number
 ): number => {
-  // Si no es filamento, no aplicar descuento
-  if (!shouldApplyDiscount(product)) return roundPrice(originalPrice);
-  
-  // Si es elegible para descuentos por cantidad (1kg de marcas específicas)
-  if (weight !== undefined && isEligibleForQuantityDiscount(product, weight)) {
-    const rate = getDiscountForQuantityForProduct(product, quantity);
-    return roundPrice(originalPrice * (1 - rate));
-  }
-  
-  // Si es filamento pero no elegible para descuentos por cantidad, aplicar solo descuento base del 15%
-  return roundPrice(originalPrice * (1 - BASE_FILAMENT_DISCOUNT));
+  const rate = getDiscountRateForProduct(product, quantity, weight);
+  return roundPrice(originalPrice * (1 - rate));
+};
+
+export const calculateDiscountedLineTotalForProduct = (
+  product: { id: string; category: string },
+  originalPrice: number,
+  quantity: number,
+  weight?: number
+): number => {
+  const rate = getDiscountRateForProduct(product, quantity, weight);
+  return roundPrice(originalPrice * quantity * (1 - rate));
 };
 
 export const getDiscountPercentageForProduct = (
