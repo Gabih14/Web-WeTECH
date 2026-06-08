@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { RefreshCw } from "lucide-react";
 import { apiFetch } from "../services/api";
 import SurveyModal from "../components/SurveyModal";
+import { useCart } from "../context/CartContext";
 
 const PaymentStatus = {
   LOADING: "loading",
@@ -41,6 +42,7 @@ interface PedidoData {
 }
 
 const PaymentCallback = () => {
+  const { clearCart } = useCart();
   const [status, setStatus] = useState(PaymentStatus.LOADING);
   const [searchParams] = useSearchParams();
   const [pedidoData, setPedidoData] = useState<PedidoData | null>(null);
@@ -315,6 +317,24 @@ const PaymentCallback = () => {
     setIsSurveyOpen(true);
     localStorage.setItem(storageKey, "1");
   }, [splashVisible, surveyOrderKey]);
+
+  useEffect(() => {
+    const shouldClearCart =
+      sessionStorage.getItem("clearCartAfterPaymentSuccess") === "true";
+
+    if (!shouldClearCart) {
+      return;
+    }
+
+    if (status === PaymentStatus.SUCCESS) {
+      clearCart();
+      sessionStorage.removeItem("clearCartAfterPaymentSuccess");
+    }
+
+    if (status === PaymentStatus.FAIL) {
+      sessionStorage.removeItem("clearCartAfterPaymentSuccess");
+    }
+  }, [clearCart, status]);
 
   const refreshPedidoStatus = async () => {
     if (!externalId || isRefreshing) return;

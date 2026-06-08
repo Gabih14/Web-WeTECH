@@ -506,6 +506,7 @@ export const CheckoutAdress = ({
                 >
                   <div className="relative px-6 pt-6 pb-4">
                     <button
+                      type="button"
                       onClick={() => {
                         setShowShippingErrorModal(false);
                       }}
@@ -542,6 +543,7 @@ export const CheckoutAdress = ({
                   </div>
                   <div className="px-6 pb-6">
                     <button
+                      type="button"
                       onClick={() => {
                         setShowShippingErrorModal(false);
                       }}
