@@ -20,6 +20,34 @@ type Props = {
   setConfirmedAddress: (address: string | null) => void;
 };
 
+type DistanceResponse = {
+  distance?: string;
+  duration?: string;
+  destinationResolved?: string;
+  originResolved?: string;
+  raw?: {
+    distance?: {
+      text: string;
+      value: number;
+    };
+    duration?: {
+      text: string;
+      value: number;
+    };
+    status?: string;
+  };
+  error?: string;
+  detail?: string;
+  needsMoreSpecificAddress?: boolean;
+};
+
+const getShippingErrorMessage = (data: DistanceResponse) => {
+  const parts = [data.error, data.detail].filter(Boolean);
+  return parts.length
+    ? parts.join(". ")
+    : "No se pudo calcular la distancia. Verifica la dirección.";
+};
+
 export const CheckoutAdress = ({
   formData,
   handleInputChange,
@@ -75,10 +103,10 @@ export const CheckoutAdress = ({
         return;
       }
 
-      let data;
+      let data: DistanceResponse;
       
       // Simulación en desarrollo
-      if (import.meta.env.DEV) {
+      if (false) { //import.meta.env.DEV
         // Simular respuesta de la API
         data = {
           distance: "3.6 km",
@@ -110,6 +138,17 @@ export const CheckoutAdress = ({
         });
         data = await response.json();
         console.log("Respuesta del backend:", data);
+
+        if (!response.ok || data.error || data.detail) {
+          setShippingError({
+            message: getShippingErrorMessage(data),
+            retryable: data.needsMoreSpecificAddress ?? true,
+          });
+          setShowShippingErrorModal(true);
+          setConfirmedAddress(null);
+          setShippingData(null);
+          return;
+        }
       }
 
       if (data && data.distance && data.destinationResolved) {
@@ -140,7 +179,7 @@ export const CheckoutAdress = ({
           }
         }
       } else {
-        setShippingError({ message: "No se pudo calcular la distancia. Verifica la dirección.", retryable: true });
+        setShippingError({ message: getShippingErrorMessage(data), retryable: true });
         setShowShippingErrorModal(true);
       }
     } catch (error) {
