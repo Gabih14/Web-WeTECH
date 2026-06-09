@@ -79,7 +79,7 @@ export default function Checkout() {
     { number: 1, title: "Información Personal", description: "Datos de contacto" },
     { number: 2, title: "Método de Pago", description: "Selecciona cómo pagar" },
     { number: 3, title: "Entrega", description: "Dirección y envío" },
-    { number: 4, title: "Resumen", description: "Confirma tu pedido" },
+    { number: 4, title: "Confirmación", description: "Última revisión" },
   ];
 
   const BEARER_TOKEN = import.meta.env.VITE_API_BEARER_TOKEN; // Se usará cuando el pago esté activo
@@ -308,6 +308,7 @@ export default function Checkout() {
           <h2 className="text-2xl font-bold text-gray-900">Carrito vacío</h2>
           <p className="mt-2 text-gray-600">No hay productos en tu carrito</p>
           <button
+            type="button"
             onClick={() => navigate("/")}
             className="mt-4 inline-flex items-center text-black hover:text-yellow-800"
           >
@@ -483,9 +484,8 @@ export default function Checkout() {
     const checkoutUrl = await createPaymentRequest();
 
     if (checkoutUrl) {
-      // Limpiar el carrito antes de redirigir al pago
-      clearCart();
-      window.location.href = checkoutUrl; // Redirecciona al checkout externo (Agregar timeout si es necesario)
+      sessionStorage.setItem("clearCartAfterPaymentSuccess", "true");
+      window.location.assign(checkoutUrl); // Redirecciona al checkout externo
     } else {
       checkoutInFlightRef.current = false;
       setIsLoading(false);
@@ -497,8 +497,22 @@ export default function Checkout() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (currentStep < 4) {
+      if (canProceedToNextStep()) {
+        setCurrentStep((step) => Math.min(step + 1, 4));
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+      return;
+    }
+  };
+
+  const handleConfirmOrder = async () => {
+    if (currentStep !== 4) {
+      return;
+    }
 
     if (!IS_CHECKOUT_PASSWORD_ENABLED) {
       await completeCheckout();
@@ -805,11 +819,29 @@ export default function Checkout() {
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 space-y-6">
             <div>
               <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Confirma tu Pedido
+                Última revisión antes de confirmar
               </h3>
               <p className="text-sm text-gray-600 mb-6">
-                Revisa que toda la información sea correcta antes de proceder al pago
+                Este es el último paso. Al tocar el botón final vamos a generar tu pedido
+                {paymentMethod === "online"
+                  ? " y te enviaremos a la plataforma de pago."
+                  : " y te enviaremos las instrucciones para transferir."}
               </p>
+            </div>
+
+            <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-4">
+              <div className="flex gap-2">
+                <AlertCircle className="h-5 w-5 text-yellow-700 flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-yellow-900">
+                  <p className="font-semibold mb-1">
+                    Estás por confirmar el pedido
+                  </p>
+                  <p>
+                    Revisá tus datos, la entrega y el total. Si algo no está bien,
+                    usá "Editar" antes de continuar.
+                  </p>
+                </div>
+              </div>
             </div>
 
             {/* Información Personal */}
@@ -828,7 +860,7 @@ export default function Checkout() {
               </div>
               <dl className="text-sm space-y-1">
                 <div className="flex justify-between">
-                  <dt className="text-gray-600">CUIT:</dt>
+                  <dt className="text-gray-600">CUIT / CUIL:</dt>
                   <dd className="text-gray-900 font-medium">{formData.cuit}</dd>
                 </div>
                 <div className="flex justify-between">
@@ -927,8 +959,9 @@ export default function Checkout() {
                 <div className="text-sm text-blue-800">
                   <p className="font-medium mb-1">Importante:</p>
                   <p>
-                    Al hacer clic en "Ir a pagar" serás redirigido a la plataforma de pago seguro
-                    para completar tu compra.
+                    {paymentMethod === "online"
+                      ? 'Al hacer clic en "Confirmar e ir a pagar" serás redirigido a la plataforma de pago seguro para completar tu compra.'
+                      : 'Al hacer clic en "Confirmar y generar pedido" registraremos tu pedido. Luego deberás enviar el comprobante de transferencia por WhatsApp para que sea procesado.'}
                   </p>
                 </div>
               </div>
@@ -943,6 +976,7 @@ export default function Checkout() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
       <button
+        type="button"
         onClick={() => navigate(-1)}
         className="flex items-center text-black hover:text-yellow-800 mb-6"
       >
@@ -992,7 +1026,8 @@ export default function Checkout() {
                 </button>
               ) : (
                 <button
-                  type="submit"
+                  type="button"
+                  onClick={handleConfirmOrder}
                   className="flex-1 py-3 px-4 rounded-md transition-colors bg-yellow-400 hover:bg-yellow-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
                   disabled={isLoading}
                 >
@@ -1002,9 +1037,9 @@ export default function Checkout() {
                       <span className="ml-2">Cargando...</span>
                     </div>
                   ) : paymentMethod === "online" ? (
-                    `Ir a pagar`
+                    `Confirmar e ir a pagar`
                   ) : (
-                    `Confirmar pedido`
+                    `Confirmar y generar pedido`
                   )}
                 </button>
               )}
@@ -1028,7 +1063,7 @@ export default function Checkout() {
 
             {currentStep === 4 && (
               <div className="text-xs text-gray-500 text-center mt-4">
-                Al confirmar tu compra aceptas nuestros términos y condiciones
+                El pedido se genera al presionar el botón de confirmación. Al confirmar tu compra aceptas nuestros términos y condiciones.
               </div>
             )}
           </form>
@@ -1254,6 +1289,7 @@ export default function Checkout() {
               <div className="text-center py-8">
                 <p className="text-gray-600">No hay productos en tu carrito.</p>
                 <button
+                  type="button"
                   onClick={() => navigate("/")}
                   className="mt-4 inline-flex items-center text-indigo-600 hover:text-indigo-800"
                 >
@@ -1400,6 +1436,7 @@ export default function Checkout() {
             {/* Header con ícono y botón cerrar */}
             <div className="relative px-6 pt-6 pb-4">
               <button
+                type="button"
                 onClick={() => {
                   setShowErrorModal(false);
                 }}
@@ -1442,6 +1479,7 @@ export default function Checkout() {
             {/* Botones de acción */}
             <div className="px-6 pb-6">
               <button
+                type="button"
                 onClick={() => {
                   setShowErrorModal(false);
                 }}

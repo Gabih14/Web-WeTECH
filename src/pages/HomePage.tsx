@@ -59,7 +59,7 @@ export function HomePage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 font-sans w-full overflow-x-hidden">
       {/* Construction Modal */}
-      {showModal && (
+      {/* {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4">
           <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-xl shadow-2xl max-w-md w-full max-h-screen overflow-y-auto border-t-4 border-yellow-500">
             <div className="flex justify-between items-start mb-4 sm:mb-6">
@@ -196,7 +196,7 @@ export function HomePage() {
             </div>
           </div>
         </div>
-      )}
+      )} */}
       <div id="categories" className="text-center mb-8 gap-4">
         <div className="flex flex-col md:flex-row items-center justify-center">
           <img src={Logo} alt="Logo WeTECH" className="mx-auto h-24 md:h-48" />
