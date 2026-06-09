@@ -398,8 +398,8 @@ export default function Checkout() {
               {
                 nombre: shippingData.itemId,
                 cantidad: 1,
-                precio_unitario: roundDisplayedPrice(shippingData.costoTotal),
-                subtotal: roundDisplayedPrice(shippingData.costoTotal),
+                precio_unitario: roundDisplayedPrice(shippingTotal),
+                subtotal: roundDisplayedPrice(shippingTotal),
                 ajuste_porcentaje: 0,
               },
             ]
@@ -644,7 +644,15 @@ export default function Checkout() {
   const checkoutTotal = calculateCheckoutTotal();
   const appliedDiscountAmount = Math.max(originalTotal - checkoutTotal, 0);
   const couponDiscount = isCouponWinningDiscount ? appliedDiscountAmount : 0;
-  const shippingTotal = shippingData?.costoTotal || 0;
+  const cartWeightKg = items.reduce(
+    (sum, item) => sum + item.weight * item.quantity,
+    0
+  );
+  const isFreeShippingByWeight =
+    deliveryMethod === "shipping" && cartWeightKg >= 10;
+  const shippingTotal = isFreeShippingByWeight
+    ? 0
+    : shippingData?.costoTotal || 0;
   const finalTotal = checkoutTotal + shippingTotal;
   const shouldSendCouponInOrder = isCouponWinningDiscount;
   const discount = originalTotal - total;
@@ -1246,9 +1254,14 @@ export default function Checkout() {
                     <dt className="text-sm text-gray-600">Envío</dt>
                     <dd className="text-sm font-medium text-gray-900">
                       $
-                      {formatPrice(shippingData?.costoTotal || 0)}
+                      {formatPrice(shippingTotal)}
                     </dd>
                   </div>
+                  {isFreeShippingByWeight && (
+                    <div className="flex items-center justify-between text-sm text-green-700">
+                      <span>Envío gratis por compra desde 10 kg</span>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-lg font-medium">Descuento:</span>
                     <span className="text-lg font-bold text-red-500">
