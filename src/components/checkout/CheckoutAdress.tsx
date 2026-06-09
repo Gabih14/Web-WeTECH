@@ -134,6 +134,9 @@ export const CheckoutAdress = ({
           body: JSON.stringify({
             address: `${formData.street} ${formData.number}`,
             city: formData.city,
+            province: "Mendoza",
+            country: "Argentina",
+            postalCode: formData.postalCode,
           }),
         });
         data = await response.json();
