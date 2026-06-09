@@ -71,6 +71,37 @@ export const isEligibleForQuantityDiscount = (
   );
 };
 
+export type QuantityDiscountCartItem = {
+  product: { id: string; category: string };
+  weight: number;
+  quantity: number;
+};
+
+export const getEligibleQuantityDiscountCartQuantity = (
+  items: QuantityDiscountCartItem[]
+): number => {
+  return items.reduce((total, item) => {
+    if (!isEligibleForQuantityDiscount(item.product, item.weight)) {
+      return total;
+    }
+
+    return total + item.quantity;
+  }, 0);
+};
+
+export const getEffectiveQuantityForProductDiscount = (
+  product: { id: string; category: string },
+  quantity: number,
+  weight: number | undefined,
+  eligibleCartQuantity: number
+): number => {
+  if (weight === undefined || !isEligibleForQuantityDiscount(product, weight)) {
+    return quantity;
+  }
+
+  return Math.max(quantity, eligibleCartQuantity);
+};
+
 export const getDiscountForQuantityForProduct = (product: { category: string }, quantity: number): number => {
   const rule = DISCOUNT_RULES[product.category];
   if (!rule) return 0;
@@ -95,9 +126,10 @@ export const calculateDiscountedPriceForProduct = (
   product: { id: string; category: string },
   originalPrice: number,
   quantity: number,
-  weight?: number
+  weight?: number,
+  effectiveQuantity = quantity
 ): number => {
-  const rate = getDiscountRateForProduct(product, quantity, weight);
+  const rate = getDiscountRateForProduct(product, effectiveQuantity, weight);
   return roundPrice(originalPrice * (1 - rate));
 };
 
@@ -105,22 +137,24 @@ export const calculateDiscountedLineTotalForProduct = (
   product: { id: string; category: string },
   originalPrice: number,
   quantity: number,
-  weight?: number
+  weight?: number,
+  effectiveQuantity = quantity
 ): number => {
-  const rate = getDiscountRateForProduct(product, quantity, weight);
+  const rate = getDiscountRateForProduct(product, effectiveQuantity, weight);
   return roundPrice(originalPrice * quantity * (1 - rate));
 };
 
 export const getDiscountPercentageForProduct = (
   product: { id: string; category: string },
   quantity: number,
-  weight?: number
+  weight?: number,
+  effectiveQuantity = quantity
 ): string => {
   if (!shouldApplyDiscount(product)) return '0%';
   
   // Si es elegible para descuentos por cantidad
   if (weight !== undefined && isEligibleForQuantityDiscount(product, weight)) {
-    const rate = getDiscountForQuantityForProduct(product, quantity);
+    const rate = getDiscountForQuantityForProduct(product, effectiveQuantity);
     return `${Math.round(rate * 100)}%`;
   }
   
@@ -177,13 +211,14 @@ export const calculateSavingsForProduct = (
   product: { id: string; category: string },
   originalPrice: number,
   quantity: number,
-  weight?: number
+  weight?: number,
+  effectiveQuantity = quantity
 ): number => {
   if (!shouldApplyDiscount(product)) return 0;
   
   // Si es elegible para descuentos por cantidad
   if (weight !== undefined && isEligibleForQuantityDiscount(product, weight)) {
-    const rate = getDiscountForQuantityForProduct(product, quantity);
+    const rate = getDiscountForQuantityForProduct(product, effectiveQuantity);
     return originalPrice * quantity * rate;
   }
   

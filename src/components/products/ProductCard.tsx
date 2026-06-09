@@ -6,7 +6,9 @@ import { Link, useLocation } from "react-router-dom";
 import {
   shouldApplyDiscount,
   calculateDiscountedPriceForProduct,
+  getEffectiveQuantityForProductDiscount,
   getDiscountPercentageForProduct,
+  getEligibleQuantityDiscountCartQuantity,
   getNextDiscountLevelForProduct,
 } from "../../utils/discounts";
 import { useAddToCartFeedback } from "../../hooks/useAddToCartFeedback";
@@ -58,6 +60,16 @@ export function ProductCard({ product, selectedColorFilter = null }: ProductCard
   );
 
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const eligibleQuantityDiscountCartQuantity =
+    getEligibleQuantityDiscountCartQuantity(items);
+  const previewEligibleQuantityDiscountCartQuantity =
+    eligibleQuantityDiscountCartQuantity + quantity;
+  const effectiveDiscountQuantity = getEffectiveQuantityForProductDiscount(
+    product,
+    quantity,
+    selectedWeight ?? undefined,
+    previewEligibleQuantityDiscountCartQuantity
+  );
 
   // ── Derived values ────────────────────────────────────────────────────────
   const { availableStock, cartQuantity, canAddToCart, isOverStock } = getPurchaseState({
@@ -102,7 +114,13 @@ export function ProductCard({ product, selectedColorFilter = null }: ProductCard
 
       setCurrentPrice(base);
       setCurrentPromotionalPrice(
-        calculateDiscountedPriceForProduct(product, base, quantity, selectedWeight ?? 0)
+        calculateDiscountedPriceForProduct(
+          product,
+          base,
+          quantity,
+          selectedWeight ?? 0,
+          effectiveDiscountQuantity
+        )
       );
     } else {
       const weightPrice =
@@ -110,7 +128,7 @@ export function ProductCard({ product, selectedColorFilter = null }: ProductCard
       setCurrentPrice(weightPrice ?? product.price);
       setCurrentPromotionalPrice(undefined);
     }
-  }, [selectedWeight, selectedColor, quantity, product]);
+  }, [selectedWeight, selectedColor, quantity, product, effectiveDiscountQuantity]);
 
   useEffect(() => {
     if (!selectedColorFilter) {
@@ -150,7 +168,7 @@ export function ProductCard({ product, selectedColorFilter = null }: ProductCard
 
   const applyDiscount = shouldApplyDiscount(product) && !!currentPromotionalPrice;
   const nextLevel = applyDiscount
-    ? getNextDiscountLevelForProduct(product, quantity, selectedWeight ?? undefined)
+    ? getNextDiscountLevelForProduct(product, effectiveDiscountQuantity, selectedWeight ?? undefined)
     : null;
   const from = `${location.pathname}${location.search}`;
 
@@ -161,7 +179,7 @@ export function ProductCard({ product, selectedColorFilter = null }: ProductCard
       {applyDiscount && (
         <div className="absolute top-3 left-3 z-10 flex items-center gap-1 bg-black text-white text-[10px] font-semibold px-2 py-1 rounded-full tracking-wide">
           <Zap className="w-2.5 h-2.5 fill-yellow-400 text-yellow-400" />
-          -{getDiscountPercentageForProduct(product, quantity, selectedWeight ?? undefined)}
+          -{getDiscountPercentageForProduct(product, quantity, selectedWeight ?? undefined, effectiveDiscountQuantity)}
         </div>
       )}
 
@@ -290,7 +308,7 @@ export function ProductCard({ product, selectedColorFilter = null }: ProductCard
           {/* Siempre ocupa la misma altura, con o sin mensaje */}
           <p className="text-[11px] text-amber-600 font-medium leading-tight min-h-[1rem] mt-0.5">
             {applyDiscount && nextLevel
-              ? `Comprá ${nextLevel.quantity - quantity} más → ${nextLevel.discount} off`
+              ? `Comprá ${nextLevel.quantity - effectiveDiscountQuantity} más → ${nextLevel.discount} off`
               : ""}
           </p>
         </div>

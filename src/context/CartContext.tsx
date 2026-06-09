@@ -7,7 +7,11 @@ import React, {
   useEffect,
 } from "react";
 import { Product, CartItem, CartContextType } from "../types";
-import { calculateDiscountedLineTotalForProduct } from "../utils/discounts";
+import {
+  calculateDiscountedLineTotalForProduct,
+  getEffectiveQuantityForProductDiscount,
+  getEligibleQuantityDiscountCartQuantity,
+} from "../utils/discounts";
 import {
   getVariantStock,
   isFilamentProduct,
@@ -119,15 +123,28 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("cartItems");
   }, []);
 
+  const eligibleQuantityDiscountCartQuantity = useMemo(
+    () => getEligibleQuantityDiscountCartQuantity(items),
+    [items]
+  );
+
   const calculateItemTotal = (item: CartItem) => {
     const originalPrice = getCartItemPrice(item);
     
     if (originalPrice) {
+      const effectiveQuantity = getEffectiveQuantityForProductDiscount(
+        item.product,
+        item.quantity,
+        item.weight,
+        eligibleQuantityDiscountCartQuantity
+      );
+
       return calculateDiscountedLineTotalForProduct(
         item.product,
         originalPrice,
         item.quantity,
-        item.weight
+        item.weight,
+        effectiveQuantity
       );
     }
     
@@ -138,7 +155,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     return items.reduce((sum, item) => {
       return sum + calculateItemTotal(item);
     }, 0);
-  }, [items]);
+  }, [items, eligibleQuantityDiscountCartQuantity]);
 
   const value = {
     items,

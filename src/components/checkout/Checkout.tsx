@@ -10,7 +10,9 @@ import { StepIndicator } from "./StepIndicator";
 import {
   calculateDiscountedLineTotalForProduct,
   calculateDiscountedPriceForProduct,
+  getEffectiveQuantityForProductDiscount,
   getDiscountPercentageForProduct,
+  getEligibleQuantityDiscountCartQuantity,
   shouldApplyDiscount,
 } from "../../utils/discounts";
 import { getVariantItemId, getVariantPrice } from "../../utils/pricing";
@@ -37,6 +39,8 @@ export default function Checkout() {
   const navigate = useNavigate();
   const isMobile = useMediaQuery("(max-width: 768px)"); // Detecta si es móvil
   const { items, total, clearCart } = useCart();
+  const eligibleQuantityDiscountCartQuantity =
+    getEligibleQuantityDiscountCartQuantity(items);
   const [shippingData, setShippingData] = useState<{ itemId: string; costoTotal: number } | null>(null);
   const [deliveryMethod, setDeliveryMethod] = useState<"pickup" | "shipping">(
     "pickup"
@@ -164,6 +168,18 @@ export default function Checkout() {
     return getVariantPrice(product, color, weight);
   };
 
+  const getEffectiveDiscountQuantity = (
+    product: Product,
+    quantity: number,
+    weight: number
+  ): number =>
+    getEffectiveQuantityForProductDiscount(
+      product,
+      quantity,
+      weight,
+      eligibleQuantityDiscountCartQuantity
+    );
+
   const getEffectiveCouponPercentage = (coupon: Coupon | null): number => {
     if (!coupon) return 0;
 
@@ -185,29 +201,6 @@ export default function Checkout() {
     return weightData ? weightData.promotionalPrice : product.promotionalPrice;
   }; */
 
-  const calculateItemPriceWithDiscount = (
-    product: Product,
-    color: string,
-    weight: number,
-    quantity: number
-  ): number | undefined => {
-    const originalPrice = getPrice(product, color, weight);
-
-    if (originalPrice) {
-      if (shouldApplyDiscount(product)) {
-        return calculateDiscountedPriceForProduct(
-          product,
-          originalPrice,
-          quantity,
-          weight
-        );
-      }
-      return roundPrice(originalPrice);
-    }
-
-    return originalPrice === undefined ? originalPrice : roundPrice(originalPrice);
-  };
-
   // Calcular precio para checkout considerando método de pago
   const calculateItemPriceForCheckout = (
     product: Product,
@@ -226,11 +219,18 @@ export default function Checkout() {
 
     // Si no gana cupón, aplicar descuento por transferencia cuando corresponda.
     if (shouldApplyTransferDiscountToCheckout && shouldApplyDiscount(product)) {
+      const effectiveQuantity = getEffectiveDiscountQuantity(
+        product,
+        quantity,
+        weight
+      );
+
       return calculateDiscountedPriceForProduct(
         product,
         originalPrice,
         quantity,
-        weight
+        weight,
+        effectiveQuantity
       );
     }
 
@@ -254,11 +254,18 @@ export default function Checkout() {
     }
 
     if (shouldApplyTransferDiscountToCheckout && shouldApplyDiscount(product)) {
+      const effectiveQuantity = getEffectiveDiscountQuantity(
+        product,
+        quantity,
+        weight
+      );
+
       return calculateDiscountedLineTotalForProduct(
         product,
         originalPrice,
         quantity,
-        weight
+        weight,
+        effectiveQuantity
       );
     }
 
@@ -278,10 +285,16 @@ export default function Checkout() {
     if (!shouldApplyTransferDiscountToCheckout) return 0;
     if (!shouldApplyDiscount(product)) return 0;
 
-    const discountPercentage = getDiscountPercentageForProduct(
+    const effectiveQuantity = getEffectiveDiscountQuantity(
       product,
       quantity,
       weight
+    );
+    const discountPercentage = getDiscountPercentageForProduct(
+      product,
+      quantity,
+      weight,
+      effectiveQuantity
     );
     const numericPercentage = Number(discountPercentage.replace("%", ""));
 
@@ -584,11 +597,18 @@ export default function Checkout() {
 
       if (!originalPrice) return sum;
 
+      const effectiveQuantity = getEffectiveDiscountQuantity(
+        item.product,
+        item.quantity,
+        item.weight
+      );
+
       return sum + calculateDiscountedLineTotalForProduct(
         item.product,
         originalPrice,
         item.quantity,
-        item.weight
+        item.weight,
+        effectiveQuantity
       );
     }, 0);
   };
@@ -1024,21 +1044,23 @@ export default function Checkout() {
                 <ul className="divide-y divide-gray-200">
                   {items.map((item, index) => {
                     const price = getPrice(item.product, item.color, item.weight);
-                    const discountedPrice = calculateItemPriceWithDiscount(
+                    const effectiveQuantity = getEffectiveDiscountQuantity(
+                      item.product,
+                      item.quantity,
+                      item.weight
+                    );
+                    const discountedPrice = calculateItemPriceForCheckout(
                       item.product,
                       item.color,
                       item.weight,
                       item.quantity
                     );
-                    const discountedLineTotal =
-                      price !== undefined
-                        ? calculateDiscountedLineTotalForProduct(
-                            item.product,
-                            price,
-                            item.quantity,
-                            item.weight
-                          )
-                        : 0;
+                    const discountedLineTotal = calculateItemTotalForCheckout(
+                      item.product,
+                      item.color,
+                      item.weight,
+                      item.quantity
+                    );
                     const colorHex = item.color
                       ? item.product.colors?.find(
                         (c) =>
@@ -1083,7 +1105,8 @@ export default function Checkout() {
                                   </span>
                                 </div>
                               )}
-                              {shouldApplyDiscount(item.product) &&
+                              {shouldApplyTransferDiscountToCheckout &&
+                                shouldApplyDiscount(item.product) &&
                                 discountedPrice &&
                                 discountedPrice < (price ?? 0) && (
                                   <span className="inline-block bg-red-100 text-red-800 text-xs font-semibold px-2 py-1 rounded-full mt-1">
@@ -1091,7 +1114,8 @@ export default function Checkout() {
                                     {getDiscountPercentageForProduct(
                                       item.product,
                                       item.quantity,
-                                      item.weight
+                                      item.weight,
+                                      effectiveQuantity
                                     )}
                                      OFF
                                   </span>

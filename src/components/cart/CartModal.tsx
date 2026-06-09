@@ -4,7 +4,9 @@ import { Product } from "../../types";
 import { useNavigate } from "react-router-dom";
 import {
   calculateDiscountedPriceForProduct,
+  getEffectiveQuantityForProductDiscount,
   getDiscountPercentageForProduct,
+  getEligibleQuantityDiscountCartQuantity,
   shouldApplyDiscount
 } from "../../utils/discounts";
 import { getVariantPrice } from "../../utils/pricing";
@@ -21,6 +23,9 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
   const navigate = useNavigate();
 
   if (!isOpen) return null;
+
+  const eligibleQuantityDiscountCartQuantity =
+    getEligibleQuantityDiscountCartQuantity(items);
 
   const handleCheckout = () => {
     onClose();
@@ -66,7 +71,20 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
     
     if (originalPrice) {
       if (shouldApplyDiscount(product)) {
-        return calculateDiscountedPriceForProduct(product, originalPrice, quantity, weight);
+        const effectiveQuantity = getEffectiveQuantityForProductDiscount(
+          product,
+          quantity,
+          weight,
+          eligibleQuantityDiscountCartQuantity
+        );
+
+        return calculateDiscountedPriceForProduct(
+          product,
+          originalPrice,
+          quantity,
+          weight,
+          effectiveQuantity
+        );
       }
       return roundPrice(originalPrice);
     }
@@ -134,6 +152,12 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                     item.weight,
                     item.quantity
                   );
+                  const effectiveQuantity = getEffectiveQuantityForProductDiscount(
+                    item.product,
+                    item.quantity,
+                    item.weight,
+                    eligibleQuantityDiscountCartQuantity
+                  );
                   const colorImage = item.color
                     ? item.product.colors?.find(
                         (c) => c.name.toLowerCase() === item.color.toLowerCase()
@@ -167,7 +191,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                                     {formatPrice(price ?? 0)}
                                   </span>
                                    <span className="text-xs bg-red-500 text-white px-2 py-1 rounded-full font-medium">
-                                     -{getDiscountPercentageForProduct(item.product, item.quantity, item.weight)}
+                                     -{getDiscountPercentageForProduct(item.product, item.quantity, item.weight, effectiveQuantity)}
                                   </span>
                                 </div>
                               </>
