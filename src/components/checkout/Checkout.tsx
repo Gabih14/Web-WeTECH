@@ -8,11 +8,15 @@ import { CheckoutAdress } from "./CheckoutAdress";
 import { StepIndicator } from "./StepIndicator";
 
 import {
+  calculateDiscountedLineTotalForProduct,
   calculateDiscountedPriceForProduct,
+  getEffectiveQuantityForProductDiscount,
   getDiscountPercentageForProduct,
+  getEligibleQuantityDiscountCartQuantity,
   shouldApplyDiscount,
 } from "../../utils/discounts";
 import { getVariantItemId, getVariantPrice } from "../../utils/pricing";
+import { formatPrice, roundPrice } from "../../utils/money";
 
 import { fetchClienteByCuit, verifyCoupon, useCoupon } from "../../services/api";
 
@@ -34,7 +38,9 @@ export default function Checkout() {
   const [confirmedAddress, setConfirmedAddress] = useState<string | null>(null);
   const navigate = useNavigate();
   const isMobile = useMediaQuery("(max-width: 768px)"); // Detecta si es móvil
-  const { items, total } = useCart();
+  const { items, total, clearCart } = useCart();
+  const eligibleQuantityDiscountCartQuantity =
+    getEligibleQuantityDiscountCartQuantity(items);
   const [shippingData, setShippingData] = useState<{ itemId: string; costoTotal: number } | null>(null);
   const [deliveryMethod, setDeliveryMethod] = useState<"pickup" | "shipping">(
     "pickup"
@@ -162,6 +168,18 @@ export default function Checkout() {
     return getVariantPrice(product, color, weight);
   };
 
+  const getEffectiveDiscountQuantity = (
+    product: Product,
+    quantity: number,
+    weight: number
+  ): number =>
+    getEffectiveQuantityForProductDiscount(
+      product,
+      quantity,
+      weight,
+      eligibleQuantityDiscountCartQuantity
+    );
+
   const getEffectiveCouponPercentage = (coupon: Coupon | null): number => {
     if (!coupon) return 0;
 
@@ -183,29 +201,6 @@ export default function Checkout() {
     return weightData ? weightData.promotionalPrice : product.promotionalPrice;
   }; */
 
-  const calculateItemPriceWithDiscount = (
-    product: Product,
-    color: string,
-    weight: number,
-    quantity: number
-  ): number | undefined => {
-    const originalPrice = getPrice(product, color, weight);
-
-    if (originalPrice) {
-      if (shouldApplyDiscount(product)) {
-        return calculateDiscountedPriceForProduct(
-          product,
-          originalPrice,
-          quantity,
-          weight
-        );
-      }
-      return originalPrice;
-    }
-
-    return originalPrice;
-  };
-
   // Calcular precio para checkout considerando método de pago
   const calculateItemPriceForCheckout = (
     product: Product,
@@ -219,20 +214,62 @@ export default function Checkout() {
 
     // Si gana cupón, cada línea sale con precio neto por cupón.
     if (isCouponWinningDiscount && appliedCoupon) {
-      return originalPrice * (1 - effectiveCouponPercentage / 100);
+      return roundPrice(originalPrice * (1 - effectiveCouponPercentage / 100));
     }
 
     // Si no gana cupón, aplicar descuento por transferencia cuando corresponda.
     if (shouldApplyTransferDiscountToCheckout && shouldApplyDiscount(product)) {
+      const effectiveQuantity = getEffectiveDiscountQuantity(
+        product,
+        quantity,
+        weight
+      );
+
       return calculateDiscountedPriceForProduct(
         product,
         originalPrice,
         quantity,
-        weight
+        weight,
+        effectiveQuantity
       );
     }
 
-    return originalPrice;
+    return roundPrice(originalPrice);
+  };
+
+  const calculateItemTotalForCheckout = (
+    product: Product,
+    color: string,
+    weight: number,
+    quantity: number
+  ): number => {
+    const originalPrice = getPrice(product, color, weight);
+
+    if (!originalPrice) return 0;
+
+    if (isCouponWinningDiscount && appliedCoupon) {
+      return roundPrice(
+        originalPrice * quantity * (1 - effectiveCouponPercentage / 100)
+      );
+    }
+
+    if (shouldApplyTransferDiscountToCheckout && shouldApplyDiscount(product)) {
+      const effectiveQuantity = getEffectiveDiscountQuantity(
+        product,
+        quantity,
+        weight
+      );
+
+      return calculateDiscountedLineTotalForProduct(
+        product,
+        originalPrice,
+        quantity,
+        weight,
+        effectiveQuantity
+      );
+    }
+
+    return roundPrice(originalPrice) * quantity;
   };
 
   const calculateItemAdjustmentPercentageForCheckout = (
@@ -248,10 +285,16 @@ export default function Checkout() {
     if (!shouldApplyTransferDiscountToCheckout) return 0;
     if (!shouldApplyDiscount(product)) return 0;
 
-    const discountPercentage = getDiscountPercentageForProduct(
+    const effectiveQuantity = getEffectiveDiscountQuantity(
       product,
       quantity,
       weight
+    );
+    const discountPercentage = getDiscountPercentageForProduct(
+      product,
+      quantity,
+      weight,
+      effectiveQuantity
     );
     const numericPercentage = Number(discountPercentage.replace("%", ""));
 
@@ -297,7 +340,7 @@ export default function Checkout() {
       postal_code: formData.billingPostalCode,
     };
 
-    const roundDisplayedPrice = (value: number) => Math.round(value);
+    const roundDisplayedPrice = (value: number) => roundPrice(value);
     const cleanCuit = formData.cuit.trim().replace(/\D/g, ''); // Remover guiones y caracteres no numéricos
 
     const body = {
@@ -544,7 +587,7 @@ export default function Checkout() {
   const calculateOriginalTotal = () => {
     return items.reduce((sum, item) => {
       const price = getPrice(item.product, item.color, item.weight);
-      const itemTotal = price ? price * item.quantity : 0;
+      const itemTotal = price ? roundPrice(price) * item.quantity : 0;
       return sum + itemTotal;
     }, 0);
   };
@@ -552,27 +595,35 @@ export default function Checkout() {
   // Calcular total del checkout según método de pago
   const calculateCheckoutTotal = () => {
     return items.reduce((sum, item) => {
-      const price = calculateItemPriceForCheckout(
+      const itemTotal = calculateItemTotalForCheckout(
         item.product,
         item.color,
         item.weight,
         item.quantity
       );
-      const itemTotal = price ? price * item.quantity : 0;
       return sum + itemTotal;
     }, 0);
   };
 
   const calculateTransferDiscountedTotal = () => {
     return items.reduce((sum, item) => {
-      const price = calculateItemPriceWithDiscount(
+      const originalPrice = getPrice(item.product, item.color, item.weight);
+
+      if (!originalPrice) return sum;
+
+      const effectiveQuantity = getEffectiveDiscountQuantity(
         item.product,
-        item.color,
-        item.weight,
-        item.quantity
+        item.quantity,
+        item.weight
       );
-      const itemTotal = price ? price * item.quantity : 0;
-      return sum + itemTotal;
+
+      return sum + calculateDiscountedLineTotalForProduct(
+        item.product,
+        originalPrice,
+        item.quantity,
+        item.weight,
+        effectiveQuantity
+      );
     }, 0);
   };
 
@@ -1028,7 +1079,18 @@ export default function Checkout() {
                 <ul className="divide-y divide-gray-200">
                   {items.map((item, index) => {
                     const price = getPrice(item.product, item.color, item.weight);
-                    const discountedPrice = calculateItemPriceWithDiscount(
+                    const effectiveQuantity = getEffectiveDiscountQuantity(
+                      item.product,
+                      item.quantity,
+                      item.weight
+                    );
+                    const discountedPrice = calculateItemPriceForCheckout(
+                      item.product,
+                      item.color,
+                      item.weight,
+                      item.quantity
+                    );
+                    const discountedLineTotal = calculateItemTotalForCheckout(
                       item.product,
                       item.color,
                       item.weight,
@@ -1078,7 +1140,8 @@ export default function Checkout() {
                                   </span>
                                 </div>
                               )}
-                              {shouldApplyDiscount(item.product) &&
+                              {shouldApplyTransferDiscountToCheckout &&
+                                shouldApplyDiscount(item.product) &&
                                 discountedPrice &&
                                 discountedPrice < (price ?? 0) && (
                                   <span className="inline-block bg-red-100 text-red-800 text-xs font-semibold px-2 py-1 rounded-full mt-1">
@@ -1086,7 +1149,8 @@ export default function Checkout() {
                                     {getDiscountPercentageForProduct(
                                       item.product,
                                       item.quantity,
-                                      item.weight
+                                      item.weight,
+                                      effectiveQuantity
                                     )}
                                      OFF
                                   </span>
@@ -1098,32 +1162,17 @@ export default function Checkout() {
                                 <div className="flex flex-wrap items-center">
                                   <span className="text-base sm:text-lg font-bold mr-2">
                                     $
-                                    {(
-                                      discountedPrice * item.quantity
-                                    ).toLocaleString("es-ES", {
-                                      minimumFractionDigits: 0,
-                                      maximumFractionDigits: 0,
-                                    })}
+                                    {formatPrice(discountedLineTotal)}
                                   </span>
                                   <span className="text-sm sm:text-base text-gray-400 font-bold line-through">
                                     $
-                                    {(
-                                      (price ?? 0) * item.quantity
-                                    ).toLocaleString("es-ES", {
-                                      minimumFractionDigits: 0,
-                                      maximumFractionDigits: 0,
-                                    })}
+                                    {formatPrice((price ?? 0) * item.quantity)}
                                   </span>
                                 </div>
                               ) : (
                                 <span className="text-base sm:text-lg font-bold">
                                   $
-                                  {(
-                                    (price ?? 0) * item.quantity
-                                  ).toLocaleString("es-ES", {
-                                    minimumFractionDigits: 0,
-                                    maximumFractionDigits: 0,
-                                  })}
+                                  {formatPrice((price ?? 0) * item.quantity)}
                                 </span>
                               )}
                             </div>
@@ -1190,30 +1239,21 @@ export default function Checkout() {
                     <dt className="text-sm text-gray-600">Subtotal</dt>
                     <dd className="text-sm font-medium text-gray-900">
                       $
-                      {originalTotal.toLocaleString("es-ES", {
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
-                      })}
+                      {formatPrice(originalTotal)}
                     </dd>
                   </div>
                   <div className="flex items-center justify-between">
                     <dt className="text-sm text-gray-600">Envío</dt>
                     <dd className="text-sm font-medium text-gray-900">
                       $
-                      {(shippingData?.costoTotal || 0).toLocaleString("es-ES", {
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
-                      })}
+                      {formatPrice(shippingData?.costoTotal || 0)}
                     </dd>
                   </div>
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-lg font-medium">Descuento:</span>
                     <span className="text-lg font-bold text-red-500">
                       -$
-                      {appliedDiscountAmount.toLocaleString("es-ES", {
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
-                      })}
+                      {formatPrice(appliedDiscountAmount)}
                     </span>
                   </div>
                   {paymentMethod === "online" && discount > 0 && (
@@ -1221,10 +1261,7 @@ export default function Checkout() {
                       <span>Descuento disponible con transferencia:</span>
                       <span className="font-medium">
                         -$
-                        {discount.toLocaleString("es-ES", {
-                          minimumFractionDigits: 0,
-                          maximumFractionDigits: 0,
-                        })}
+                        {formatPrice(discount)}
                       </span>
                     </div>
                   )}
@@ -1233,10 +1270,7 @@ export default function Checkout() {
                       <span className="text-sm font-medium text-green-700">Cupón {appliedCoupon.code}:</span>
                       <span className="text-sm font-bold text-green-700">
                         -$
-                        {couponDiscount.toLocaleString("es-ES", {
-                          minimumFractionDigits: 0,
-                          maximumFractionDigits: 0,
-                        })}
+                        {formatPrice(couponDiscount)}
                       </span>
                     </div>
                   )}
@@ -1246,10 +1280,7 @@ export default function Checkout() {
                     </dt>
                     <dd className="text-xl font-bold text-black">
                       $
-                      {finalTotal.toLocaleString("es-ES", {
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
-                      })}
+                      {formatPrice(finalTotal)}
                     </dd>
                   </div>
                 </dl>

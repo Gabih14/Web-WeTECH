@@ -352,7 +352,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
       }
     });
 
-    //console.log("Productos transformados:", transformedProducts);
+    console.log("Productos transformados:", transformedProducts);
     return transformedProducts;
   } catch (error: any) {
     console.error("Error al obtener los productos:", error.message);

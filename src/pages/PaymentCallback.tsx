@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { RefreshCw } from "lucide-react";
 import { apiFetch } from "../services/api";
 import SurveyModal from "../components/SurveyModal";
+import { formatCurrency } from "../utils/money";
 import { useCart } from "../context/CartContext";
 
 const PaymentStatus = {
@@ -422,8 +423,7 @@ const PaymentCallback = () => {
     "Solo un momento, por favor";
 
   // ─── Helpers ─────────────────────────────────────────────────────────────
-  const fmt = (n: number | string) =>
-    `$${Number(n).toLocaleString("es-AR")}`;
+  const fmt = (n: number | string) => formatCurrency(n);
 
   const deliveryLabel =
     pedidoData?.delivery_method === "pickup" ? "Retiro en tienda" :

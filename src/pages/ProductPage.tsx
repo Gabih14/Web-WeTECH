@@ -8,7 +8,9 @@ import { Product } from "../types";
 import {
   calculateDiscountedPriceForProduct,
   calculateSavingsForProduct,
+  getEffectiveQuantityForProductDiscount,
   getDiscountPercentageForProduct,
+  getEligibleQuantityDiscountCartQuantity,
   getNextDiscountLevelForProduct,
   shouldApplyDiscount,
 } from "../utils/discounts";
@@ -21,15 +23,9 @@ import {
   getVariantStock,
 } from "../utils/cartPurchase";
 import { getVariantPrice } from "../utils/pricing";
+import { formatPrice } from "../utils/money";
 
 const QUANTITY_OPTIONS = [1, 5, 10, 50];
-
-function formatPrice(price: number) {
-  return price.toLocaleString("es-ES", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  });
-}
 
 export function ProductPage() {
   const { id } = useParams<{ id: string }>();
@@ -119,6 +115,14 @@ export function ProductPage() {
     if (shouldApplyDiscount(product)) {
       const originalPrice =
         getVariantPrice(product, selectedColor, selectedWeight) ?? 0;
+      const eligibleQuantityDiscountCartQuantity =
+        getEligibleQuantityDiscountCartQuantity(items);
+      const effectiveDiscountQuantity = getEffectiveQuantityForProductDiscount(
+        product,
+        quantity,
+        selectedWeight ?? undefined,
+        eligibleQuantityDiscountCartQuantity + quantity
+      );
 
       setCurrentPrice(originalPrice);
       setCurrentPromotionalPrice(
@@ -126,7 +130,8 @@ export function ProductPage() {
           product,
           originalPrice,
           quantity,
-          selectedWeight ?? 0
+          selectedWeight ?? 0,
+          effectiveDiscountQuantity
         )
       );
       return;
@@ -139,7 +144,7 @@ export function ProductPage() {
     }
 
     setCurrentPromotionalPrice(undefined);
-  }, [product, quantity, selectedColor, selectedWeight]);
+  }, [product, quantity, selectedColor, selectedWeight, items]);
 
   if (loading) {
     return (
@@ -180,6 +185,20 @@ export function ProductPage() {
   const variantSelectionIncomplete = hasVariants && (!selectedColor || selectedWeight === null);
   const isAddDisabled = variantSelectionIncomplete || !canAddToCart || isOverStock;
   const applyDiscount = shouldApplyDiscount(product) && !!currentPromotionalPrice;
+  const eligibleQuantityDiscountCartQuantity =
+    getEligibleQuantityDiscountCartQuantity(items);
+  const effectiveDiscountQuantity = getEffectiveQuantityForProductDiscount(
+    product,
+    quantity,
+    selectedWeight ?? undefined,
+    eligibleQuantityDiscountCartQuantity + quantity
+  );
+  const effectiveCartDiscountQuantity = getEffectiveQuantityForProductDiscount(
+    product,
+    0,
+    selectedWeight ?? undefined,
+    eligibleQuantityDiscountCartQuantity
+  );
   const hasStockInOtherColor = hasPurchasableStockInOtherColor(
     product,
     selectedColor,
@@ -207,7 +226,7 @@ export function ProductPage() {
 
   const nextLevel = getNextDiscountLevelForProduct(
     product,
-    quantity,
+    effectiveCartDiscountQuantity,
     selectedWeight ?? undefined
   );
 
@@ -326,7 +345,8 @@ export function ProductPage() {
                         {getDiscountPercentageForProduct(
                           product,
                           quantity,
-                          selectedWeight ?? undefined
+                          selectedWeight ?? undefined,
+                          effectiveDiscountQuantity
                         )}
                         %
                       </span>
@@ -340,7 +360,8 @@ export function ProductPage() {
                           product,
                           currentPrice || 0,
                           quantity,
-                          selectedWeight ?? undefined
+                          selectedWeight ?? undefined,
+                          effectiveDiscountQuantity
                         )
                       )}
                     </p>
@@ -348,7 +369,7 @@ export function ProductPage() {
                     {nextLevel && (
                       <p className="flex items-center gap-1 text-sm font-medium text-amber-700">
                         <Sparkles className="h-4 w-4" />
-                        Comprá {nextLevel.quantity - quantity} más para obtener {nextLevel.discount} OFF
+                        Comprá {nextLevel.quantity - effectiveCartDiscountQuantity} más para obtener {nextLevel.discount} OFF
                       </p>
                     )}
                   </>

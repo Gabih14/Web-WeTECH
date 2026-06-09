@@ -7,7 +7,11 @@ import React, {
   useEffect,
 } from "react";
 import { Product, CartItem, CartContextType } from "../types";
-import { calculateDiscountedPriceForProduct } from "../utils/discounts";
+import {
+  calculateDiscountedLineTotalForProduct,
+  getEffectiveQuantityForProductDiscount,
+  getEligibleQuantityDiscountCartQuantity,
+} from "../utils/discounts";
 import {
   getVariantStock,
   isFilamentProduct,
@@ -119,15 +123,28 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("cartItems");
   }, []);
 
-  const calculateItemPrice = (item: CartItem) => {
+  const eligibleQuantityDiscountCartQuantity = useMemo(
+    () => getEligibleQuantityDiscountCartQuantity(items),
+    [items]
+  );
+
+  const calculateItemTotal = (item: CartItem) => {
     const originalPrice = getCartItemPrice(item);
     
     if (originalPrice) {
-      return calculateDiscountedPriceForProduct(
+      const effectiveQuantity = getEffectiveQuantityForProductDiscount(
+        item.product,
+        item.quantity,
+        item.weight,
+        eligibleQuantityDiscountCartQuantity
+      );
+
+      return calculateDiscountedLineTotalForProduct(
         item.product,
         originalPrice,
         item.quantity,
-        item.weight
+        item.weight,
+        effectiveQuantity
       );
     }
     
@@ -136,11 +153,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const total = useMemo(() => {
     return items.reduce((sum, item) => {
-      const itemPrice = calculateItemPrice(item);
-      const itemTotal = itemPrice ? itemPrice * item.quantity : 0;
-      return sum + itemTotal;
+      return sum + calculateItemTotal(item);
     }, 0);
-  }, [items]);
+  }, [items, eligibleQuantityDiscountCartQuantity]);
 
   const value = {
     items,
