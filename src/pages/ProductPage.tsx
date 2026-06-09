@@ -193,6 +193,12 @@ export function ProductPage() {
     selectedWeight ?? undefined,
     eligibleQuantityDiscountCartQuantity + quantity
   );
+  const effectiveCartDiscountQuantity = getEffectiveQuantityForProductDiscount(
+    product,
+    0,
+    selectedWeight ?? undefined,
+    eligibleQuantityDiscountCartQuantity
+  );
   const hasStockInOtherColor = hasPurchasableStockInOtherColor(
     product,
     selectedColor,
@@ -220,7 +226,7 @@ export function ProductPage() {
 
   const nextLevel = getNextDiscountLevelForProduct(
     product,
-    effectiveDiscountQuantity,
+    effectiveCartDiscountQuantity,
     selectedWeight ?? undefined
   );
 
@@ -363,7 +369,7 @@ export function ProductPage() {
                     {nextLevel && (
                       <p className="flex items-center gap-1 text-sm font-medium text-amber-700">
                         <Sparkles className="h-4 w-4" />
-                        Comprá {nextLevel.quantity - effectiveDiscountQuantity} más para obtener {nextLevel.discount} OFF
+                        Comprá {nextLevel.quantity - effectiveCartDiscountQuantity} más para obtener {nextLevel.discount} OFF
                       </p>
                     )}
                   </>

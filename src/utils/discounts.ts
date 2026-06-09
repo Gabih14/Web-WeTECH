@@ -240,6 +240,7 @@ export const getNextDiscountLevelForProduct = (
   if (!rule) return null;
   const thresholds = Object.keys(rule.discounts)
     .map((k) => Number(k))
+    .filter((threshold) => threshold > 1)
     .sort((a, b) => a - b);
   for (const t of thresholds) {
     if (currentQuantity < t) {

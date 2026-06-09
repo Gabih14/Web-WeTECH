@@ -70,6 +70,12 @@ export function ProductCard({ product, selectedColorFilter = null }: ProductCard
     selectedWeight ?? undefined,
     previewEligibleQuantityDiscountCartQuantity
   );
+  const effectiveCartDiscountQuantity = getEffectiveQuantityForProductDiscount(
+    product,
+    0,
+    selectedWeight ?? undefined,
+    eligibleQuantityDiscountCartQuantity
+  );
 
   // ── Derived values ────────────────────────────────────────────────────────
   const { availableStock, cartQuantity, canAddToCart, isOverStock } = getPurchaseState({
@@ -168,7 +174,7 @@ export function ProductCard({ product, selectedColorFilter = null }: ProductCard
 
   const applyDiscount = shouldApplyDiscount(product) && !!currentPromotionalPrice;
   const nextLevel = applyDiscount
-    ? getNextDiscountLevelForProduct(product, effectiveDiscountQuantity, selectedWeight ?? undefined)
+    ? getNextDiscountLevelForProduct(product, effectiveCartDiscountQuantity, selectedWeight ?? undefined)
     : null;
   const from = `${location.pathname}${location.search}`;
 
@@ -308,7 +314,7 @@ export function ProductCard({ product, selectedColorFilter = null }: ProductCard
           {/* Siempre ocupa la misma altura, con o sin mensaje */}
           <p className="text-[11px] text-amber-600 font-medium leading-tight min-h-[1rem] mt-0.5">
             {applyDiscount && nextLevel
-              ? `Comprá ${nextLevel.quantity - effectiveDiscountQuantity} más → ${nextLevel.discount} off`
+              ? `Comprá ${nextLevel.quantity - effectiveCartDiscountQuantity} más → ${nextLevel.discount} off`
               : ""}
           </p>
         </div>
