@@ -4,10 +4,13 @@ import { Product } from "../../types";
 import { useNavigate } from "react-router-dom";
 import {
   calculateDiscountedPriceForProduct,
+  getEffectiveQuantityForProductDiscount,
   getDiscountPercentageForProduct,
+  getEligibleQuantityDiscountCartQuantity,
   shouldApplyDiscount
 } from "../../utils/discounts";
 import { getVariantPrice } from "../../utils/pricing";
+import { formatPrice, roundPrice } from "../../utils/money";
 
 interface CartModalProps {
   isOpen: boolean;
@@ -20,6 +23,9 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
   const navigate = useNavigate();
 
   if (!isOpen) return null;
+
+  const eligibleQuantityDiscountCartQuantity =
+    getEligibleQuantityDiscountCartQuantity(items);
 
   const handleCheckout = () => {
     onClose();
@@ -65,18 +71,31 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
     
     if (originalPrice) {
       if (shouldApplyDiscount(product)) {
-        return calculateDiscountedPriceForProduct(product, originalPrice, quantity, weight);
+        const effectiveQuantity = getEffectiveQuantityForProductDiscount(
+          product,
+          quantity,
+          weight,
+          eligibleQuantityDiscountCartQuantity
+        );
+
+        return calculateDiscountedPriceForProduct(
+          product,
+          originalPrice,
+          quantity,
+          weight,
+          effectiveQuantity
+        );
       }
-      return originalPrice;
+      return roundPrice(originalPrice);
     }
     
-    return originalPrice;
+    return originalPrice === undefined ? originalPrice : roundPrice(originalPrice);
   };
 
   const calculateOriginalTotal = () => {
     return items.reduce((sum, item) => {
       const price = getPrice(item.product, item.color, item.weight);
-      const itemTotal = price ? price * item.quantity : 0;
+      const itemTotal = price ? roundPrice(price) * item.quantity : 0;
       return sum + itemTotal;
     }, 0);
   };
@@ -133,6 +152,12 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                     item.weight,
                     item.quantity
                   );
+                  const effectiveQuantity = getEffectiveQuantityForProductDiscount(
+                    item.product,
+                    item.quantity,
+                    item.weight,
+                    eligibleQuantityDiscountCartQuantity
+                  );
                   const colorImage = item.color
                     ? item.product.colors?.find(
                         (c) => c.name.toLowerCase() === item.color.toLowerCase()
@@ -159,30 +184,21 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                                 <div className="flex items-center gap-2">
                                   <span className="text-base sm:text-lg font-bold">
                                     $
-                                    {discountedPrice.toLocaleString("es-ES", {
-                                      minimumFractionDigits: 0,
-                                      maximumFractionDigits: 0,
-                                    })}
+                                    {formatPrice(discountedPrice)}
                                   </span>
                                   <span className="text-base sm:text-lg text-gray-300 font-bold line-through">
                                     $
-                                    {price?.toLocaleString("es-ES", {
-                                      minimumFractionDigits: 0,
-                                      maximumFractionDigits: 0,
-                                    })}
+                                    {formatPrice(price ?? 0)}
                                   </span>
                                    <span className="text-xs bg-red-500 text-white px-2 py-1 rounded-full font-medium">
-                                     -{getDiscountPercentageForProduct(item.product, item.quantity, item.weight)}
+                                     -{getDiscountPercentageForProduct(item.product, item.quantity, item.weight, effectiveQuantity)}
                                   </span>
                                 </div>
                               </>
                             ) : (
                               <span className="text-base sm:text-lg font-bold">
                                 $
-                                {price?.toLocaleString("es-ES", {
-                                  minimumFractionDigits: 0,
-                                  maximumFractionDigits: 0,
-                                })}
+                                {formatPrice(price ?? 0)}
                               </span>
                             )}
                           </div>
@@ -256,30 +272,21 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                   <span className="text-lg font-medium">Subtotal:</span>
                   <span className="text-lg font-bold text-gray-700">
                     $
-                    {originalTotal.toLocaleString("es-ES", {
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0,
-                    })}
+                    {formatPrice(originalTotal)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-lg font-medium">Descuento:</span>
                   <span className="text-lg font-bold text-red-500">
                     -$
-                    {discount.toLocaleString("es-ES", {
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0,
-                    })}
+                    {formatPrice(discount)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-lg font-medium">Total:</span>
                   <span className="text-xl font-bold text-black">
                     $
-                    {total.toLocaleString("es-ES", {
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0,
-                    })}
+                    {formatPrice(total)}
                   </span>
                 </div>
                 <button
