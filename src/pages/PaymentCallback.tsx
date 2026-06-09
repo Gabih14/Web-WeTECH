@@ -327,7 +327,7 @@ const PaymentCallback = () => {
       return;
     }
 
-    if (status === PaymentStatus.SUCCESS) {
+    if (status === PaymentStatus.SUCCESS || isTransferPending) {
       clearCart();
       sessionStorage.removeItem("clearCartAfterPaymentSuccess");
     }
@@ -335,7 +335,7 @@ const PaymentCallback = () => {
     if (status === PaymentStatus.FAIL) {
       sessionStorage.removeItem("clearCartAfterPaymentSuccess");
     }
-  }, [clearCart, status]);
+  }, [clearCart, isTransferPending, status]);
 
   const refreshPedidoStatus = async () => {
     if (!externalId || isRefreshing) return;

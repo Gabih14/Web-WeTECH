@@ -19,7 +19,9 @@ export const ELIGIBLE_BRANDS_FOR_QUANTITY_DISCOUNT = [
   "GST3D-PLA",
   "HELLBOT-PLA",
   "3NMAX-PLA",
-  "FREMOVER-PLA"
+  "FREMOVER-PLA",
+  "FREMOVER-HIGH SPEED PLA",
+  "FREMOVER-HIGH SPEED PLA MATTE"
 ] as const;
 
 // Categorías que comparten la misma regla de descuento (aceptamos legacy y nuevo nombre)
