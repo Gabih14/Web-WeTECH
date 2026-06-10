@@ -393,7 +393,7 @@ export default function Checkout() {
           };
         }),
         // Agregar shipping como producto si aplica
-        ...(deliveryMethod === "shipping" && shippingData
+        ...(deliveryMethod === "shipping" && shippingData && !isFreeShippingByWeight
           ? [
               {
                 nombre: shippingData.itemId,
