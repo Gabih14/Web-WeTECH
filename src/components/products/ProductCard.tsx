@@ -177,6 +177,10 @@ export function ProductCard({ product, selectedColorFilter = null }: ProductCard
     ? getNextDiscountLevelForProduct(product, effectiveCartDiscountQuantity, selectedWeight ?? undefined)
     : null;
   const from = `${location.pathname}${location.search}`;
+  const selectedColorImage = selectedColor
+    ? product.colors?.find((color) => color.name === selectedColor)?.images?.[0]
+    : undefined;
+  const displayImage = selectedColorImage || product.image;
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -196,10 +200,13 @@ export function ProductCard({ product, selectedColorFilter = null }: ProductCard
         className="block aspect-square overflow-hidden rounded-t-2xl bg-gray-50"
       >
         <img
-          src={product.image}
+          src={displayImage}
           alt={product.name}
           loading="lazy"
           className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-500 ease-out"
+          onError={(event) => {
+            event.currentTarget.src = product.image;
+          }}
         />
       </Link>
 
