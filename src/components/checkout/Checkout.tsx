@@ -21,14 +21,33 @@ import { formatPrice, roundPrice } from "../../utils/money";
 import { fetchClienteByCuit, verifyCoupon, useCoupon } from "../../services/api";
 
 function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(window.matchMedia(query).matches);
+  const getMatches = () => {
+    if (typeof window === "undefined" || !window.matchMedia) {
+      return false;
+    }
+
+    return window.matchMedia(query).matches;
+  };
+
+  const [matches, setMatches] = useState(getMatches);
 
   React.useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) {
+      return;
+    }
+
     const mediaQueryList = window.matchMedia(query);
     const listener = (event: MediaQueryListEvent) => setMatches(event.matches);
 
-    mediaQueryList.addEventListener("change", listener);
-    return () => mediaQueryList.removeEventListener("change", listener);
+    setMatches(mediaQueryList.matches);
+
+    if (mediaQueryList.addEventListener) {
+      mediaQueryList.addEventListener("change", listener);
+      return () => mediaQueryList.removeEventListener("change", listener);
+    }
+
+    mediaQueryList.addListener(listener);
+    return () => mediaQueryList.removeListener(listener);
   }, [query]);
 
   return matches;
