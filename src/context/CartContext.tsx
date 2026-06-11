@@ -19,15 +19,54 @@ import {
 import { getCartItemPrice } from "../utils/pricing";
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
+const CART_STORAGE_KEY = "cartItems";
+
+const getStoredCartItems = (): CartItem[] => {
+  try {
+    const savedItems = window.localStorage.getItem(CART_STORAGE_KEY);
+    if (!savedItems) return [];
+
+    const parsedItems = JSON.parse(savedItems);
+    if (!Array.isArray(parsedItems)) return [];
+
+    return parsedItems.filter((item): item is CartItem => {
+      return (
+        item &&
+        typeof item === "object" &&
+        item.product &&
+        typeof item.product.id === "string" &&
+        typeof item.color === "string" &&
+        typeof item.weight === "number" &&
+        typeof item.quantity === "number"
+      );
+    });
+  } catch (error) {
+    console.warn("No se pudo leer el carrito guardado. Se inicia vacío.", error);
+    return [];
+  }
+};
+
+const persistCartItems = (items: CartItem[]) => {
+  try {
+    window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+  } catch (error) {
+    console.warn("No se pudo guardar el carrito.", error);
+  }
+};
+
+const removeStoredCartItems = () => {
+  try {
+    window.localStorage.removeItem(CART_STORAGE_KEY);
+  } catch (error) {
+    console.warn("No se pudo borrar el carrito guardado.", error);
+  }
+};
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>(() => {
-    const savedItems = localStorage.getItem("cartItems");
-    return savedItems ? JSON.parse(savedItems) : [];
-  });
+  const [items, setItems] = useState<CartItem[]>(getStoredCartItems);
 
   useEffect(() => {
-    localStorage.setItem("cartItems", JSON.stringify(items));
+    persistCartItems(items);
   }, [items]);
 
   const addToCart = useCallback(
@@ -120,7 +159,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const clearCart = useCallback(() => {
     setItems([]);
-    localStorage.removeItem("cartItems");
+    removeStoredCartItems();
   }, []);
 
   const eligibleQuantityDiscountCartQuantity = useMemo(
