@@ -1,43 +1,45 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Filter, X, AlertCircle, ChevronDown } from "lucide-react";
-import { FaWhatsapp } from "react-icons/fa";
+import { CSSProperties, useCallback, useEffect, useMemo, useState } from "react";
+import { Filter, X } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { categories } from "../data/categories";
 import { ProductCard } from "../components/products/ProductCard";
 import { CategoryFilter } from "../components/products/CategoryFilter";
-import { Product } from "../types";
+import { ColorGroup, Product } from "../types";
 import { fetchProducts } from "../services/fetchProducts";
 
-type ColorFilterOption = {
-  name: string;
-  hex: string;
-};
-
 interface ColorFilterProps {
-  colors: ColorFilterOption[];
-  selectedColor: string | null;
-  onColorChange: (color: string | null) => void;
+  colorGroups: ColorGroup[];
+  selectedColorGroupId: number | null;
+  onColorGroupChange: (colorGroupId: number | null) => void;
 }
 
 function ColorFilter({
-  colors,
-  selectedColor,
-  onColorChange,
+  colorGroups,
+  selectedColorGroupId,
+  onColorGroupChange,
 }: ColorFilterProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const selectedColorData = colors.find((color) => color.name === selectedColor);
-
-  if (colors.length === 0) {
+  if (colorGroups.length === 0) {
     return null;
   }
+
+  const getColorGroupStyle = (colorGroup: ColorGroup): CSSProperties => {
+    if (colorGroup.name.trim().toLowerCase() === "multicolor") {
+      return {
+        background:
+          "conic-gradient(#ef4444, #f97316, #facc15, #22c55e, #06b6d4, #3b82f6, #a855f7, #ef4444)",
+      };
+    }
+
+    return { backgroundColor: colorGroup.hex || "#f3f4f6" };
+  };
 
   return (
     <div className="bg-white p-4 rounded-lg shadow mb-6">
       <div className="mb-4 flex items-center justify-between gap-3">
         <h2 className="text-xl font-bold">Colores</h2>
-        {selectedColor && (
+        {selectedColorGroupId !== null && (
           <button
-            onClick={() => onColorChange(null)}
+            onClick={() => onColorGroupChange(null)}
             className="text-sm font-medium text-yellow-700 hover:text-yellow-900"
             type="button"
           >
@@ -46,84 +48,36 @@ function ColorFilter({
         )}
       </div>
 
-      <div className="relative">
-        <button
-          onClick={() => setIsOpen((open) => !open)}
-          className={`flex min-h-10 w-full items-center gap-2 rounded-md border px-3 py-2 text-left text-sm transition-colors ${
-            selectedColor
-              ? "border-yellow-400 bg-yellow-50 text-yellow-900"
-              : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-          }`}
-          type="button"
-          aria-expanded={isOpen}
-        >
-          {selectedColorData ? (
-            <>
+      <div className="grid grid-cols-4 gap-3 sm:grid-cols-5 lg:grid-cols-4">
+        {colorGroups.map((colorGroup) => {
+          const isSelected = selectedColorGroupId === colorGroup.id;
+
+          return (
+            <button
+              key={colorGroup.id}
+              onClick={() =>
+                onColorGroupChange(isSelected ? null : colorGroup.id)
+              }
+              className={`group flex flex-col items-center gap-1.5 rounded-md p-1 text-center text-[11px] font-medium transition-colors hover:bg-gray-50 ${
+                isSelected ? "text-yellow-900" : "text-gray-700"
+              }`}
+              type="button"
+              aria-label={`Filtrar por ${colorGroup.name}`}
+              title={colorGroup.name}
+            >
               <span
-                className="h-5 w-5 flex-shrink-0 rounded-full border border-gray-300"
-                style={{ backgroundColor: selectedColorData.hex || "#f3f4f6" }}
+                className={`h-10 w-10 rounded-full border shadow-sm transition-all ${
+                  isSelected
+                    ? "border-yellow-500 ring-2 ring-yellow-300 ring-offset-2"
+                    : "border-gray-300 group-hover:border-gray-400"
+                }`}
+                style={getColorGroupStyle(colorGroup)}
                 aria-hidden="true"
               />
-              <span className="min-w-0 flex-1 truncate">
-                {selectedColorData.name}
-              </span>
-            </>
-          ) : (
-            <span className="min-w-0 flex-1 text-gray-500">
-              Seleccionar color
-            </span>
-          )}
-          <ChevronDown
-            className={`h-4 w-4 flex-shrink-0 text-gray-400 transition-transform ${
-              isOpen ? "rotate-180" : ""
-            }`}
-            aria-hidden="true"
-          />
-        </button>
-
-        {isOpen && (
-          <div className="absolute left-0 right-0 top-full z-20 mt-2 max-h-72 overflow-y-auto rounded-md border border-gray-200 bg-white py-1 shadow-lg">
-            {selectedColor && (
-              <button
-                onClick={() => {
-                  onColorChange(null);
-                  setIsOpen(false);
-                }}
-                className="w-full px-3 py-2 text-left text-sm text-gray-600 transition-colors hover:bg-gray-50"
-                type="button"
-              >
-                Todos los colores
-              </button>
-            )}
-
-            {colors.map((color) => {
-              const isSelected = selectedColor === color.name;
-
-              return (
-                <button
-                  key={color.name}
-                  onClick={() => {
-                    onColorChange(isSelected ? null : color.name);
-                    setIsOpen(false);
-                  }}
-                  className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors ${
-                    isSelected
-                      ? "bg-yellow-50 font-medium text-yellow-900"
-                      : "hover:bg-gray-50"
-                  }`}
-                  type="button"
-                >
-                  <span
-                    className="h-5 w-5 flex-shrink-0 rounded-full border border-gray-300"
-                    style={{ backgroundColor: color.hex || "#f3f4f6" }}
-                    aria-hidden="true"
-                  />
-                  <span className="min-w-0 flex-1 truncate">{color.name}</span>
-                </button>
-              );
-            })}
-          </div>
-        )}
+              <span className="w-full truncate">{colorGroup.name}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -138,7 +92,9 @@ export function ProductsPage() {
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
     null
   );
-  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [selectedColorGroupId, setSelectedColorGroupId] = useState<
+    number | null
+  >(null);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -209,42 +165,47 @@ export function ProductsPage() {
     return matchesCategory && matchesSubcategory;
   }, [selectedCategory, selectedSubcategory]);
 
-  const availableColors = useMemo(() => {
-    const colorMap = new Map<string, ColorFilterOption>();
+  const availableColorGroups = useMemo(() => {
+    const colorGroupMap = new Map<number, ColorGroup>();
 
     products
       .filter(matchesSelectedCategory)
       .forEach((product) => {
         product.colors?.forEach((color) => {
-          if (!color.name.trim() || colorMap.has(color.name)) {
+          if (!color.colorGroup || colorGroupMap.has(color.colorGroup.id)) {
             return;
           }
 
-          colorMap.set(color.name, {
-            name: color.name,
-            hex: color.hex,
-          });
+          colorGroupMap.set(color.colorGroup.id, color.colorGroup);
         });
       });
 
-    return Array.from(colorMap.values()).sort((a, b) =>
-      a.name.localeCompare(b.name)
-    );
+    return Array.from(colorGroupMap.values()).sort((a, b) => {
+      if (a.sortOrder !== b.sortOrder) {
+        return a.sortOrder - b.sortOrder;
+      }
+
+      return a.name.localeCompare(b.name);
+    });
   }, [matchesSelectedCategory, products]);
 
   useEffect(() => {
     if (
-      selectedColor &&
-      !availableColors.some((color) => color.name === selectedColor)
+      selectedColorGroupId !== null &&
+      !availableColorGroups.some(
+        (colorGroup) => colorGroup.id === selectedColorGroupId
+      )
     ) {
-      setSelectedColor(null);
+      setSelectedColorGroupId(null);
     }
-  }, [availableColors, selectedColor]);
+  }, [availableColorGroups, selectedColorGroupId]);
 
   const filteredProducts = products.filter((product) => {
     const matchesColor =
-      !selectedColor ||
-      product.colors?.some((color) => color.name === selectedColor);
+      selectedColorGroupId === null ||
+      product.colors?.some(
+        (color) => color.colorGroup?.id === selectedColorGroupId
+      );
 
     return matchesSelectedCategory(product) && matchesColor;
   });
@@ -269,10 +230,10 @@ export function ProductsPage() {
 
   const clearActiveFilters = () => {
     handleCategoryChange(null);
-    setSelectedColor(null);
+    setSelectedColorGroupId(null);
   };
 
-  const hasActiveFilters = !!selectedCategory || !!selectedColor;
+  const hasActiveFilters = !!selectedCategory || selectedColorGroupId !== null;
 
   if (loading) {
     return (
@@ -426,9 +387,9 @@ export function ProductsPage() {
             onSubcategoryChange={handleSubcategoryChange}
           />
           <ColorFilter
-            colors={availableColors}
-            selectedColor={selectedColor}
-            onColorChange={setSelectedColor}
+            colorGroups={availableColorGroups}
+            selectedColorGroupId={selectedColorGroupId}
+            onColorGroupChange={setSelectedColorGroupId}
           />
         </div>
 
@@ -457,7 +418,7 @@ export function ProductsPage() {
                 <ProductCard
                   key={product.id}
                   product={product}
-                  selectedColorFilter={selectedColor}
+                  selectedColorGroupId={selectedColorGroupId}
                 />
               ))}
             </div>
@@ -528,10 +489,10 @@ export function ProductsPage() {
             }}
           />
           <ColorFilter
-            colors={availableColors}
-            selectedColor={selectedColor}
-            onColorChange={(color) => {
-              setSelectedColor(color);
+            colorGroups={availableColorGroups}
+            selectedColorGroupId={selectedColorGroupId}
+            onColorGroupChange={(colorGroupId) => {
+              setSelectedColorGroupId(colorGroupId);
               setIsMobileFilterOpen(false);
             }}
           />

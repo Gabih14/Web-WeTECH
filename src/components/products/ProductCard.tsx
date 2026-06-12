@@ -23,12 +23,15 @@ import { formatPrice } from "../../utils/money";
 
 interface ProductCardProps {
   product: Product;
-  selectedColorFilter?: string | null;
+  selectedColorGroupId?: number | null;
 }
 
 const QUANTITY_OPTIONS = [1, 5, 10, 50];
 
-export function ProductCard({ product, selectedColorFilter = null }: ProductCardProps) {
+export function ProductCard({
+  product,
+  selectedColorGroupId = null,
+}: ProductCardProps) {
   const { addToCart, items } = useCart();
   const location = useLocation();
   const { justAdded, triggerAddedFeedback } = useAddToCartFeedback();
@@ -41,13 +44,36 @@ export function ProductCard({ product, selectedColorFilter = null }: ProductCard
     [product]
   );
 
+  const getFirstColorForGroup = useCallback(
+    (colorGroupId: number | null, weight: number | null) => {
+      if (colorGroupId === null || !product.colors) {
+        return getFirstColorWithStock(product);
+      }
+
+      const groupColors = product.colors.filter(
+        (color) => color.colorGroup?.id === colorGroupId
+      );
+
+      if (groupColors.length === 0) {
+        return getFirstColorWithStock(product);
+      }
+
+      const selectedWeight = weight ?? product.weights?.[0]?.weight ?? 0;
+      const firstInStock = groupColors.find(
+        (color) => selectedStock(color.name, selectedWeight) > 0
+      );
+
+      return firstInStock?.name ?? groupColors[0]?.name ?? null;
+    },
+    [product, selectedStock]
+  );
+
   // ── State ─────────────────────────────────────────────────────────────────
   const [selectedColor, setSelectedColor] = useState<string | null>(() => {
-    const hasFilteredColor = product.colors?.some(
-      (color) => color.name === selectedColorFilter
+    return getFirstColorForGroup(
+      selectedColorGroupId,
+      product.weights?.[0]?.weight ?? null
     );
-
-    return hasFilteredColor ? selectedColorFilter : getFirstColorWithStock(product);
   });
   const [selectedWeight, setSelectedWeight] = useState<number | null>(
     product.weights?.[0]?.weight ?? null
@@ -137,19 +163,8 @@ export function ProductCard({ product, selectedColorFilter = null }: ProductCard
   }, [selectedWeight, selectedColor, quantity, product, effectiveDiscountQuantity]);
 
   useEffect(() => {
-    if (!selectedColorFilter) {
-      setSelectedColor(getFirstColorWithStock(product));
-      return;
-    }
-
-    const hasFilteredColor = product.colors?.some(
-      (color) => color.name === selectedColorFilter
-    );
-
-    if (hasFilteredColor) {
-      setSelectedColor(selectedColorFilter);
-    }
-  }, [product, selectedColorFilter]);
+    setSelectedColor(getFirstColorForGroup(selectedColorGroupId, selectedWeight));
+  }, [getFirstColorForGroup, selectedColorGroupId, selectedWeight]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleAddToCart = () => {

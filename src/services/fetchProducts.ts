@@ -12,8 +12,28 @@ const fetchColors = async (): Promise<Colors[]> => {
             typeof color?.name === "string" && typeof color?.hex === "string",
         )
         .map((color) => ({
+          id: typeof color.id === "number" ? color.id : undefined,
           name: color.name.trim(),
           hex: color.hex.trim(),
+          colorGroupId:
+            typeof color.colorGroupId === "number" ? color.colorGroupId : null,
+          colorGroup:
+            color.colorGroup &&
+            typeof color.colorGroup.id === "number" &&
+            typeof color.colorGroup.name === "string"
+              ? {
+                  id: color.colorGroup.id,
+                  name: color.colorGroup.name.trim(),
+                  hex:
+                    typeof color.colorGroup.hex === "string"
+                      ? color.colorGroup.hex.trim()
+                      : null,
+                  sortOrder:
+                    typeof color.colorGroup.sortOrder === "number"
+                      ? color.colorGroup.sortOrder
+                      : 0,
+                }
+              : undefined,
         }))
     : [];
 };
@@ -272,6 +292,9 @@ export const fetchProducts = async (): Promise<Product[]> => {
           if (!existingColor.itemId) {
             existingColor.itemId = item.id;
           }
+          if (!existingColor.colorGroup) {
+            existingColor.colorGroup = colorData?.colorGroup;
+          }
           // Asociar imagen si no estaba
           if (itemImageUrl) {
             const existingImages = existingColor.images || [];
@@ -287,6 +310,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
           groupedProducts[groupingKey].colors?.push({
             name: colorName,
             hex: hexValue, // Puedes asignar un color genérico o específico
+            colorGroup: colorData?.colorGroup,
             stock: {
               [weight]: stock, // Manejar el stock por peso
             },
