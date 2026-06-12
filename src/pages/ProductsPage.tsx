@@ -142,14 +142,14 @@ export function ProductsPage() {
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const openWhatsApp = () => {
+  /* const openWhatsApp = () => {
     const phoneNumber = "5492615987988";
     const message = "¡Hola! Estoy interesado en realizar una compra. ¿Podrían ayudarme?";
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(
       message
     )}`;
     window.open(whatsappUrl, "_blank");
-  };
+  }; */
 
   
 
