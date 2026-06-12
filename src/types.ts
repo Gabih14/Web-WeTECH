@@ -18,6 +18,7 @@ export interface Product {
   colors?: {
     name: string;
     hex: string;
+    colorGroup?: ColorGroup;
     stock: { [weight: string]: number };
     prices?: { [weight: string]: number };
     promotionalPrices?: { [weight: string]: number };
@@ -77,6 +78,16 @@ export interface Coupon {
 }
 
 export interface Colors {
+  id?: number;
   name: string;
   hex: string;
+  colorGroupId?: number | null;
+  colorGroup?: ColorGroup;
+}
+
+export interface ColorGroup {
+  id: number;
+  name: string;
+  hex: string | null;
+  sortOrder: number;
 }
