@@ -289,18 +289,28 @@ const PaymentCallback = () => {
       }
     `;
     document.head.appendChild(style);
-    return () => { document.head.removeChild(style); };
+    return () => {
+      if (style.parentNode) {
+        style.parentNode.removeChild(style);
+      }
+    };
   }, []);
 
   // Trigger splash exit after status resolves (or after timeout for LOADING)
   useEffect(() => {
     if (status === PaymentStatus.LOADING && !pedidoData) return; // wait for first data
     // Small delay so the user sees the splash color
+    let hideTimer: number | undefined;
     const timer = setTimeout(() => {
       setSplashExiting(true);
-      setTimeout(() => setSplashVisible(false), 700);
+      hideTimer = window.setTimeout(() => setSplashVisible(false), 700);
     }, 1800);
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      if (hideTimer) {
+        clearTimeout(hideTimer);
+      }
+    };
   }, [status, pedidoData]);
 
   useEffect(() => {
