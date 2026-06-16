@@ -14,15 +14,35 @@ export const BASE_FILAMENT_DISCOUNT = 0.15; // 15%
 // Marcas elegibles para descuentos por cantidad (solo filamentos de 1kg)
 export const ELIGIBLE_BRANDS_FOR_QUANTITY_DISCOUNT = [
   "3N3-PLA",
+  "3N-PLA",
   "GRILON3-PLA BOUTIQUE",
   "GRILON3-PLA",
+  "G3-PLA",
   "GST3D-PLA",
+  "GS-PLA",
   "HELLBOT-PLA",
+  "HB-PLA",
   "3NMAX-PLA",
+  "3X-PLA",
   "FREMOVER-PLA",
+  "FM-PLA",
   "FREMOVER-HIGH SPEED PLA",
-  "FREMOVER-HIGH SPEED PLA MATTE"
+  "FREMOVER-HIGH SPEED PLA MATTE",
+  "FM-PLAF",
+  "FM-PLAM"
 ] as const;
+
+const normalizeDiscountIdentifier = (value: string): string =>
+  value.trim().replace(/\s+/g, " ").toUpperCase();
+
+const getDiscountIdentifiersForProductId = (productId: string): string[] => {
+  const normalizedId = normalizeDiscountIdentifier(productId);
+  const parts = normalizedId.split("-");
+  const variantFamily =
+    parts.length >= 2 ? `${parts[0]}-${parts[1]}` : normalizedId;
+
+  return Array.from(new Set([normalizedId, variantFamily]));
+};
 
 // Categorías que comparten la misma regla de descuento (aceptamos legacy y nuevo nombre)
 const FILAMENT_CATEGORIES = ["FILAMENTO 3D", "FILAMENTOS"] as const;
@@ -67,9 +87,9 @@ export const isEligibleForQuantityDiscount = (
   if (weight !== 1) return false;
   
   // Debe ser de una marca elegible (comparación exacta)
-  const productId = product.id.toUpperCase();
-  return ELIGIBLE_BRANDS_FOR_QUANTITY_DISCOUNT.some(
-    brand => productId === brand
+  const productIdentifiers = getDiscountIdentifiersForProductId(product.id);
+  return ELIGIBLE_BRANDS_FOR_QUANTITY_DISCOUNT.some((brand) =>
+    productIdentifiers.includes(normalizeDiscountIdentifier(brand))
   );
 };
 
