@@ -2,6 +2,82 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .reviews-carousel-shell {
+    width: 100%;
+    max-width: 72rem;
+    min-width: 0;
+    margin: 0 auto;
+    overflow: hidden;
+    padding: 0 2.75rem;
+  }
+
+  .reviews-carousel-shell .reviews-carousel,
+  .reviews-carousel-shell .slick-slider,
+  .reviews-carousel-shell .slick-list,
+  .reviews-carousel-shell .slick-track,
+  .reviews-carousel-shell .slick-slide,
+  .reviews-carousel-shell .slick-slide > div {
+    min-width: 0;
+  }
+
+  .reviews-carousel-shell .slick-list {
+    overflow: hidden;
+  }
+
+  .reviews-carousel-shell .slick-track {
+    display: flex;
+    align-items: stretch;
+  }
+
+  .reviews-carousel-shell .slick-slide {
+    height: auto;
+  }
+
+  .reviews-carousel-shell .slick-slide > div,
+  .reviews-carousel-slide {
+    height: 100%;
+  }
+
+  .reviews-carousel-slide {
+    padding: 0 0.5rem;
+    box-sizing: border-box;
+  }
+
+  .reviews-card {
+    height: 100%;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .reviews-carousel-button {
+    z-index: 2;
+  }
+
+  .reviews-carousel-button-left {
+    left: 0.25rem;
+  }
+
+  .reviews-carousel-button-right {
+    right: 0.25rem;
+  }
+
+  @media (max-width: 640px) {
+    .reviews-carousel-shell {
+      padding: 0 0.25rem;
+      overflow: visible;
+    }
+
+    .reviews-carousel-button {
+      display: none;
+    }
+
+    .reviews-carousel-slide {
+      padding: 0;
+    }
+  }
+}
+
 @layer utilities {
   @keyframes fadeIn {
     from {
