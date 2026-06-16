@@ -9,7 +9,6 @@ import { StepIndicator } from "./StepIndicator";
 
 import {
   calculateDiscountedLineTotalForProduct,
-  calculateDiscountedPriceForProduct,
   getEffectiveQuantityForProductDiscount,
   getDiscountPercentageForProduct,
   getEligibleQuantityDiscountCartQuantity,
@@ -17,6 +16,7 @@ import {
 } from "../../utils/discounts";
 import { getVariantItemId, getVariantPrice } from "../../utils/pricing";
 import { formatPrice, roundPrice } from "../../utils/money";
+import { calculateCheckoutLinePricing } from "../../utils/checkoutPricing";
 
 import { fetchClienteByCuit, verifyCoupon, useCoupon } from "../../services/api";
 
@@ -233,7 +233,11 @@ export default function Checkout() {
 
     // Si gana cupón, cada línea sale con precio neto por cupón.
     if (isCouponWinningDiscount && appliedCoupon) {
-      return roundPrice(originalPrice * (1 - effectiveCouponPercentage / 100));
+      return calculateCheckoutLinePricing(
+        originalPrice,
+        quantity,
+        effectiveCouponPercentage
+      ).precioUnitarioNeto;
     }
 
     // Si no gana cupón, aplicar descuento por transferencia cuando corresponda.
@@ -244,13 +248,19 @@ export default function Checkout() {
         weight
       );
 
-      return calculateDiscountedPriceForProduct(
+      const discountPercentage = getDiscountPercentageForProduct(
         product,
-        originalPrice,
         quantity,
         weight,
         effectiveQuantity
       );
+      const numericPercentage = Number(discountPercentage.replace("%", ""));
+
+      return calculateCheckoutLinePricing(
+        originalPrice,
+        quantity,
+        Number.isFinite(numericPercentage) ? numericPercentage : 0
+      ).precioUnitarioNeto;
     }
 
     return roundPrice(originalPrice);
@@ -386,29 +396,26 @@ export default function Checkout() {
           // Buscar el ID original del ítem según el color seleccionado (si aplica)
           const nombre = getVariantItemId(item.product, item.color, item.weight);
 
-          const originalUnitPrice = roundDisplayedPrice(
-            getPrice(item.product, item.color, item.weight) ?? 0
+          const originalUnitPrice =
+            getPrice(item.product, item.color, item.weight) ?? 0;
+          const adjustmentPercentage =
+            calculateItemAdjustmentPercentageForCheckout(
+              item.product,
+              item.weight,
+              item.quantity
+            );
+          const linePricing = calculateCheckoutLinePricing(
+            originalUnitPrice,
+            item.quantity,
+            adjustmentPercentage
           );
 
           return {
             nombre,
             cantidad: item.quantity,
-            precio_unitario: roundDisplayedPrice(
-              calculateItemPriceForCheckout(
-                item.product,
-                item.color,
-                item.weight,
-                item.quantity
-              ) ??
-                getPrice(item.product, item.color, item.weight) ??
-                0
-            ),
-            subtotal: originalUnitPrice * item.quantity,
-            ajuste_porcentaje: calculateItemAdjustmentPercentageForCheckout(
-              item.product,
-              item.weight,
-              item.quantity
-            ),
+            precio_unitario: linePricing.precioUnitarioNeto,
+            subtotal: linePricing.subtotalBruto,
+            ajuste_porcentaje: adjustmentPercentage,
           };
         }),
         // Agregar shipping como producto si aplica
