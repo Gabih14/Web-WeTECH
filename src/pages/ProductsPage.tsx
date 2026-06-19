@@ -1,9 +1,10 @@
-import { CSSProperties, useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Filter, X } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { categories } from "../data/categories";
 import { ProductCard } from "../components/products/ProductCard";
 import { CategoryFilter } from "../components/products/CategoryFilter";
+import { ColorSwatch } from "../components/products/ColorSwatch";
 import { ColorGroup, Product } from "../types";
 import { fetchProducts } from "../services/fetchProducts";
 
@@ -21,17 +22,6 @@ function ColorFilter({
   if (colorGroups.length === 0) {
     return null;
   }
-
-  const getColorGroupStyle = (colorGroup: ColorGroup): CSSProperties => {
-    if (colorGroup.name.trim().toLowerCase() === "multicolor") {
-      return {
-        background:
-          "conic-gradient(#ef4444, #f97316, #facc15, #22c55e, #06b6d4, #3b82f6, #a855f7, #ef4444)",
-      };
-    }
-
-    return { backgroundColor: colorGroup.hex || "#f3f4f6" };
-  };
 
   return (
     <div className="bg-white p-4 rounded-lg shadow mb-6">
@@ -65,14 +55,14 @@ function ColorFilter({
               aria-label={`Filtrar por ${colorGroup.name}`}
               title={colorGroup.name}
             >
-              <span
+              <ColorSwatch
+                hex={colorGroup.hex}
+                colorGroup={colorGroup}
                 className={`h-10 w-10 rounded-full border shadow-sm transition-all ${
                   isSelected
                     ? "border-yellow-500 ring-2 ring-yellow-300 ring-offset-2"
                     : "border-gray-300 group-hover:border-gray-400"
                 }`}
-                style={getColorGroupStyle(colorGroup)}
-                aria-hidden="true"
               />
               <span className="w-full truncate">{colorGroup.name}</span>
             </button>

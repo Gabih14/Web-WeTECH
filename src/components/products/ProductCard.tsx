@@ -20,6 +20,7 @@ import {
 } from "../../utils/cartPurchase";
 import { getVariantPrice } from "../../utils/pricing";
 import { formatPrice } from "../../utils/money";
+import { ColorSwatch } from "./ColorSwatch";
 
 interface ProductCardProps {
   product: Product;
@@ -192,8 +193,11 @@ export function ProductCard({
     ? getNextDiscountLevelForProduct(product, effectiveCartDiscountQuantity, selectedWeight ?? undefined)
     : null;
   const from = `${location.pathname}${location.search}`;
+  const selectedColorData = selectedColor
+    ? product.colors?.find((color) => color.name === selectedColor)
+    : undefined;
   const selectedColorImage = selectedColor
-    ? product.colors?.find((color) => color.name === selectedColor)?.images?.[0]
+    ? selectedColorData?.images?.[0]
     : undefined;
   const displayImage = selectedColorImage || product.image;
 
@@ -248,12 +252,11 @@ export function ProductCard({
               className="w-full flex items-center justify-between px-3 py-2 text-xs border border-gray-200 rounded-xl bg-white hover:border-gray-400 transition-colors"
             >
               <span className="flex items-center gap-2 truncate">
-                {selectedColor && !!product.colors.find((c) => c.name === selectedColor)?.hex?.trim() && (
-                  <span
-                    className="w-3.5 h-3.5 rounded-full border border-gray-200 flex-shrink-0 shadow-sm"
-                    style={{
-                      backgroundColor: product.colors.find((c) => c.name === selectedColor)!.hex,
-                    }}
+                {selectedColorData && (
+                  <ColorSwatch
+                    hex={selectedColorData.hex}
+                    colorGroup={selectedColorData.colorGroup}
+                    className="w-3.5 h-3.5 border-gray-200 flex-shrink-0"
                   />
                 )}
                 <span className="truncate text-gray-700">{selectedColor ?? "Seleccionar color"}</span>
@@ -284,12 +287,11 @@ export function ProductCard({
                         isColorDisabled ? "opacity-40" : ""
                       } ${selectedColor === color.name ? "bg-gray-50 font-medium" : ""}`}
                     >
-                      {!!color.hex?.trim() && (
-                        <span
-                          className="w-3.5 h-3.5 rounded-full border border-gray-200 flex-shrink-0 shadow-sm"
-                          style={{ backgroundColor: color.hex }}
-                        />
-                      )}
+                      <ColorSwatch
+                        hex={color.hex}
+                        colorGroup={color.colorGroup}
+                        className="w-3.5 h-3.5 border-gray-200 flex-shrink-0"
+                      />
                       <span className="truncate text-gray-700">{color.name}</span>
                       <span className="ml-auto text-gray-400 tabular-nums">
                         {isColorDisabled ? "Sin stock" : `(${stock})`}

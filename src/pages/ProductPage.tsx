@@ -24,6 +24,7 @@ import {
 } from "../utils/cartPurchase";
 import { getVariantPrice } from "../utils/pricing";
 import { formatPrice } from "../utils/money";
+import { ColorSwatch } from "../components/products/ColorSwatch";
 
 const QUANTITY_OPTIONS = [1, 5, 10, 50];
 
@@ -223,6 +224,9 @@ export function ProductPage() {
       return a.name.localeCompare(b.name);
     })
     : [];
+  const selectedColorData = selectedColor
+    ? product.colors?.find((color) => color.name === selectedColor)
+    : undefined;
 
   const nextLevel = getNextDiscountLevelForProduct(
     product,
@@ -417,14 +421,11 @@ export function ProductPage() {
                     className="flex w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm hover:border-gray-400"
                   >
                     <span className="flex items-center gap-2 text-gray-700">
-                      {selectedColor && !!product.colors.find((c) => c.name === selectedColor)?.hex?.trim() && (
-                        <span
-                          className="h-4 w-4 rounded-full border border-gray-300"
-                          style={{
-                            backgroundColor: product.colors.find(
-                              (color) => color.name === selectedColor
-                            )?.hex,
-                          }}
+                      {selectedColorData && (
+                        <ColorSwatch
+                          hex={selectedColorData.hex}
+                          colorGroup={selectedColorData.colorGroup}
+                          className="h-4 w-4 border-gray-300"
                         />
                       )}
                       {selectedColor || "Seleccionar color"}
@@ -456,12 +457,11 @@ export function ProductPage() {
                             className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-gray-50 ${disabledByStock ? "opacity-45" : ""
                               } ${selectedColor === color.name ? "bg-gray-50" : ""}`}
                           >
-                            {!!color.hex?.trim() && (
-                              <span
-                                className="h-4 w-4 rounded-full border border-gray-300"
-                                style={{ backgroundColor: color.hex }}
-                              />
-                            )}
+                            <ColorSwatch
+                              hex={color.hex}
+                              colorGroup={color.colorGroup}
+                              className="h-4 w-4 border-gray-300"
+                            />
                             <span className="text-gray-700">{color.name}</span>
                             <span className="ml-auto text-xs text-gray-500">
                               {disabledByStock ? "Sin stock" : `(${stock})`}

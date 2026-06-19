@@ -14,11 +14,16 @@ export const BASE_FILAMENT_DISCOUNT = 0.15; // 15%
 // Marcas elegibles para descuentos por cantidad (solo filamentos de 1kg)
 export const ELIGIBLE_BRANDS_FOR_QUANTITY_DISCOUNT = [
   "3N3-PLA",
+  "3NMAX-PLA+",
   "3N-PLA",
+  "ELEGOO-PLA",
+  "ELEGOO-PLA-MATTE",
   "GRILON3-PLA BOUTIQUE",
   "GRILON3-PLA",
   "G3-PLA",
   "GST3D-PLA",
+  "GST3D-PLA+",
+  "GST3D-PLA-LITE",
   "GS-PLA",
   "HELLBOT-PLA",
   "HB-PLA",
