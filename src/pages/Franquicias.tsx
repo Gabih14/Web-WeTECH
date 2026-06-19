@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import emailjs from "@emailjs/browser";
 import { User as UserIcon } from "lucide-react";
+import {
+  FULL_NAME_MESSAGE,
+  FULL_NAME_PATTERN,
+  hasAtLeastTwoWords,
+} from "../utils/validation";
 
 export const Franquicias = () => {
   // Scroll suave al formulario
@@ -62,6 +67,11 @@ export const Franquicias = () => {
 
   const handleSubmit = (e: FormEvent): void => {
     e.preventDefault();
+
+    if (!hasAtLeastTwoWords(formData.nombre)) {
+      alert(FULL_NAME_MESSAGE);
+      return;
+    }
 
     const serviceId = "service_ql4q72a";
     const templateId = "template_yt57d62";
@@ -358,7 +368,10 @@ export const Franquicias = () => {
                   name="nombre"
                   value={formData.nombre}
                   onChange={handleChange}
+                  pattern={FULL_NAME_PATTERN}
+                  title={FULL_NAME_MESSAGE}
                   className="w-full px-4 py-2 border border-yellow-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-600"
+                  placeholder="Nombre y apellido"
                   required
                 />
               </div>

@@ -238,7 +238,7 @@ export function HomePage() {
                     {category.name}
                   </h3>
                   <span className="text-xs md:text-sm bg-gray-800 bg-opacity-75 px-2 md:px-3 py-1 rounded-full mt-1 md:mt-2">
-                    Próximamente
+                    Disponible en el local
                   </span>
                 </div>
               </div>
