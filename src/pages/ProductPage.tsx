@@ -352,7 +352,7 @@ export function ProductPage() {
                           selectedWeight ?? undefined,
                           effectiveDiscountQuantity
                         )}
-                        %
+                        
                       </span>
                     </div>
 

@@ -19,6 +19,7 @@ import { formatPrice, roundPrice } from "../../utils/money";
 import { calculateCheckoutLinePricing } from "../../utils/checkoutPricing";
 
 import { fetchClienteByCuit, verifyCoupon, useCoupon } from "../../services/api";
+import { hasAtLeastTwoWords } from "../../utils/validation";
 
 function useMediaQuery(query: string): boolean {
   const getMatches = () => {
@@ -689,7 +690,7 @@ export default function Checkout() {
       case 1: // Información Personal
         return !!(
           formData.cuit &&
-          formData.name &&
+          hasAtLeastTwoWords(formData.name) &&
           formData.email &&
           formData.phone
         );

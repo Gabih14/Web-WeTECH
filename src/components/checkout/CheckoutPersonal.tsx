@@ -1,3 +1,9 @@
+import {
+  FULL_NAME_MESSAGE,
+  FULL_NAME_PATTERN,
+  hasAtLeastTwoWords,
+} from "../../utils/validation";
+
 type Props = {
   formData: {
     name: string;
@@ -10,6 +16,9 @@ type Props = {
 };
 
 export const CheckoutPersonal = ({ formData, handleInputChange, handleCuitBlur }: Props) => {
+  const isNameIncomplete =
+    formData.name.trim().length > 0 && !hasAtLeastTwoWords(formData.name);
+
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
       <h2 className="text-lg font-medium text-gray-900 mb-4">
@@ -54,9 +63,15 @@ export const CheckoutPersonal = ({ formData, handleInputChange, handleCuitBlur }
             name="name"
             value={formData.name}
             onChange={handleInputChange}
+            pattern={FULL_NAME_PATTERN}
+            title={FULL_NAME_MESSAGE}
             required
             className="mt-1 p-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            placeholder="Nombre y apellido"
           />
+          {isNameIncomplete && (
+            <p className="mt-1 text-sm text-red-600">{FULL_NAME_MESSAGE}</p>
+          )}
         </div>
         <div>
           <label
