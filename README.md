@@ -265,3 +265,180 @@ Web-WeTECH
 └─ vite.config.ts
 
 ```
+```
+Web-WeTECH
+├─ .agents
+├─ Dockerfile
+├─ Dockerfile.bkp
+├─ eslint.config.js
+├─ index.html
+├─ package-lock.json
+├─ package.json
+├─ postcss.config.js
+├─ public
+│  ├─ assets
+│  │  ├─ filamentos
+│  │  │  ├─ 3N3 EPET AZUL.png
+│  │  │  ├─ 3N3 EPET BLANCO.png
+│  │  │  ├─ 3N3 EPET GRIS ESPACIAL.png
+│  │  │  ├─ 3N3 EPET NEGRO.png
+│  │  │  ├─ 3N3 EPET ROJO CARMIN.png
+│  │  │  ├─ 3N3 EPET VERDE LIMA.png
+│  │  │  ├─ 3N3 PETG AZUL.png
+│  │  │  ├─ 3N3 PETG BLANCO.png
+│  │  │  ├─ 3N3 PETG BRONCE.png
+│  │  │  ├─ 3N3 PETG GRIS ESPACIAL.png
+│  │  │  ├─ 3N3 PETG NEGRO.png
+│  │  │  ├─ 3N3 PETG ROJO.png
+│  │  │  ├─ 3N3 PLA AMARILLO FLUO.png
+│  │  │  ├─ 3N3 PLA AMARILLO.png
+│  │  │  ├─ 3N3 PLA AZUL.png
+│  │  │  ├─ 3N3 PLA BLANCO.png
+│  │  │  ├─ 3N3 PLA BRONCE.png
+│  │  │  ├─ 3N3 PLA CELESTE.png
+│  │  │  ├─ 3N3 PLA COBRE.png
+│  │  │  ├─ 3N3 PLA FUCSIA.png
+│  │  │  ├─ 3N3 PLA GRIS ACERO.png
+│  │  │  ├─ 3N3 PLA GRIS PLOMO.png
+│  │  │  ├─ 3N3 PLA HABANO.png
+│  │  │  ├─ 3N3 PLA HUESO.png
+│  │  │  ├─ 3N3 PLA NARANJA.png
+│  │  │  ├─ 3N3 PLA NATURAL.png
+│  │  │  ├─ 3N3 PLA NEGRO.png
+│  │  │  ├─ 3N3 PLA ORO.png
+│  │  │  ├─ 3N3 PLA ROJO.png
+│  │  │  ├─ 3N3 PLA ROSA.png
+│  │  │  ├─ 3N3 PLA RUSTICO.png
+│  │  │  ├─ 3N3 PLA VERDE FLUO.png
+│  │  │  ├─ 3N3 PLA VERDE.png
+│  │  │  ├─ 3N3 PLA VIOLETA.png
+│  │  │  ├─ 3NMAX PLA+ AMARILLO.png
+│  │  │  ├─ 3NMAX PLA+ AZUL.png
+│  │  │  ├─ 3NMAX PLA+ BLANCO.png
+│  │  │  ├─ 3NMAX PLA+ BRONCE.png
+│  │  │  ├─ 3NMAX PLA+ CELESTE.png
+│  │  │  ├─ 3NMAX PLA+ CHOCOLATE.png
+│  │  │  ├─ 3NMAX PLA+ GRIS PLOMO.png
+│  │  │  ├─ 3NMAX PLA+ LILA.png
+│  │  │  ├─ 3NMAX PLA+ NARANJA.png
+│  │  │  ├─ 3NMAX PLA+ NEGRO.png
+│  │  │  ├─ 3NMAX PLA+ ROJO.png
+│  │  │  ├─ 3NMAX PLA+ ROSA.png
+│  │  │  ├─ 3NMAX PLA+ UVA.png
+│  │  │  ├─ 3NMAX PLA+ VERDE.png
+│  │  │  ├─ 3NMAXPLA+ FLEX AMARILLO.png
+│  │  │  ├─ 3NMAXPLA+ FLEX AZUL PRUSIA.png
+│  │  │  ├─ 3NMAXPLA+ FLEX BLANCO.png
+│  │  │  ├─ 3NMAXPLA+ FLEX BRONCE.png
+│  │  │  ├─ 3NMAXPLA+ FLEX GRIS PLOMO.png
+│  │  │  ├─ 3NMAXPLA+ FLEX NARANJA.png
+│  │  │  ├─ 3NMAXPLA+ FLEX NEGRO.png
+│  │  │  ├─ 3NMAXPLA+ FLEX PIEL162.png
+│  │  │  ├─ 3NMAXPLA+ FLEX PIEL720.png
+│  │  │  ├─ 3NMAXPLA+ FLEX ROJO.png
+│  │  │  ├─ 3NMAXPLA+ FLEX ROSA.png
+│  │  │  ├─ 3NMAXPLA+ FLEX VERDE MANZANA.png
+│  │  │  └─ 3NMAXPLA+ FLEX VERDE.png
+│  │  ├─ folleto
+│  │  │  └─ WeTECH - Folleto Expo Franquicias Mobile.pdf
+│  │  ├─ franquicias
+│  │  │  ├─ iconos folleto expo franquicias-01.svg
+│  │  │  ├─ iconos folleto expo franquicias-02.svg
+│  │  │  ├─ iconos folleto expo franquicias-03.svg
+│  │  │  ├─ iconos folleto expo franquicias-04.svg
+│  │  │  ├─ iconos folleto expo franquicias-05.svg
+│  │  │  ├─ iconos folleto expo franquicias-06.svg
+│  │  │  └─ wetech-franquicias-logo.webp
+│  │  ├─ local1.webp
+│  │  ├─ local2.webp
+│  │  ├─ local3.webp
+│  │  ├─ local4.webp
+│  │  ├─ local5.webp
+│  │  └─ local6.webp
+│  └─ Firma Email.jpg
+├─ README.md
+├─ SISTEMA_IMAGENES.md
+├─ src
+│  ├─ App.tsx
+│  ├─ assets
+│  │  ├─ CR6 S.png
+│  │  ├─ filamentso-removebg-preview.webp
+│  │  ├─ folleto
+│  │  │  └─ WeTECH - Folleto Expo Franquicias Mobile.pdf
+│  │  ├─ Grilon_pla_piel.jpeg
+│  │  ├─ Grilo_pla_blanco-1.jpeg
+│  │  ├─ GST-AMARILLO-700x700.png
+│  │  ├─ GST-AMARILLO-FLUOR-700x700.png
+│  │  ├─ Isologo Fondo Negro SVG.svg
+│  │  ├─ Logo WeTECH Negro PNG.png
+│  │  └─ racor 6mm plastico web2_Impresora 3D Creality CR-10 SMART Mendoza v2.jpg
+│  ├─ components
+│  │  ├─ cart
+│  │  │  └─ CartModal.tsx
+│  │  ├─ checkout
+│  │  │  ├─ Checkout.tsx
+│  │  │  ├─ CheckoutAdress.tsx
+│  │  │  ├─ CheckoutBilling.tsx
+│  │  │  ├─ CheckoutPersonal.tsx
+│  │  │  ├─ ShippingInfoModal.tsx
+│  │  │  └─ StepIndicator.tsx
+│  │  ├─ ErrorBoundary.tsx
+│  │  ├─ home
+│  │  │  ├─ ContactInfo.tsx
+│  │  │  └─ ReviewSection.tsx
+│  │  ├─ layout
+│  │  │  ├─ Footer.tsx
+│  │  │  └─ Navbar.tsx
+│  │  ├─ LoginModal.tsx
+│  │  ├─ products
+│  │  │  ├─ CategoryFilter.tsx
+│  │  │  ├─ ColorSwatch.tsx
+│  │  │  └─ ProductCard.tsx
+│  │  └─ SurveyModal.tsx
+│  ├─ context
+│  │  ├─ AuthContext.tsx
+│  │  └─ CartContext.tsx
+│  ├─ data
+│  │  ├─ categories.ts
+│  │  ├─ colors.ts
+│  │  ├─ excludedFamilies.ts
+│  │  ├─ products.ts
+│  │  ├─ shippingCost.ts
+│  │  └─ users.json
+│  ├─ hooks
+│  │  ├─ useAddToCartFeedback.ts
+│  │  └─ useMetaPixel.ts
+│  ├─ index.css
+│  ├─ main.tsx
+│  ├─ pages
+│  │  ├─ Franquicias.tsx
+│  │  ├─ HomePage.tsx
+│  │  ├─ PaymentCallback.tsx
+│  │  ├─ ProductPage.tsx
+│  │  ├─ ProductsPage.tsx
+│  │  ├─ SearchResultsPage.tsx
+│  │  └─ UnderDevelopment.tsx
+│  ├─ services
+│  │  ├─ api.ts
+│  │  └─ fetchProducts.ts
+│  ├─ types.ts
+│  ├─ utils
+│  │  ├─ cartPurchase.ts
+│  │  ├─ checkoutPricing.ts
+│  │  ├─ discounts.ts
+│  │  ├─ domSafety.ts
+│  │  ├─ metaPixel.ts
+│  │  ├─ money.ts
+│  │  ├─ pricing.ts
+│  │  └─ validation.ts
+│  └─ vite-env.d.ts
+├─ tailwind.config.js
+├─ tests
+│  ├─ checkoutPricing.test.cjs
+│  └─ discounts.test.cjs
+├─ tsconfig.app.json
+├─ tsconfig.json
+├─ tsconfig.node.json
+└─ vite.config.ts
+
+```

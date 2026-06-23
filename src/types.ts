@@ -5,6 +5,7 @@ export interface Product {
   observaciones?: string;
   image: string; // Imagen principal (primera del array)
   images?: string[]; // Array de todas las imágenes
+  brand?: string;
   category: string;
   subcategory?: string;
   weights?: {
