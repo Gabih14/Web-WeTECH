@@ -14,6 +14,62 @@ interface ColorFilterProps {
   onColorGroupChange: (colorGroupId: number | null) => void;
 }
 
+interface BrandFilterProps {
+  brands: string[];
+  selectedBrand: string | null;
+  onBrandChange: (brand: string | null) => void;
+}
+
+const normalizeBrand = (brand: string) => brand.trim().toUpperCase();
+
+function BrandFilter({
+  brands,
+  selectedBrand,
+  onBrandChange,
+}: BrandFilterProps) {
+  if (brands.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="bg-white p-4 rounded-lg shadow mb-6">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h2 className="text-xl font-bold">Marcas</h2>
+        {selectedBrand !== null && (
+          <button
+            onClick={() => onBrandChange(null)}
+            className="text-sm font-medium text-yellow-700 hover:text-yellow-900"
+            type="button"
+          >
+            Limpiar
+          </button>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        {brands.map((brand) => {
+          const isSelected =
+            selectedBrand !== null &&
+            normalizeBrand(selectedBrand) === normalizeBrand(brand);
+
+          return (
+            <button
+              key={brand}
+              onClick={() => onBrandChange(isSelected ? null : brand)}
+              className={`w-full rounded p-2 text-left transition-colors ${
+                isSelected ? "bg-yellow-100 text-black" : "hover:bg-gray-100"
+              }`}
+              type="button"
+            >
+              {brand}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function ColorFilter({
   colorGroups,
   selectedColorGroupId,
@@ -85,6 +141,7 @@ export function ProductsPage() {
   const [selectedColorGroupId, setSelectedColorGroupId] = useState<
     number | null
   >(null);
+  const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -179,6 +236,23 @@ export function ProductsPage() {
     });
   }, [matchesSelectedCategory, products]);
 
+  const availableBrands = useMemo(() => {
+    const brandMap = new Map<string, string>();
+
+    products.filter(matchesSelectedCategory).forEach((product) => {
+      if (!product.brand?.trim()) {
+        return;
+      }
+
+      const normalizedBrand = normalizeBrand(product.brand);
+      if (!brandMap.has(normalizedBrand)) {
+        brandMap.set(normalizedBrand, product.brand.trim());
+      }
+    });
+
+    return Array.from(brandMap.values()).sort((a, b) => a.localeCompare(b));
+  }, [matchesSelectedCategory, products]);
+
   useEffect(() => {
     if (
       selectedColorGroupId !== null &&
@@ -190,14 +264,29 @@ export function ProductsPage() {
     }
   }, [availableColorGroups, selectedColorGroupId]);
 
+  useEffect(() => {
+    if (
+      selectedBrand !== null &&
+      !availableBrands.some(
+        (brand) => normalizeBrand(brand) === normalizeBrand(selectedBrand)
+      )
+    ) {
+      setSelectedBrand(null);
+    }
+  }, [availableBrands, selectedBrand]);
+
   const filteredProducts = products.filter((product) => {
     const matchesColor =
       selectedColorGroupId === null ||
       product.colors?.some(
         (color) => color.colorGroup?.id === selectedColorGroupId
       );
+    const matchesBrand =
+      selectedBrand === null ||
+      (product.brand &&
+        normalizeBrand(product.brand) === normalizeBrand(selectedBrand));
 
-    return matchesSelectedCategory(product) && matchesColor;
+    return matchesSelectedCategory(product) && matchesColor && matchesBrand;
   });
 
   const toggleMobileFilter = () => {
@@ -221,9 +310,11 @@ export function ProductsPage() {
   const clearActiveFilters = () => {
     handleCategoryChange(null);
     setSelectedColorGroupId(null);
+    setSelectedBrand(null);
   };
 
-  const hasActiveFilters = !!selectedCategory || selectedColorGroupId !== null;
+  const hasActiveFilters =
+    !!selectedCategory || selectedColorGroupId !== null || selectedBrand !== null;
 
   if (loading) {
     return (
@@ -381,6 +472,11 @@ export function ProductsPage() {
             selectedColorGroupId={selectedColorGroupId}
             onColorGroupChange={setSelectedColorGroupId}
           />
+          <BrandFilter
+            brands={availableBrands}
+            selectedBrand={selectedBrand}
+            onBrandChange={setSelectedBrand}
+          />
         </div>
 
         {/* Product Grid */}
@@ -483,6 +579,14 @@ export function ProductsPage() {
             selectedColorGroupId={selectedColorGroupId}
             onColorGroupChange={(colorGroupId) => {
               setSelectedColorGroupId(colorGroupId);
+              setIsMobileFilterOpen(false);
+            }}
+          />
+          <BrandFilter
+            brands={availableBrands}
+            selectedBrand={selectedBrand}
+            onBrandChange={(brand) => {
+              setSelectedBrand(brand);
               setIsMobileFilterOpen(false);
             }}
           />

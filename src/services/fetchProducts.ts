@@ -58,7 +58,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
       apiFetch("/stk-item"),
       fetchColors(),
     ]);
-    //console.log("Productos crudos recibidos:", rawProducts);
+    console.log("Productos crudos recibidos:", rawProducts);
     // Transformar los datos
     const groupedProducts: { [key: string]: Product } = {};
 
@@ -91,16 +91,16 @@ export const fetchProducts = async (): Promise<Product[]> => {
 
       // Generar una clave de agrupación basada en las primeras dos partes de la descripción
       // Esto permite agrupar productos con diferentes pesos pero mismo material
+      const descriptionParts = String(item.descripcion || "")
+        .split("|")
+        .map((p: string) => p.trim())
+        .filter(Boolean);
+      const brand = descriptionParts[0] || undefined;
       const groupingKey = (() => {
-        if (item.descripcion) {
-          const parts = item.descripcion
-            .split("|")
-            .map((p: string) => p.trim())
-            .filter(Boolean);
-          if (parts.length >= 2) {
-            return `${parts[0]}-${parts[1]}`.toUpperCase(); // e.g., "3N3-PLA"
-          }
+        if (descriptionParts.length >= 2) {
+          return `${descriptionParts[0]}-${descriptionParts[1]}`.toUpperCase(); // e.g., "3N3-PLA"
         }
+
         // Fallback a familia o id si no hay descripción válida
         return item.familia || item.id;
       })();
@@ -158,14 +158,8 @@ export const fetchProducts = async (): Promise<Product[]> => {
       if (!groupedProducts[groupingKey]) {
         // Derivar el nombre usando los dos primeros segmentos de la descripción ("Marca Material")
         const productName = (() => {
-          if (item.descripcion) {
-            const parts = item.descripcion
-              .split("|")
-              .map((p: string) => p.trim())
-              .filter(Boolean);
-            if (parts.length >= 2) {
-              return `${parts[0]} ${parts[1]}`;
-            }
+          if (descriptionParts.length >= 2) {
+            return `${descriptionParts[0]} ${descriptionParts[1]}`;
           }
           return groupingKey;
         })();
@@ -186,6 +180,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
               : undefined,
           image: primaryImage, // Se actualizará después con la primera imagen de color para filamentos
           images: productImages.length ? productImages : undefined, // Array completo de imágenes
+          brand,
           category: normalizedGroup,
           subcategory: item.subgrupo ? item.subgrupo.toUpperCase() : undefined,
           price: parseFloat(item.precioVtaCotizadoMin || "0"), // Guardar precioVtaCotizadoMin en todos los productos
@@ -200,6 +195,10 @@ export const fetchProducts = async (): Promise<Product[]> => {
       }
 
       // Agregar imagen del ítem al producto agrupado (si existe y no está ya)
+      if (!groupedProducts[groupingKey].brand && brand) {
+        groupedProducts[groupingKey].brand = brand;
+      }
+
       const currentImages = groupedProducts[groupingKey].images || [];
       if (itemImageUrl && !currentImages.includes(itemImageUrl)) {
         groupedProducts[groupingKey].images = [...currentImages, itemImageUrl];
@@ -376,7 +375,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
       }
     });
 
-    //console.log("Productos transformados:", transformedProducts);
+    console.log("Productos transformados:", transformedProducts);
     return transformedProducts;
   } catch (error: any) {
     console.error("Error al obtener los productos:", error.message);
