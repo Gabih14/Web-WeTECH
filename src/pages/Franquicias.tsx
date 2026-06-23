@@ -63,10 +63,9 @@ export const Franquicias = () => {
   const handleSubmit = (e: FormEvent): void => {
     e.preventDefault();
 
-    const serviceId = "service_ql4q72a";
-    const templateId = "template_yt57d62";
-    const templateIdCanudas = "template_8ecs1oj";
-    const publicKey = "KtgXJK3IzzROv0Uhs";
+    const serviceId = "service_1zpjl0r";
+    const templateId = "template_4yogibe";
+    const publicKey = "LnlogUtS5gxID7eoi";
 
     const templateParams = {
       from_name: formData.nombre,
@@ -77,27 +76,6 @@ export const Franquicias = () => {
       zone: formData.zona,
       message: formData.mensaje,
     };
-    emailjs
-      .send(serviceId, templateIdCanudas, templateParams, publicKey)
-      .then(
-        (response) => {
-          console.log("Email sent successfully:", response);
-          setFormData({
-            nombre: "",
-            celular: "",
-            email: "",
-            zona: "",
-            mensaje: "",
-          });
-        },
-        (error) => {
-          console.error("Error sending Canudas email:", error);
-        }
-      )
-      .catch((error) => {
-        console.error("Error sending email:", error);
-      });
-    // Send the email using EmailJS
     emailjs
       .send(serviceId, templateId, templateParams, publicKey)
       .then(
