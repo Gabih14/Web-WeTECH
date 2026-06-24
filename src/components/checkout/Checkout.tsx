@@ -17,6 +17,12 @@ import {
 import { getVariantItemId, getVariantPrice } from "../../utils/pricing";
 import { formatPrice, roundPrice } from "../../utils/money";
 import { calculateCheckoutLinePricing } from "../../utils/checkoutPricing";
+import {
+  applyInvoiceSurcharge,
+  calculateInvoiceSurcharge,
+  requiresInvoice,
+} from "../../utils/invoice";
+import type { FacturaTipo } from "../../utils/invoice";
 
 import { fetchClienteByCuit, verifyCoupon, useCoupon } from "../../services/api";
 import { hasAtLeastTwoWords } from "../../utils/validation";
@@ -68,6 +74,7 @@ export default function Checkout() {
   const [sameBillingAddress] = useState(true); // por defecto sí
   const [isLoading, setIsLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"online" | "transfer">("transfer");
+  const [facturaTipo, setFacturaTipo] = useState<FacturaTipo>("none");
   const [formData, setFormData] = useState({
     cuit: "",
     name: "",
@@ -377,7 +384,7 @@ export default function Checkout() {
       cliente_nombre: formData.name,
       cliente_cuit: cleanCuit,
       total: roundDisplayedPrice(finalTotal),
-      costo_envio: roundDisplayedPrice(shippingTotal),
+      costo_envio: applyInvoiceSurcharge(shippingTotal, facturaTipo),
       descuento_cupon: roundDisplayedPrice(couponDiscount),
       codigo_cupon: shouldSendCouponInOrder ? appliedCoupon?.code || "" : "",
       metodo_pago: paymentMethod,
@@ -414,8 +421,11 @@ export default function Checkout() {
           return {
             nombre,
             cantidad: item.quantity,
-            precio_unitario: linePricing.precioUnitarioNeto,
-            subtotal: linePricing.subtotalBruto,
+            precio_unitario: applyInvoiceSurcharge(
+              linePricing.precioUnitarioNeto,
+              facturaTipo
+            ),
+            subtotal: applyInvoiceSurcharge(linePricing.subtotalBruto, facturaTipo),
             ajuste_porcentaje: adjustmentPercentage,
           };
         }),
@@ -425,14 +435,15 @@ export default function Checkout() {
               {
                 nombre: shippingData.itemId,
                 cantidad: 1,
-                precio_unitario: roundDisplayedPrice(shippingTotal),
-                subtotal: roundDisplayedPrice(shippingTotal),
+                precio_unitario: applyInvoiceSurcharge(shippingTotal, facturaTipo),
+                subtotal: applyInvoiceSurcharge(shippingTotal, facturaTipo),
                 ajuste_porcentaje: 0,
               },
             ]
           : []),
       ],
       billing_address,
+      ...(requiresInvoice(facturaTipo) ? { factura_tipo: facturaTipo } : {}),
     };
     const API_URL = import.meta.env.VITE_API_URL; // Se usará cuando el pago esté activo
     try {
@@ -680,7 +691,12 @@ export default function Checkout() {
   const shippingTotal = isFreeShippingByWeight
     ? 0
     : shippingData?.costoTotal || 0;
-  const finalTotal = checkoutTotal + shippingTotal;
+  const baseFinalTotal = checkoutTotal + shippingTotal;
+  const invoiceSurcharge = calculateInvoiceSurcharge(
+    baseFinalTotal,
+    facturaTipo
+  );
+  const finalTotal = baseFinalTotal + invoiceSurcharge;
   const shouldSendCouponInOrder = isCouponWinningDiscount;
   const discount = originalTotal - total;
 
@@ -744,6 +760,8 @@ export default function Checkout() {
             formData={formData}
             handleInputChange={handleInputChange}
             handleCuitBlur={handleCuitBlur}
+            facturaTipo={facturaTipo}
+            setFacturaTipo={setFacturaTipo}
           />
         );
       case 2:
@@ -909,6 +927,14 @@ export default function Checkout() {
                 <div className="flex justify-between">
                   <dt className="text-gray-600">Teléfono:</dt>
                   <dd className="text-gray-900 font-medium">{formData.phone}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-gray-600">Facturacion:</dt>
+                  <dd className="text-gray-900 font-medium">
+                    {requiresInvoice(facturaTipo)
+                      ? `Factura ${facturaTipo}`
+                      : "Sin factura"}
+                  </dd>
                 </div>
               </dl>
             </div>
@@ -1311,6 +1337,16 @@ export default function Checkout() {
                       <span className="text-sm font-bold text-green-700">
                         -$
                         {formatPrice(couponDiscount)}
+                      </span>
+                    </div>
+                  )}
+                  {requiresInvoice(facturaTipo) && (
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-medium text-gray-700">
+                        Factura {facturaTipo} - recargo 21%:
+                      </span>
+                      <span className="text-sm font-bold text-gray-900">
+                        ${formatPrice(invoiceSurcharge)}
                       </span>
                     </div>
                   )}
