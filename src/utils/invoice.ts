@@ -9,6 +9,16 @@ export const INVOICE_SURCHARGE_RATE = 0.21;
 export const requiresInvoice = (facturaTipo: FacturaTipo): facturaTipo is "A" | "B" =>
   facturaTipo === "A" || facturaTipo === "B";
 
+export const round2 = (value: number): number =>
+  Math.round((value + Number.EPSILON) * 100) / 100;
+
+export const calculateInvoiceTotal = (subtotalSinIva: number) => {
+  const iva = round2(subtotalSinIva * INVOICE_SURCHARGE_RATE);
+  const total = round2(subtotalSinIva + iva);
+
+  return { iva, total };
+};
+
 export const calculateInvoiceSurcharge = (
   amount: number,
   facturaTipo: FacturaTipo

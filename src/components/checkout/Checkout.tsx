@@ -19,6 +19,7 @@ import { formatPrice, roundPrice } from "../../utils/money";
 import { calculateCheckoutLinePricing } from "../../utils/checkoutPricing";
 import {
   applyInvoiceSurcharge,
+  calculateInvoiceTotal,
   calculateInvoiceSurcharge,
   requiresInvoice,
 } from "../../utils/invoice";
@@ -378,12 +379,15 @@ export default function Checkout() {
     };
 
     const roundDisplayedPrice = (value: number) => roundPrice(value);
+    const orderTotal = requiresInvoice(facturaTipo)
+      ? calculateInvoiceTotal(baseFinalTotal).total
+      : roundDisplayedPrice(finalTotal);
     const cleanCuit = formData.cuit.trim().replace(/\D/g, ''); // Remover guiones y caracteres no numéricos
 
     const body = {
       cliente_nombre: formData.name,
       cliente_cuit: cleanCuit,
-      total: roundDisplayedPrice(finalTotal),
+      total: orderTotal,
       costo_envio: applyInvoiceSurcharge(shippingTotal, facturaTipo),
       descuento_cupon: roundDisplayedPrice(couponDiscount),
       codigo_cupon: shouldSendCouponInOrder ? appliedCoupon?.code || "" : "",
@@ -692,11 +696,25 @@ export default function Checkout() {
     ? 0
     : shippingData?.costoTotal || 0;
   const baseFinalTotal = checkoutTotal + shippingTotal;
-  const invoiceSurcharge = calculateInvoiceSurcharge(
-    baseFinalTotal,
-    facturaTipo
-  );
-  const finalTotal = baseFinalTotal + invoiceSurcharge;
+  const invoiceTotals = calculateInvoiceTotal(baseFinalTotal);
+  const invoiceSurcharge = requiresInvoice(facturaTipo)
+    ? invoiceTotals.iva
+    : calculateInvoiceSurcharge(baseFinalTotal, facturaTipo);
+  const finalTotal = requiresInvoice(facturaTipo)
+    ? invoiceTotals.total
+    : baseFinalTotal + invoiceSurcharge;
+  const formattedFinalTotal = requiresInvoice(facturaTipo)
+    ? finalTotal.toLocaleString("es-ES", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })
+    : formatPrice(finalTotal);
+  const formattedInvoiceSurcharge = requiresInvoice(facturaTipo)
+    ? invoiceSurcharge.toLocaleString("es-ES", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })
+    : formatPrice(invoiceSurcharge);
   const shouldSendCouponInOrder = isCouponWinningDiscount;
   const discount = originalTotal - total;
 
@@ -1346,7 +1364,7 @@ export default function Checkout() {
                         Factura {facturaTipo} - recargo 21%:
                       </span>
                       <span className="text-sm font-bold text-gray-900">
-                        ${formatPrice(invoiceSurcharge)}
+                        ${formattedInvoiceSurcharge}
                       </span>
                     </div>
                   )}
@@ -1356,7 +1374,7 @@ export default function Checkout() {
                     </dt>
                     <dd className="text-xl font-bold text-black">
                       $
-                      {formatPrice(finalTotal)}
+                      {formattedFinalTotal}
                     </dd>
                   </div>
                 </dl>
