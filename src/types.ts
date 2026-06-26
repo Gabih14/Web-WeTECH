@@ -59,6 +59,11 @@ export interface CartContextType {
     weight: number
   ) => void;
   clearCart: () => void;
+  syncCartWithProducts: (products: Product[]) => {
+    removedItems: CartItem[];
+    updatedItems: CartItem[];
+    hasChanges: boolean;
+  };
   total: number;
 }
 
