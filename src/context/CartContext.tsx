@@ -16,6 +16,7 @@ import {
   getVariantStock,
   isFilamentProduct,
 } from "../utils/cartPurchase";
+import { syncCartItemsWithCatalog } from "../utils/cartCatalogSync";
 import { getCartItemPrice } from "../utils/pricing";
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -162,6 +163,20 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     removeStoredCartItems();
   }, []);
 
+  const syncCartWithProducts = useCallback((products: Product[]) => {
+    const result = syncCartItemsWithCatalog(items, products);
+
+    if (result.hasChanges) {
+      setItems(result.items);
+    }
+
+    return {
+      removedItems: result.removedItems,
+      updatedItems: result.updatedItems,
+      hasChanges: result.hasChanges,
+    };
+  }, [items]);
+
   const eligibleQuantityDiscountCartQuantity = useMemo(
     () => getEligibleQuantityDiscountCartQuantity(items),
     [items]
@@ -202,6 +217,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     removeFromCart,
     updateQuantity,
     clearCart,
+    syncCartWithProducts,
     total,
   };
 

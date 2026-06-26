@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useCallback, useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Tag, AlertCircle, X, ChevronRight, ChevronLeft, Lock } from "lucide-react";
 import { useCart } from "../../context/CartContext";
@@ -19,6 +19,7 @@ import { formatPrice, roundPrice } from "../../utils/money";
 import { calculateCheckoutLinePricing } from "../../utils/checkoutPricing";
 
 import { fetchClienteByCuit, verifyCoupon, useCoupon } from "../../services/api";
+import { fetchProducts } from "../../services/fetchProducts";
 import { hasAtLeastTwoWords } from "../../utils/validation";
 
 function useMediaQuery(query: string): boolean {
@@ -58,7 +59,7 @@ export default function Checkout() {
   const [confirmedAddress, setConfirmedAddress] = useState<string | null>(null);
   const navigate = useNavigate();
   const isMobile = useMediaQuery("(max-width: 768px)"); // Detecta si es móvil
-  const { items, total, clearCart } = useCart();
+  const { items, total, clearCart, syncCartWithProducts } = useCart();
   const eligibleQuantityDiscountCartQuantity =
     getEligibleQuantityDiscountCartQuantity(items);
   const [shippingData, setShippingData] = useState<{ itemId: string; costoTotal: number } | null>(null);
@@ -111,6 +112,35 @@ export default function Checkout() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
   }, []);
+
+  const refreshCartPricesFromCatalog = useCallback(async () => {
+    const freshProducts = await fetchProducts();
+    return syncCartWithProducts(freshProducts);
+  }, [syncCartWithProducts]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    refreshCartPricesFromCatalog()
+      .then((syncResult) => {
+        if (!isMounted || !syncResult.hasChanges) return;
+
+        setError({
+          code: "PRECIOS_ACTUALIZADOS",
+          message:
+            "Actualizamos los precios del carrito con la lista vigente. Revisá el total antes de confirmar el pedido.",
+          retryable: true,
+        });
+        setShowErrorModal(true);
+      })
+      .catch((error) => {
+        console.error("No se pudo actualizar el carrito con el catálogo vigente.", error);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [refreshCartPricesFromCatalog]);
 
   // Sincroniza billing con envío si el check está marcado
   useEffect(() => {
@@ -352,6 +382,30 @@ export default function Checkout() {
 
   /* PAYMENT REQUEST */
   const createPaymentRequest = async () => {
+    try {
+      const syncResult = await refreshCartPricesFromCatalog();
+
+      if (syncResult.hasChanges) {
+        setError({
+          code: "PRECIOS_ACTUALIZADOS",
+          message:
+            "Los precios del carrito cambiaron con la lista vigente. Revisá el nuevo total y volvé a confirmar el pedido.",
+          retryable: true,
+        });
+        setShowErrorModal(true);
+        return;
+      }
+    } catch (error) {
+      console.error("No se pudo validar el carrito con el catálogo vigente.", error);
+      setError({
+        code: "CATALOGO_NO_DISPONIBLE",
+        message:
+          "No pudimos validar los precios vigentes del carrito. Intentá confirmar el pedido nuevamente en unos minutos.",
+        retryable: true,
+      });
+      setShowErrorModal(true);
+      return;
+    }
     // Dirección de envío
     const calle = formData.street;
     // const numero = formData.number;
