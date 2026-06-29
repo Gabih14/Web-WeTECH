@@ -37,6 +37,12 @@ Web-WeTECH
 - 📱 Diseño responsive con enfoque mobile-first
 - 🌐 Página de franquicias con información general
 
+## Facturacion e IVA
+
+- El checkout permite requerir Factura A o B y, para los productos actuales, aplica un recargo general de IVA del 21%.
+- Importante: cuando se incorporen impresoras al catalogo/carrito, esas lineas no deben usar el 21%; las impresoras llevan IVA del 10.5%.
+- Al implementar impresoras, actualizar el calculo de facturacion para aplicar la alicuota por tipo de producto, incluyendo el payload enviado a `/pedido`.
+
 ## ⚙️ Tecnologías utilizadas
 
 | Herramienta         | Descripción                                      |

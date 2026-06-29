@@ -3,6 +3,7 @@ import {
   FULL_NAME_PATTERN,
   hasAtLeastTwoWords,
 } from "../../utils/validation";
+import type { FacturaTipo } from "../../utils/invoice";
 
 type Props = {
   formData: {
@@ -13,9 +14,17 @@ type Props = {
   };
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleCuitBlur?: () => void;
+  facturaTipo: FacturaTipo;
+  setFacturaTipo: (facturaTipo: FacturaTipo) => void;
 };
 
-export const CheckoutPersonal = ({ formData, handleInputChange, handleCuitBlur }: Props) => {
+export const CheckoutPersonal = ({
+  formData,
+  handleInputChange,
+  handleCuitBlur,
+  facturaTipo,
+  setFacturaTipo,
+}: Props) => {
   const isNameIncomplete =
     formData.name.trim().length > 0 && !hasAtLeastTwoWords(formData.name);
 
@@ -107,7 +116,37 @@ export const CheckoutPersonal = ({ formData, handleInputChange, handleCuitBlur }
             className="mt-1 p-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
           />
         </div>
-        
+        <fieldset className="border-t border-gray-200 pt-4">
+          <legend className="text-sm font-medium text-gray-700">
+            Facturacion
+          </legend>
+          <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
+            {[
+              { value: "none", label: "Sin factura" },
+              { value: "A", label: "Factura A (+21%)" },
+              { value: "B", label: "Factura B (+21%)" },
+            ].map((option) => (
+              <label
+                key={option.value}
+                className={`flex items-center gap-2 rounded-md border-2 px-3 py-2 text-sm cursor-pointer transition-colors ${
+                  facturaTipo === option.value
+                    ? "border-yellow-400 bg-yellow-50"
+                    : "border-gray-200 hover:border-gray-300"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="facturaTipo"
+                  value={option.value}
+                  checked={facturaTipo === option.value}
+                  onChange={() => setFacturaTipo(option.value as FacturaTipo)}
+                  className="h-4 w-4 text-yellow-600 focus:ring-yellow-500"
+                />
+                <span>{option.label}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
       </div>
     </div>
   );

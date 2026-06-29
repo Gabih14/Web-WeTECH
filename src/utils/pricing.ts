@@ -33,6 +33,26 @@ export function getVariantPrice(
   return weightData?.price ?? product.price;
 }
 
+export function getVariantInvoicePrice(
+  product: Product,
+  color: string | null | undefined,
+  weight: number | null | undefined
+): number | undefined {
+  const key = weightKey(weight);
+  const colorPrice = getColorVariant(product, color)?.invoicePrices?.[key];
+
+  if (colorPrice !== undefined) {
+    return colorPrice;
+  }
+
+  const weightData =
+    weight !== null && weight !== undefined
+      ? product.weights?.find((variantWeight) => variantWeight.weight === weight)
+      : undefined;
+
+  return weightData?.invoicePrice ?? product.invoicePrice ?? getVariantPrice(product, color, weight);
+}
+
 export function getVariantPromotionalPrice(
   product: Product,
   color: string | null | undefined,
