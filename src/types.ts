@@ -11,9 +11,11 @@ export interface Product {
   weights?: {
     weight: number;
     price: number;
+    invoicePrice?: number;
     promotionalPrice?: number;
   }[];
   price?: number;
+  invoicePrice?: number;
   discountQuantity?: { [quantity: number]: number };
   promotionalPrice?: number;
   colors?: {
@@ -22,6 +24,7 @@ export interface Product {
     colorGroup?: ColorGroup;
     stock: { [weight: string]: number };
     prices?: { [weight: string]: number };
+    invoicePrices?: { [weight: string]: number };
     promotionalPrices?: { [weight: string]: number };
     itemIds?: { [weight: string]: string };
     images?: string[]; // Imágenes específicas por color

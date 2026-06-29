@@ -8,19 +8,20 @@ import { CheckoutAdress } from "./CheckoutAdress";
 import { StepIndicator } from "./StepIndicator";
 
 import {
-  calculateDiscountedLineTotalForProduct,
   getEffectiveQuantityForProductDiscount,
   getDiscountPercentageForProduct,
   getEligibleQuantityDiscountCartQuantity,
   shouldApplyDiscount,
 } from "../../utils/discounts";
-import { getVariantItemId, getVariantPrice } from "../../utils/pricing";
+import {
+  getVariantInvoicePrice,
+  getVariantItemId,
+  getVariantPrice,
+} from "../../utils/pricing";
 import { formatPrice, roundPrice } from "../../utils/money";
 import { calculateCheckoutLinePricing } from "../../utils/checkoutPricing";
 import {
-  applyInvoiceSurcharge,
-  calculateInvoiceTotal,
-  calculateInvoiceSurcharge,
+  calculateInvoiceLine,
   requiresInvoice,
 } from "../../utils/invoice";
 import type { FacturaTipo } from "../../utils/invoice";
@@ -193,7 +194,45 @@ export default function Checkout() {
     color: string,
     weight: number
   ): number | undefined => {
-    return getVariantPrice(product, color, weight);
+    if (!requiresInvoice(facturaTipo)) {
+      return getVariantPrice(product, color, weight);
+    }
+
+    return getVariantInvoicePrice(product, color, weight);
+  };
+
+  const calculateCheckoutLinePricingForInvoiceMode = (
+    precioBaseUnitario: number,
+    cantidad: number,
+    descuentoPorcentaje: number
+  ) => {
+    if (!requiresInvoice(facturaTipo)) {
+      return calculateCheckoutLinePricing(
+        precioBaseUnitario,
+        cantidad,
+        descuentoPorcentaje
+      );
+    }
+
+    if (cantidad <= 0) {
+      return {
+        subtotalBruto: 0,
+        subtotalNeto: 0,
+        precioUnitarioNeto: 0,
+      };
+    }
+
+    const invoiceLine = calculateInvoiceLine({
+      precioMinoristaConIva: precioBaseUnitario,
+      cantidad,
+      descuentoPorcentaje,
+    });
+
+    return {
+      subtotalBruto: invoiceLine.subtotal,
+      subtotalNeto: invoiceLine.subtotalFinal,
+      precioUnitarioNeto: invoiceLine.precio_unitario,
+    };
   };
 
   const getEffectiveDiscountQuantity = (
@@ -242,7 +281,7 @@ export default function Checkout() {
 
     // Si gana cupón, cada línea sale con precio neto por cupón.
     if (isCouponWinningDiscount && appliedCoupon) {
-      return calculateCheckoutLinePricing(
+      return calculateCheckoutLinePricingForInvoiceMode(
         originalPrice,
         quantity,
         effectiveCouponPercentage
@@ -265,14 +304,18 @@ export default function Checkout() {
       );
       const numericPercentage = Number(discountPercentage.replace("%", ""));
 
-      return calculateCheckoutLinePricing(
+      return calculateCheckoutLinePricingForInvoiceMode(
         originalPrice,
         quantity,
         Number.isFinite(numericPercentage) ? numericPercentage : 0
       ).precioUnitarioNeto;
     }
 
-    return roundPrice(originalPrice);
+    return calculateCheckoutLinePricingForInvoiceMode(
+      originalPrice,
+      quantity,
+      0
+    ).precioUnitarioNeto;
   };
 
   const calculateItemTotalForCheckout = (
@@ -286,9 +329,11 @@ export default function Checkout() {
     if (!originalPrice) return 0;
 
     if (isCouponWinningDiscount && appliedCoupon) {
-      return roundPrice(
-        originalPrice * quantity * (1 - effectiveCouponPercentage / 100)
-      );
+      return calculateCheckoutLinePricingForInvoiceMode(
+        originalPrice,
+        quantity,
+        effectiveCouponPercentage
+      ).subtotalNeto;
     }
 
     if (shouldApplyTransferDiscountToCheckout && shouldApplyDiscount(product)) {
@@ -298,16 +343,26 @@ export default function Checkout() {
         weight
       );
 
-      return calculateDiscountedLineTotalForProduct(
+      const discountPercentage = getDiscountPercentageForProduct(
         product,
-        originalPrice,
         quantity,
         weight,
         effectiveQuantity
       );
+      const numericPercentage = Number(discountPercentage.replace("%", ""));
+
+      return calculateCheckoutLinePricingForInvoiceMode(
+        originalPrice,
+        quantity,
+        Number.isFinite(numericPercentage) ? numericPercentage : 0
+      ).subtotalNeto;
     }
 
-    return roundPrice(originalPrice) * quantity;
+    return calculateCheckoutLinePricingForInvoiceMode(
+      originalPrice,
+      quantity,
+      0
+    ).subtotalNeto;
   };
 
   const calculateItemAdjustmentPercentageForCheckout = (
@@ -380,7 +435,7 @@ export default function Checkout() {
 
     const roundDisplayedPrice = (value: number) => roundPrice(value);
     const orderTotal = requiresInvoice(facturaTipo)
-      ? calculateInvoiceTotal(baseFinalTotal).total
+      ? finalTotal
       : roundDisplayedPrice(finalTotal);
     const cleanCuit = formData.cuit.trim().replace(/\D/g, ''); // Remover guiones y caracteres no numéricos
 
@@ -388,7 +443,7 @@ export default function Checkout() {
       cliente_nombre: formData.name,
       cliente_cuit: cleanCuit,
       total: orderTotal,
-      costo_envio: applyInvoiceSurcharge(shippingTotal, facturaTipo),
+      costo_envio: shippingTotal,
       descuento_cupon: roundDisplayedPrice(couponDiscount),
       codigo_cupon: shouldSendCouponInOrder ? appliedCoupon?.code || "" : "",
       metodo_pago: paymentMethod,
@@ -416,7 +471,7 @@ export default function Checkout() {
               item.weight,
               item.quantity
             );
-          const linePricing = calculateCheckoutLinePricing(
+          const linePricing = calculateCheckoutLinePricingForInvoiceMode(
             originalUnitPrice,
             item.quantity,
             adjustmentPercentage
@@ -425,11 +480,8 @@ export default function Checkout() {
           return {
             nombre,
             cantidad: item.quantity,
-            precio_unitario: applyInvoiceSurcharge(
-              linePricing.precioUnitarioNeto,
-              facturaTipo
-            ),
-            subtotal: applyInvoiceSurcharge(linePricing.subtotalBruto, facturaTipo),
+            precio_unitario: linePricing.precioUnitarioNeto,
+            subtotal: linePricing.subtotalBruto,
             ajuste_porcentaje: adjustmentPercentage,
           };
         }),
@@ -439,8 +491,8 @@ export default function Checkout() {
               {
                 nombre: shippingData.itemId,
                 cantidad: 1,
-                precio_unitario: applyInvoiceSurcharge(shippingTotal, facturaTipo),
-                subtotal: applyInvoiceSurcharge(shippingTotal, facturaTipo),
+                precio_unitario: shippingTotal,
+                subtotal: shippingTotal,
                 ajuste_porcentaje: 0,
               },
             ]
@@ -629,7 +681,13 @@ export default function Checkout() {
   const calculateOriginalTotal = () => {
     return items.reduce((sum, item) => {
       const price = getPrice(item.product, item.color, item.weight);
-      const itemTotal = price ? roundPrice(price) * item.quantity : 0;
+      const itemTotal = price
+        ? calculateCheckoutLinePricingForInvoiceMode(
+            price,
+            item.quantity,
+            0
+          ).subtotalBruto
+        : 0;
       return sum + itemTotal;
     }, 0);
   };
@@ -659,12 +717,21 @@ export default function Checkout() {
         item.weight
       );
 
-      return sum + calculateDiscountedLineTotalForProduct(
+      const discountPercentage = getDiscountPercentageForProduct(
         item.product,
-        originalPrice,
         item.quantity,
         item.weight,
         effectiveQuantity
+      );
+      const numericPercentage = Number(discountPercentage.replace("%", ""));
+
+      return (
+        sum +
+        calculateCheckoutLinePricingForInvoiceMode(
+          originalPrice,
+          item.quantity,
+          Number.isFinite(numericPercentage) ? numericPercentage : 0
+        ).subtotalNeto
       );
     }, 0);
   };
@@ -696,25 +763,13 @@ export default function Checkout() {
     ? 0
     : shippingData?.costoTotal || 0;
   const baseFinalTotal = checkoutTotal + shippingTotal;
-  const invoiceTotals = calculateInvoiceTotal(baseFinalTotal);
-  const invoiceSurcharge = requiresInvoice(facturaTipo)
-    ? invoiceTotals.iva
-    : calculateInvoiceSurcharge(baseFinalTotal, facturaTipo);
-  const finalTotal = requiresInvoice(facturaTipo)
-    ? invoiceTotals.total
-    : baseFinalTotal + invoiceSurcharge;
+  const finalTotal = baseFinalTotal;
   const formattedFinalTotal = requiresInvoice(facturaTipo)
     ? finalTotal.toLocaleString("es-ES", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       })
     : formatPrice(finalTotal);
-  const formattedInvoiceSurcharge = requiresInvoice(facturaTipo)
-    ? invoiceSurcharge.toLocaleString("es-ES", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })
-    : formatPrice(invoiceSurcharge);
   const shouldSendCouponInOrder = isCouponWinningDiscount;
   const discount = originalTotal - total;
 
@@ -1355,16 +1410,6 @@ export default function Checkout() {
                       <span className="text-sm font-bold text-green-700">
                         -$
                         {formatPrice(couponDiscount)}
-                      </span>
-                    </div>
-                  )}
-                  {requiresInvoice(facturaTipo) && (
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-medium text-gray-700">
-                        Factura {facturaTipo} - recargo 21%:
-                      </span>
-                      <span className="text-sm font-bold text-gray-900">
-                        ${formattedInvoiceSurcharge}
                       </span>
                     </div>
                   )}

@@ -2,6 +2,37 @@ import { apiFetch } from "../services/api";
 import { Colors, Product } from "../types";
 import { shouldExcludeFamily } from "../data/excludedFamilies";
 
+const getSalePriceFromList = (
+  item: any,
+  listName: string
+): number | undefined => {
+  const normalizedListName = listName.trim().toUpperCase();
+  const priceData = Array.isArray(item.stkPrecios)
+    ? item.stkPrecios.find(
+        (price: any) =>
+          typeof price?.lista === "string" &&
+          price.lista.trim().toUpperCase() === normalizedListName
+      )
+    : undefined;
+  const parsedPrice = Number(priceData?.precioVta ?? priceData?.precio);
+
+  return Number.isFinite(parsedPrice) && parsedPrice > 0
+    ? parsedPrice
+    : undefined;
+};
+
+const getDefaultSalePrice = (item: any): number => {
+  const parsedPrice = Number(item.precioVtaCotizadoMin);
+  const listPrice = getSalePriceFromList(item, "MINORISTA");
+
+  return Number.isFinite(parsedPrice) && parsedPrice > 0
+    ? parsedPrice
+    : listPrice ?? 0;
+};
+
+const getInvoiceSalePrice = (item: any, fallbackPrice: number): number =>
+  getSalePriceFromList(item, "MINORISTA CON IVA") ?? fallbackPrice;
+
 const fetchColors = async (): Promise<Colors[]> => {
   const colorData = await apiFetch("/colors");
 
@@ -58,7 +89,9 @@ export const fetchProducts = async (): Promise<Product[]> => {
       apiFetch("/stk-item"),
       fetchColors(),
     ]);
-    console.log("Productos crudos recibidos:", rawProducts);
+    if (import.meta.env.DEV) {
+      console.log("Productos crudos recibidos:", rawProducts);
+    }
     // Transformar los datos
     const groupedProducts: { [key: string]: Product } = {};
 
@@ -124,22 +157,22 @@ export const fetchProducts = async (): Promise<Product[]> => {
       }
 
       // Ignorar ítems con precio 0 o menor
-      if (
-        !item.precioVtaCotizadoMin ||
-        parseFloat(item.precioVtaCotizadoMin) <= 0
-      ) {
+      const price = getDefaultSalePrice(item);
+      const invoicePrice = getInvoiceSalePrice(item, price);
+
+      if (price <= 0) {
         return; // Salir de esta iteración
       }
 
       // Ignorar filamentos con precio < 10.000 ARS
-      if (isFilament && parseFloat(item.precioVtaCotizadoMin) < 10000) {
+      if (isFilament && price < 10000) {
         return; // Salir de esta iteración
       }
 
       // Ignorar impresoras con precio < 300.000 ARS
       if (
         item.category?.toUpperCase() === "IMPRESORAS 3D" &&
-        parseFloat(item.precioVtaCotizadoMin) < 300000
+        price < 300000
       ) {
         return; // Salir de esta iteración
       }
@@ -183,7 +216,8 @@ export const fetchProducts = async (): Promise<Product[]> => {
           brand,
           category: normalizedGroup,
           subcategory: item.subgrupo ? item.subgrupo.toUpperCase() : undefined,
-          price: parseFloat(item.precioVtaCotizadoMin || "0"), // Guardar precioVtaCotizadoMin en todos los productos
+          price,
+          invoicePrice,
           ...(isFilament && { colors: [] }), // Solo agregar `colors` si es filamento
           ...(!isFilament && { stock: 0 }), // Solo agregar `stock` si no es filamento
         };
@@ -229,7 +263,6 @@ export const fetchProducts = async (): Promise<Product[]> => {
         const unit = weightMatch[2]; // already uppercase KG/G
         // Convertir a kilogramos si es necesario
         const weight = unit === "G" ? value / 1000 : value;
-        const price = parseFloat(item.precioVtaCotizadoMin || "0"); // Usar precioVtaCotizadoMin como precio
         const promotionalPrice = price - price * 0.15; // Calcular el precio promocional (15% de descuento)
 
         // Verificar si el peso ya existe en `weights`
@@ -242,6 +275,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
           groupedProducts[groupingKey].weights?.push({
             weight,
             price,
+            invoicePrice,
             promotionalPrice,
           });
         }
@@ -279,6 +313,10 @@ export const fetchProducts = async (): Promise<Product[]> => {
             ...(existingColor.prices || {}),
             [weight]: price,
           };
+          existingColor.invoicePrices = {
+            ...(existingColor.invoicePrices || {}),
+            [weight]: invoicePrice,
+          };
           existingColor.promotionalPrices = {
             ...(existingColor.promotionalPrices || {}),
             [weight]: promotionalPrice,
@@ -315,6 +353,9 @@ export const fetchProducts = async (): Promise<Product[]> => {
             },
             prices: {
               [weight]: price,
+            },
+            invoicePrices: {
+              [weight]: invoicePrice,
             },
             promotionalPrices: {
               [weight]: promotionalPrice,
@@ -374,7 +415,6 @@ export const fetchProducts = async (): Promise<Product[]> => {
         product.image = product.images[0];
       }
     });
-
     console.log("Productos transformados:", transformedProducts);
     return transformedProducts;
   } catch (error: any) {
