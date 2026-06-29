@@ -8,15 +8,23 @@ import { CheckoutAdress } from "./CheckoutAdress";
 import { StepIndicator } from "./StepIndicator";
 
 import {
-  calculateDiscountedLineTotalForProduct,
   getEffectiveQuantityForProductDiscount,
   getDiscountPercentageForProduct,
   getEligibleQuantityDiscountCartQuantity,
   shouldApplyDiscount,
 } from "../../utils/discounts";
-import { getVariantItemId, getVariantPrice } from "../../utils/pricing";
+import {
+  getVariantInvoicePrice,
+  getVariantItemId,
+  getVariantPrice,
+} from "../../utils/pricing";
 import { formatPrice, roundPrice } from "../../utils/money";
 import { calculateCheckoutLinePricing } from "../../utils/checkoutPricing";
+import {
+  calculateInvoiceLine,
+  requiresInvoice,
+} from "../../utils/invoice";
+import type { FacturaTipo } from "../../utils/invoice";
 
 import { fetchClienteByCuit, verifyCoupon, useCoupon } from "../../services/api";
 import { fetchProducts } from "../../services/fetchProducts";
@@ -69,6 +77,7 @@ export default function Checkout() {
   const [sameBillingAddress] = useState(true); // por defecto sí
   const [isLoading, setIsLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"online" | "transfer">("transfer");
+  const [facturaTipo, setFacturaTipo] = useState<FacturaTipo>("none");
   const [formData, setFormData] = useState({
     cuit: "",
     name: "",
@@ -215,7 +224,45 @@ export default function Checkout() {
     color: string,
     weight: number
   ): number | undefined => {
-    return getVariantPrice(product, color, weight);
+    if (!requiresInvoice(facturaTipo)) {
+      return getVariantPrice(product, color, weight);
+    }
+
+    return getVariantInvoicePrice(product, color, weight);
+  };
+
+  const calculateCheckoutLinePricingForInvoiceMode = (
+    precioBaseUnitario: number,
+    cantidad: number,
+    descuentoPorcentaje: number
+  ) => {
+    if (!requiresInvoice(facturaTipo)) {
+      return calculateCheckoutLinePricing(
+        precioBaseUnitario,
+        cantidad,
+        descuentoPorcentaje
+      );
+    }
+
+    if (cantidad <= 0) {
+      return {
+        subtotalBruto: 0,
+        subtotalNeto: 0,
+        precioUnitarioNeto: 0,
+      };
+    }
+
+    const invoiceLine = calculateInvoiceLine({
+      precioMinoristaConIva: precioBaseUnitario,
+      cantidad,
+      descuentoPorcentaje,
+    });
+
+    return {
+      subtotalBruto: invoiceLine.subtotal,
+      subtotalNeto: invoiceLine.subtotalFinal,
+      precioUnitarioNeto: invoiceLine.precio_unitario,
+    };
   };
 
   const getEffectiveDiscountQuantity = (
@@ -264,7 +311,7 @@ export default function Checkout() {
 
     // Si gana cupón, cada línea sale con precio neto por cupón.
     if (isCouponWinningDiscount && appliedCoupon) {
-      return calculateCheckoutLinePricing(
+      return calculateCheckoutLinePricingForInvoiceMode(
         originalPrice,
         quantity,
         effectiveCouponPercentage
@@ -287,14 +334,18 @@ export default function Checkout() {
       );
       const numericPercentage = Number(discountPercentage.replace("%", ""));
 
-      return calculateCheckoutLinePricing(
+      return calculateCheckoutLinePricingForInvoiceMode(
         originalPrice,
         quantity,
         Number.isFinite(numericPercentage) ? numericPercentage : 0
       ).precioUnitarioNeto;
     }
 
-    return roundPrice(originalPrice);
+    return calculateCheckoutLinePricingForInvoiceMode(
+      originalPrice,
+      quantity,
+      0
+    ).precioUnitarioNeto;
   };
 
   const calculateItemTotalForCheckout = (
@@ -308,9 +359,11 @@ export default function Checkout() {
     if (!originalPrice) return 0;
 
     if (isCouponWinningDiscount && appliedCoupon) {
-      return roundPrice(
-        originalPrice * quantity * (1 - effectiveCouponPercentage / 100)
-      );
+      return calculateCheckoutLinePricingForInvoiceMode(
+        originalPrice,
+        quantity,
+        effectiveCouponPercentage
+      ).subtotalNeto;
     }
 
     if (shouldApplyTransferDiscountToCheckout && shouldApplyDiscount(product)) {
@@ -320,16 +373,26 @@ export default function Checkout() {
         weight
       );
 
-      return calculateDiscountedLineTotalForProduct(
+      const discountPercentage = getDiscountPercentageForProduct(
         product,
-        originalPrice,
         quantity,
         weight,
         effectiveQuantity
       );
+      const numericPercentage = Number(discountPercentage.replace("%", ""));
+
+      return calculateCheckoutLinePricingForInvoiceMode(
+        originalPrice,
+        quantity,
+        Number.isFinite(numericPercentage) ? numericPercentage : 0
+      ).subtotalNeto;
     }
 
-    return roundPrice(originalPrice) * quantity;
+    return calculateCheckoutLinePricingForInvoiceMode(
+      originalPrice,
+      quantity,
+      0
+    ).subtotalNeto;
   };
 
   const calculateItemAdjustmentPercentageForCheckout = (
@@ -425,13 +488,16 @@ export default function Checkout() {
     };
 
     const roundDisplayedPrice = (value: number) => roundPrice(value);
+    const orderTotal = requiresInvoice(facturaTipo)
+      ? finalTotal
+      : roundDisplayedPrice(finalTotal);
     const cleanCuit = formData.cuit.trim().replace(/\D/g, ''); // Remover guiones y caracteres no numéricos
 
     const body = {
       cliente_nombre: formData.name,
       cliente_cuit: cleanCuit,
-      total: roundDisplayedPrice(finalTotal),
-      costo_envio: roundDisplayedPrice(shippingTotal),
+      total: orderTotal,
+      costo_envio: shippingTotal,
       descuento_cupon: roundDisplayedPrice(couponDiscount),
       codigo_cupon: shouldSendCouponInOrder ? appliedCoupon?.code || "" : "",
       metodo_pago: paymentMethod,
@@ -459,7 +525,7 @@ export default function Checkout() {
               item.weight,
               item.quantity
             );
-          const linePricing = calculateCheckoutLinePricing(
+          const linePricing = calculateCheckoutLinePricingForInvoiceMode(
             originalUnitPrice,
             item.quantity,
             adjustmentPercentage
@@ -479,14 +545,15 @@ export default function Checkout() {
               {
                 nombre: shippingData.itemId,
                 cantidad: 1,
-                precio_unitario: roundDisplayedPrice(shippingTotal),
-                subtotal: roundDisplayedPrice(shippingTotal),
+                precio_unitario: shippingTotal,
+                subtotal: shippingTotal,
                 ajuste_porcentaje: 0,
               },
             ]
           : []),
       ],
       billing_address,
+      ...(requiresInvoice(facturaTipo) ? { factura_tipo: facturaTipo } : {}),
     };
     const API_URL = import.meta.env.VITE_API_URL; // Se usará cuando el pago esté activo
     try {
@@ -668,7 +735,13 @@ export default function Checkout() {
   const calculateOriginalTotal = () => {
     return items.reduce((sum, item) => {
       const price = getPrice(item.product, item.color, item.weight);
-      const itemTotal = price ? roundPrice(price) * item.quantity : 0;
+      const itemTotal = price
+        ? calculateCheckoutLinePricingForInvoiceMode(
+            price,
+            item.quantity,
+            0
+          ).subtotalBruto
+        : 0;
       return sum + itemTotal;
     }, 0);
   };
@@ -698,12 +771,21 @@ export default function Checkout() {
         item.weight
       );
 
-      return sum + calculateDiscountedLineTotalForProduct(
+      const discountPercentage = getDiscountPercentageForProduct(
         item.product,
-        originalPrice,
         item.quantity,
         item.weight,
         effectiveQuantity
+      );
+      const numericPercentage = Number(discountPercentage.replace("%", ""));
+
+      return (
+        sum +
+        calculateCheckoutLinePricingForInvoiceMode(
+          originalPrice,
+          item.quantity,
+          Number.isFinite(numericPercentage) ? numericPercentage : 0
+        ).subtotalNeto
       );
     }, 0);
   };
@@ -734,7 +816,14 @@ export default function Checkout() {
   const shippingTotal = isFreeShippingByWeight
     ? 0
     : shippingData?.costoTotal || 0;
-  const finalTotal = checkoutTotal + shippingTotal;
+  const baseFinalTotal = checkoutTotal + shippingTotal;
+  const finalTotal = baseFinalTotal;
+  const formattedFinalTotal = requiresInvoice(facturaTipo)
+    ? finalTotal.toLocaleString("es-ES", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })
+    : formatPrice(finalTotal);
   const shouldSendCouponInOrder = isCouponWinningDiscount;
   const discount = originalTotal - total;
 
@@ -798,6 +887,8 @@ export default function Checkout() {
             formData={formData}
             handleInputChange={handleInputChange}
             handleCuitBlur={handleCuitBlur}
+            facturaTipo={facturaTipo}
+            setFacturaTipo={setFacturaTipo}
           />
         );
       case 2:
@@ -963,6 +1054,14 @@ export default function Checkout() {
                 <div className="flex justify-between">
                   <dt className="text-gray-600">Teléfono:</dt>
                   <dd className="text-gray-900 font-medium">{formData.phone}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-gray-600">Facturacion:</dt>
+                  <dd className="text-gray-900 font-medium">
+                    {requiresInvoice(facturaTipo)
+                      ? `Factura ${facturaTipo}`
+                      : "Sin factura"}
+                  </dd>
                 </div>
               </dl>
             </div>
@@ -1374,7 +1473,7 @@ export default function Checkout() {
                     </dt>
                     <dd className="text-xl font-bold text-black">
                       $
-                      {formatPrice(finalTotal)}
+                      {formattedFinalTotal}
                     </dd>
                   </div>
                 </dl>
