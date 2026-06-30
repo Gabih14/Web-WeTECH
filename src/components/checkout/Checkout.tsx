@@ -77,7 +77,8 @@ export default function Checkout() {
   const [sameBillingAddress] = useState(true); // por defecto sí
   const [isLoading, setIsLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"online" | "transfer">("transfer");
-  const [facturaTipo, setFacturaTipo] = useState<FacturaTipo>("none");
+  // TODO: Reactivar seleccion de facturacion en CheckoutPersonal cuando el flujo este listo.
+  const [facturaTipo] = useState<FacturaTipo>("none");
   const [formData, setFormData] = useState({
     cuit: "",
     name: "",
@@ -887,8 +888,6 @@ export default function Checkout() {
             formData={formData}
             handleInputChange={handleInputChange}
             handleCuitBlur={handleCuitBlur}
-            facturaTipo={facturaTipo}
-            setFacturaTipo={setFacturaTipo}
           />
         );
       case 2:
@@ -1055,7 +1054,9 @@ export default function Checkout() {
                   <dt className="text-gray-600">Teléfono:</dt>
                   <dd className="text-gray-900 font-medium">{formData.phone}</dd>
                 </div>
-                <div className="flex justify-between">
+                {/*
+                  TODO: Reactivar resumen de facturacion cuando se implemente el flujo completo.
+                  <div className="flex justify-between">
                   <dt className="text-gray-600">Facturacion:</dt>
                   <dd className="text-gray-900 font-medium">
                     {requiresInvoice(facturaTipo)
@@ -1063,6 +1064,7 @@ export default function Checkout() {
                       : "Sin factura"}
                   </dd>
                 </div>
+                */}
               </dl>
             </div>
 

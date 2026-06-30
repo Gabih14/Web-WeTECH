@@ -3,7 +3,6 @@ import {
   FULL_NAME_PATTERN,
   hasAtLeastTwoWords,
 } from "../../utils/validation";
-import type { FacturaTipo } from "../../utils/invoice";
 
 type Props = {
   formData: {
@@ -14,16 +13,12 @@ type Props = {
   };
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleCuitBlur?: () => void;
-  facturaTipo: FacturaTipo;
-  setFacturaTipo: (facturaTipo: FacturaTipo) => void;
 };
 
 export const CheckoutPersonal = ({
   formData,
   handleInputChange,
   handleCuitBlur,
-  facturaTipo,
-  setFacturaTipo,
 }: Props) => {
   const isNameIncomplete =
     formData.name.trim().length > 0 && !hasAtLeastTwoWords(formData.name);
@@ -116,7 +111,9 @@ export const CheckoutPersonal = ({
             className="mt-1 p-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
           />
         </div>
-        <fieldset className="border-t border-gray-200 pt-4">
+        {/*
+          TODO: Reactivar facturacion cuando se implemente el flujo completo.
+          <fieldset className="border-t border-gray-200 pt-4">
           <legend className="text-sm font-medium text-gray-700">
             Facturacion
           </legend>
@@ -147,6 +144,7 @@ export const CheckoutPersonal = ({
             ))}
           </div>
         </fieldset>
+        */}
       </div>
     </div>
   );
