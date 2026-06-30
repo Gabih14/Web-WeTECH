@@ -96,8 +96,12 @@ export const fetchProducts = async (): Promise<Product[]> => {
     const groupedProducts: { [key: string]: Product } = {};
 
     rawProducts.forEach((item: any) => {
+      const isFilament = isFilamentGroup(item.grupo);
+      const normalizedGroup = isFilament ? FILAMENT_GROUP : item.grupo;
+
       // Ignorar productos cuya descripción termina en "mm" (diámetros, etc)
       if (
+        isFilament &&
         String(item.descripcion || "")
           .trim()
           .toLowerCase()
@@ -111,9 +115,6 @@ export const fetchProducts = async (): Promise<Product[]> => {
       /* if (!desc.startsWith("Grilon3")) {
         return;
       } */
-
-      const isFilament = isFilamentGroup(item.grupo);
-      const normalizedGroup = isFilament ? FILAMENT_GROUP : item.grupo;
 
       // Ignorar ítems filamentos cuyo id no cumpla el patrón con 3 guiones: XXXX-XXXX-XXXX-XXXX
       const id: string = String(item.id || "");
@@ -426,3 +427,4 @@ export const fetchProducts = async (): Promise<Product[]> => {
     );
   }
 };
+
