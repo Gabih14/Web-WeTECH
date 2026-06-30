@@ -1,6 +1,7 @@
 import { apiFetch } from "../services/api";
 import { Colors, Product } from "../types";
 import { shouldExcludeFamily } from "../data/excludedFamilies";
+import sparePartsFallbackImage from "../assets/pngtree-no-image-vector-illustration-isolated-png-image_1694547.jpg";
 
 const getSalePriceFromList = (
   item: any,
@@ -72,6 +73,7 @@ const fetchColors = async (): Promise<Colors[]> => {
 export const fetchProducts = async (): Promise<Product[]> => {
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
   const FILAMENT_GROUP = "FILAMENTO 3D";
+  const SPARE_PARTS_GROUP = "REPUESTOS & ACCESORIOS";
   const isFilamentGroup = (group: string) => {
     const upper = group?.toUpperCase();
     return upper === FILAMENT_GROUP || upper === "FILAMENTOS"; // aceptar legacy
@@ -98,6 +100,9 @@ export const fetchProducts = async (): Promise<Product[]> => {
     rawProducts.forEach((item: any) => {
       const isFilament = isFilamentGroup(item.grupo);
       const normalizedGroup = isFilament ? FILAMENT_GROUP : item.grupo;
+      const isSparePart =
+        typeof normalizedGroup === "string" &&
+        normalizedGroup.trim().toUpperCase() === SPARE_PARTS_GROUP;
 
       // Ignorar productos cuya descripción termina en "mm" (diámetros, etc)
       if (
@@ -181,8 +186,12 @@ export const fetchProducts = async (): Promise<Product[]> => {
       if (item.grupo?.toUpperCase() === "IMPRESORAS 3D") {
         return; // Salir de esta iteración
       }
+      const rawItemImageUrl =
+        typeof item.fotoUrl === "string" && item.fotoUrl.trim()
+          ? item.fotoUrl.trim()
+          : null;
       const itemImageUrl =
-        typeof item.fotoUrl === "string" ? item.fotoUrl : null;
+        rawItemImageUrl ?? (isSparePart ? sparePartsFallbackImage : null);
 
       // Ignorar productos sin fotoUrl
       if (!itemImageUrl || itemImageUrl.trim() === "") {
@@ -427,4 +436,5 @@ export const fetchProducts = async (): Promise<Product[]> => {
     );
   }
 };
+
 
