@@ -160,12 +160,12 @@ export const Footer = () => {
 
               <li>
                 <a
-                  href="/products?category=repuestos"
+                  href="/products?category=REPUESTOS%20%26%20ACCESORIOS"
                   title=""
                   className="flex text-base text-black transition-all duration-200 hover:text-blue-600 focus:text-blue-600"
                 >
                   {" "}
-                  Repuestos{" "}
+                  Repuestos y Accesorios{" "}
                 </a>
               </li>
             </ul>

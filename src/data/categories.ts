@@ -9,13 +9,13 @@ export const categories: Category[] = [
       { name: "Técnicos", id: "tecnicos" },
     ], */
   },
- /*  {
+  /*  {
     name: "Impresoras 3D",
     id: "IMPRESORAS 3D",
     
-  },
-  {
-    name: "Repuestos",
-    id: "REPUESTOS & ACCESORIOS",
   }, */
+  {
+    name: "Repuestos y Accesorios",
+    id: "REPUESTOS & ACCESORIOS",
+  },
 ];
