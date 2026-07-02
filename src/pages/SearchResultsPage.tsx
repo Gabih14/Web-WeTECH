@@ -20,9 +20,7 @@ export default function SearchResultsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  // TODO: Cambiar a null cuando se agreguen impresoras y repuestos a la tienda
-  // Por ahora filtramos solo por FILAMENTO 3D por defecto
-  const [selectedCategory, setSelectedCategory] = useState<string | null>("FILAMENTO 3D");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 

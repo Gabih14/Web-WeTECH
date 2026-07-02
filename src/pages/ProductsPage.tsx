@@ -21,6 +21,7 @@ interface BrandFilterProps {
 }
 
 const normalizeBrand = (brand: string) => brand.trim().toUpperCase();
+const SPARE_PARTS_CATEGORY = "REPUESTOS & ACCESORIOS";
 
 function BrandFilter({
   brands,
@@ -240,6 +241,10 @@ export function ProductsPage() {
     const brandMap = new Map<string, string>();
 
     products.filter(matchesSelectedCategory).forEach((product) => {
+      if (product.category?.trim().toUpperCase() === SPARE_PARTS_CATEGORY) {
+        return;
+      }
+
       if (!product.brand?.trim()) {
         return;
       }

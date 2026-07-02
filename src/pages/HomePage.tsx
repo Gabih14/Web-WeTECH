@@ -29,13 +29,13 @@ const categories = [
     locked: true,
   },
   {
-    id: "REPUESTOS+%26+ACCESORIOS",
-    name: "Repuestos",
+    id: "REPUESTOS & ACCESORIOS",
+    name: "Repuestos y Accesorios",
     description:
       "Todo lo que necesitas para mantener tu impresora funcionando perfectamente.",
     icon: Wrench,
     image: repuestoCategoria,
-    locked: true,
+    locked: false,
   },
 ];
 
@@ -248,7 +248,7 @@ export function HomePage() {
           return (
             <Link
               key={category.id}
-              to={`/products?category=${category.id}`}
+              to={`/products?category=${encodeURIComponent(category.id)}`}
               className="group relative overflow-hidden rounded-lg shadow-lg hover:shadow-xl transition-shadow flex-1"
             >
               <div className="absolute inset-0">
