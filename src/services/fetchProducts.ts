@@ -3,6 +3,8 @@ import { Colors, Product } from "../types";
 import { shouldExcludeFamily } from "../data/excludedFamilies";
 import sparePartsFallbackImage from "../assets/pngtree-no-image-vector-illustration-isolated-png-image_1694547.jpg";
 
+const MINIMUM_PRODUCT_PRICE = 100;
+
 const getSalePriceFromList = (
   item: any,
   listName: string
@@ -162,11 +164,11 @@ export const fetchProducts = async (): Promise<Product[]> => {
         return; // Salir de esta iteración
       }
 
-      // Ignorar ítems con precio 0 o menor
+      // Ignorar ítems con precio menor al mínimo publicable
       const price = getDefaultSalePrice(item);
       const invoicePrice = getInvoiceSalePrice(item, price);
 
-      if (price <= 0) {
+      if (price < MINIMUM_PRODUCT_PRICE) {
         return; // Salir de esta iteración
       }
 
