@@ -80,6 +80,13 @@
       align-items: flex-start;
     }
 
+    .reviews-carousel-shell .reviews-carousel,
+    .reviews-carousel-shell .slick-slider,
+    .reviews-carousel-shell .slick-list,
+    .reviews-carousel-shell .slick-slide > div {
+      width: 100% !important;
+    }
+
     .reviews-carousel-shell .slick-slide,
     .reviews-carousel-shell .slick-slide > div,
     .reviews-carousel-slide,
@@ -89,12 +96,26 @@
 
     .reviews-carousel-slide {
       padding: 0;
-      width: 100%;
+      width: 100% !important;
     }
 
     .reviews-card {
       min-height: 0;
       width: 100%;
+    }
+  }
+
+  @media (min-width: 641px) and (max-width: 900px) {
+    .reviews-carousel-shell {
+      padding: 0 2rem;
+    }
+
+    .reviews-carousel-button-left {
+      left: 0;
+    }
+
+    .reviews-carousel-button-right {
+      right: 0;
     }
   }
 }
