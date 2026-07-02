@@ -50,6 +50,10 @@
     overflow-wrap: anywhere;
   }
 
+  .reviews-card * {
+    max-width: 100%;
+  }
+
   .reviews-carousel-button {
     z-index: 2;
   }
@@ -64,16 +68,33 @@
 
   @media (max-width: 640px) {
     .reviews-carousel-shell {
-      padding: 0 0.25rem;
-      overflow: visible;
+      padding: 0;
+      overflow: hidden;
     }
 
     .reviews-carousel-button {
       display: none;
     }
 
+    .reviews-carousel-shell .slick-track {
+      align-items: flex-start;
+    }
+
+    .reviews-carousel-shell .slick-slide,
+    .reviews-carousel-shell .slick-slide > div,
+    .reviews-carousel-slide,
+    .reviews-card {
+      height: auto;
+    }
+
     .reviews-carousel-slide {
       padding: 0;
+      width: 100%;
+    }
+
+    .reviews-card {
+      min-height: 0;
+      width: 100%;
     }
   }
 }
