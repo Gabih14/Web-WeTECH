@@ -415,7 +415,9 @@ export const fetchProducts = async (): Promise<Product[]> => {
         product.image = product.images[0];
       }
     });
+    if (import.meta.env.DEV) {
     console.log("Productos transformados:", transformedProducts);
+    }
     return transformedProducts;
   } catch (error: any) {
     console.error("Error al obtener los productos:", error.message);
