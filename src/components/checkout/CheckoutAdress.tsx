@@ -364,6 +364,7 @@ export const CheckoutAdress = ({
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
   const BEARER_TOKEN = import.meta.env.VITE_API_BEARER_TOKEN;
   const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  const hasLoggedMissingGoogleMapsApiKeyRef = useRef(false);
   const mapQuery = encodeURIComponent(
     pendingResolvedAddress ||
       confirmedAddress ||
@@ -399,6 +400,13 @@ export const CheckoutAdress = ({
 
   const renderMap = (title: string, heightClass = "h-64") => {
     if (!GOOGLE_MAPS_API_KEY) {
+      if (!hasLoggedMissingGoogleMapsApiKeyRef.current) {
+        console.warn(
+          "CheckoutAdress: VITE_GOOGLE_MAPS_API_KEY no esta configurada. Se usa iframe de Google Maps sin selector interactivo."
+        );
+        hasLoggedMissingGoogleMapsApiKeyRef.current = true;
+      }
+
       return (
         <iframe
           title={title}
