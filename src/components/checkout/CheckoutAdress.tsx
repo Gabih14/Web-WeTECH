@@ -253,6 +253,11 @@ const GoogleMapPicker = ({
         geocoderRef.current = new google.maps.Geocoder();
         geocoderRef.current.geocode({ address }, (results, status) => {
           if (!isMounted || !containerRef.current || status !== "OK" || !results?.[0]) {
+            console.error("GoogleMapPicker: no se pudo geocodificar la direccion.", {
+              address,
+              status,
+              results,
+            });
             setLoadError("No se pudo ubicar esta direccion en el mapa.");
             return;
           }
@@ -294,7 +299,10 @@ const GoogleMapPicker = ({
         });
       })
       .catch((error) => {
-        console.error(error);
+        console.error("GoogleMapPicker: no se pudo cargar Google Maps.", {
+          address,
+          error,
+        });
         if (isMounted) setLoadError("No se pudo cargar el mapa interactivo.");
       });
 
