@@ -1,5 +1,5 @@
 import { MapPin, Store, Truck, AlertCircle, X, CheckCircle } from "lucide-react"; //MapPin,
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ShippingInfoModal } from "./ShippingInfoModal";
 import { apiFetch } from "../../services/api";
 
@@ -41,6 +41,89 @@ type DistanceResponse = {
   needsMoreSpecificAddress?: boolean;
 };
 
+type MapSelection = {
+  address: string;
+  distanceKm: number;
+};
+
+type GoogleMapsApi = {
+  maps: {
+    Map: new (
+      element: HTMLElement,
+      options: {
+        center: { lat: number; lng: number };
+        zoom: number;
+        mapTypeControl?: boolean;
+        streetViewControl?: boolean;
+        fullscreenControl?: boolean;
+      }
+    ) => GoogleMap;
+    Marker: new (
+      options: {
+        map: GoogleMap;
+        position: { lat: number; lng: number };
+        draggable?: boolean;
+      }
+    ) => GoogleMarker;
+    Geocoder: new () => GoogleGeocoder;
+    DistanceMatrixService: new () => GoogleDistanceMatrixService;
+    DistanceMatrixStatus: { OK: string };
+    DistanceMatrixElementStatus: { OK: string };
+    TravelMode: { DRIVING: string };
+  };
+};
+
+type GoogleMap = {
+  setCenter: (position: { lat: number; lng: number }) => void;
+};
+
+type GoogleMarker = {
+  setPosition: (position: { lat: number; lng: number }) => void;
+  addListener: (eventName: string, callback: () => void) => void;
+  getPosition: () => { lat: () => number; lng: () => number } | null;
+};
+
+type GoogleGeocoder = {
+  geocode: (
+    request: { address?: string; location?: { lat: number; lng: number } },
+    callback: (
+      results: Array<{
+        formatted_address: string;
+        geometry: { location: { lat: () => number; lng: () => number } };
+      }> | null,
+      status: string
+    ) => void
+  ) => void;
+};
+
+type GoogleDistanceMatrixService = {
+  getDistanceMatrix: (
+    request: {
+      origins: string[];
+      destinations: Array<{ lat: number; lng: number }>;
+      travelMode: string;
+    },
+    callback: (
+      response: {
+        rows: Array<{
+          elements: Array<{
+            status: string;
+            distance?: { value: number };
+          }>;
+        }>;
+      } | null,
+      status: string
+    ) => void
+  ) => void;
+};
+
+declare global {
+  interface Window {
+    google?: GoogleMapsApi;
+    __checkoutGoogleMapsPromise?: Promise<GoogleMapsApi>;
+  }
+}
+
 const getShippingErrorMessage = (data: DistanceResponse) => {
   const parts = [data.error, data.detail].filter(Boolean);
   return parts.length
@@ -48,8 +131,189 @@ const getShippingErrorMessage = (data: DistanceResponse) => {
     : "No se pudo calcular la distancia. Verifica la dirección.";
 };
 
-// Primera version del mapa pausada. Cambiar a true para reactivarla.
-const ENABLE_SHIPPING_MAP_PREVIEW = false;
+const ENABLE_SHIPPING_MAP_PREVIEW = true;
+const STORE_ADDRESS = "Santiago de Liniers 670, Godoy Cruz, Mendoza, Argentina";
+
+const loadGoogleMaps = (apiKey: string): Promise<GoogleMapsApi> => {
+  if (window.google?.maps) {
+    return Promise.resolve(window.google);
+  }
+
+  if (window.__checkoutGoogleMapsPromise) {
+    return window.__checkoutGoogleMapsPromise;
+  }
+
+  window.__checkoutGoogleMapsPromise = new Promise((resolve, reject) => {
+    const existingScript = document.querySelector<HTMLScriptElement>(
+      'script[data-checkout-google-maps="true"]'
+    );
+
+    if (existingScript) {
+      existingScript.addEventListener("load", () => {
+        if (window.google?.maps) resolve(window.google);
+        else reject(new Error("Google Maps no esta disponible."));
+      });
+      existingScript.addEventListener("error", () => reject(new Error("No se pudo cargar Google Maps.")));
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}`;
+    script.async = true;
+    script.defer = true;
+    script.dataset.checkoutGoogleMaps = "true";
+    script.onload = () => {
+      if (window.google?.maps) resolve(window.google);
+      else reject(new Error("Google Maps no esta disponible."));
+    };
+    script.onerror = () => reject(new Error("No se pudo cargar Google Maps."));
+    document.head.appendChild(script);
+  });
+
+  return window.__checkoutGoogleMapsPromise;
+};
+
+const getDistanceFromStore = (
+  google: GoogleMapsApi,
+  destination: { lat: number; lng: number }
+) =>
+  new Promise<number>((resolve, reject) => {
+    const distanceService = new google.maps.DistanceMatrixService();
+
+    distanceService.getDistanceMatrix(
+      {
+        origins: [STORE_ADDRESS],
+        destinations: [destination],
+        travelMode: google.maps.TravelMode.DRIVING,
+      },
+      (response, status) => {
+        const element = response?.rows?.[0]?.elements?.[0];
+
+        if (
+          status !== google.maps.DistanceMatrixStatus.OK ||
+          !element ||
+          element.status !== google.maps.DistanceMatrixElementStatus.OK ||
+          !element.distance
+        ) {
+          reject(new Error("No se pudo calcular la distancia desde el mapa."));
+          return;
+        }
+
+        resolve(element.distance.value / 1000);
+      }
+    );
+  });
+
+const GoogleMapPicker = ({
+  address,
+  apiKey,
+  onLocationChange,
+}: {
+  address: string;
+  apiKey: string;
+  onLocationChange: (selection: MapSelection) => void;
+}) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<GoogleMap | null>(null);
+  const markerRef = useRef<GoogleMarker | null>(null);
+  const geocoderRef = useRef<GoogleGeocoder | null>(null);
+  const [loadError, setLoadError] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const updateSelection = async (
+      google: GoogleMapsApi,
+      position: { lat: number; lng: number }
+    ) => {
+      if (!geocoderRef.current) return;
+
+      geocoderRef.current.geocode({ location: position }, async (results, status) => {
+        if (!isMounted || status !== "OK" || !results?.[0]) return;
+
+        try {
+          const distanceKm = await getDistanceFromStore(google, position);
+          if (!isMounted) return;
+
+          onLocationChange({
+            address: results[0].formatted_address,
+            distanceKm,
+          });
+        } catch (error) {
+          console.error(error);
+          if (isMounted) setLoadError("No se pudo recalcular la distancia desde el mapa.");
+        }
+      });
+    };
+
+    loadGoogleMaps(apiKey)
+      .then((google) => {
+        if (!isMounted || !containerRef.current) return;
+
+        geocoderRef.current = new google.maps.Geocoder();
+        geocoderRef.current.geocode({ address }, (results, status) => {
+          if (!isMounted || !containerRef.current || status !== "OK" || !results?.[0]) {
+            setLoadError("No se pudo ubicar esta direccion en el mapa.");
+            return;
+          }
+
+          const location = results[0].geometry.location;
+          const position = { lat: location.lat(), lng: location.lng() };
+
+          if (!mapRef.current) {
+            mapRef.current = new google.maps.Map(containerRef.current, {
+              center: position,
+              zoom: 16,
+              mapTypeControl: false,
+              streetViewControl: false,
+              fullscreenControl: false,
+            });
+          } else {
+            mapRef.current.setCenter(position);
+          }
+
+          if (!markerRef.current) {
+            markerRef.current = new google.maps.Marker({
+              map: mapRef.current,
+              position,
+              draggable: true,
+            });
+
+            markerRef.current.addListener("dragend", () => {
+              const markerPosition = markerRef.current?.getPosition();
+              if (!markerPosition) return;
+
+              updateSelection(google, {
+                lat: markerPosition.lat(),
+                lng: markerPosition.lng(),
+              });
+            });
+          } else {
+            markerRef.current.setPosition(position);
+          }
+        });
+      })
+      .catch((error) => {
+        console.error(error);
+        if (isMounted) setLoadError("No se pudo cargar el mapa interactivo.");
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [address, apiKey, onLocationChange]);
+
+  return (
+    <>
+      <div ref={containerRef} className="h-64 w-full" />
+      {loadError && (
+        <p className="border-t border-yellow-100 bg-yellow-50 px-3 py-2 text-xs text-yellow-800">
+          {loadError}
+        </p>
+      )}
+    </>
+  );
+};
 
 export const CheckoutAdress = ({
   formData,
@@ -68,6 +332,7 @@ export const CheckoutAdress = ({
   const [shippingError, setShippingError] = useState<{ message: string; retryable: boolean } | null>(null);
   const [pendingResolvedAddress, setPendingResolvedAddress] = useState<string | null>(null);
   const [pendingDistance, setPendingDistance] = useState<number | null>(null);
+  const streetInputRef = useRef<HTMLInputElement>(null);
   const isShippingFormComplete = Boolean(
     formData.street &&
     formData.number &&
@@ -90,6 +355,7 @@ export const CheckoutAdress = ({
   const [calculatingShipping, setCalculatingShipping] = useState(false);
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
   const BEARER_TOKEN = import.meta.env.VITE_API_BEARER_TOKEN;
+  const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   const mapQuery = encodeURIComponent(
     pendingResolvedAddress ||
       confirmedAddress ||
@@ -103,6 +369,46 @@ export const CheckoutAdress = ({
     setPendingDistance(null);
     setConfirmedAddress(null);
     setShippingData(null);
+  };
+
+  const editAddressFromMap = () => {
+    resetConfirmedShipping();
+    window.requestAnimationFrame(() => {
+      streetInputRef.current?.focus();
+      streetInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  };
+
+  const handleMapSelection = useCallback(
+    (selection: MapSelection) => {
+      setConfirmedAddress(null);
+      setShippingData(null);
+      setPendingResolvedAddress(selection.address);
+      setPendingDistance(selection.distanceKm);
+    },
+    [setConfirmedAddress, setShippingData]
+  );
+
+  const renderMap = (title: string, heightClass = "h-64") => {
+    if (!GOOGLE_MAPS_API_KEY) {
+      return (
+        <iframe
+          title={title}
+          src={mapUrl}
+          className={`${heightClass} w-full`}
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+        />
+      );
+    }
+
+    return (
+      <GoogleMapPicker
+        address={decodeURIComponent(mapQuery)}
+        apiKey={GOOGLE_MAPS_API_KEY}
+        onLocationChange={handleMapSelection}
+      />
+    );
   };
 
   const handleAddressInputChange = (
@@ -403,6 +709,7 @@ export const CheckoutAdress = ({
                   Calle
                 </label>
                 <input
+                  ref={streetInputRef}
                   type="text"
                   id="street"
                   name="street"
@@ -487,6 +794,38 @@ export const CheckoutAdress = ({
                 placeholder="Ej: Casa con portón azul, timbre 2B"
               />
             </div>
+            {ENABLE_SHIPPING_MAP_PREVIEW &&
+              deliveryMethod === "shipping" &&
+              isShippingFormComplete &&
+              !pendingResolvedAddress &&
+              !confirmedAddress && (
+                <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+                  {renderMap("Vista previa de ubicacion en Google Maps", "h-56")}
+                  {GOOGLE_MAPS_API_KEY && (
+                    <p className="border-t border-gray-200 px-3 py-2 text-xs text-gray-600">
+                      Arrastra el pin para ajustar la ubicacion exacta.
+                    </p>
+                  )}
+                  <div className="flex flex-col gap-2 border-t border-gray-200 p-3 sm:flex-row">
+                    <a
+                      href={externalMapUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-yellow-500 bg-white px-4 py-2 text-sm font-semibold text-yellow-800 transition hover:bg-yellow-100"
+                    >
+                      <MapPin className="h-4 w-4" />
+                      Ver mapa ampliado
+                    </a>
+                    <button
+                      type="button"
+                      onClick={editAddressFromMap}
+                      className="inline-flex flex-1 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                    >
+                      Modificar ubicacion
+                    </button>
+                  </div>
+                </div>
+              )}
             {deliveryMethod === "shipping" && (
               <>
             <div className="flex items-center space-x-2">
@@ -573,13 +912,30 @@ export const CheckoutAdress = ({
                 <div>{confirmedAddress}</div>
                 {ENABLE_SHIPPING_MAP_PREVIEW && (
                 <div className="mt-3 overflow-hidden rounded-lg border border-green-200 bg-white">
-                  <iframe
-                    title="Ubicacion confirmada en Google Maps"
-                    src={mapUrl}
-                    className="h-56 w-full"
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                  />
+                  {renderMap("Ubicacion confirmada en Google Maps", "h-56")}
+                  {GOOGLE_MAPS_API_KEY && (
+                    <p className="border-t border-green-200 px-3 py-2 text-xs text-green-800">
+                      Arrastra el pin para cambiar la ubicacion y volver a confirmar el envio.
+                    </p>
+                  )}
+                  <div className="flex flex-col gap-2 border-t border-green-200 p-3 sm:flex-row">
+                    <a
+                      href={externalMapUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-green-600 bg-white px-4 py-2 font-semibold text-green-800 transition hover:bg-green-50"
+                    >
+                      <MapPin className="h-4 w-4" />
+                      Ver mapa ampliado
+                    </a>
+                    <button
+                      type="button"
+                      onClick={editAddressFromMap}
+                      className="inline-flex flex-1 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 font-semibold text-gray-700 transition hover:bg-gray-50"
+                    >
+                      Modificar ubicacion
+                    </button>
+                  </div>
                 </div>
                 )}
               </div>
@@ -599,13 +955,12 @@ export const CheckoutAdress = ({
                   </div>
                 </div>
                 <div className="mt-3 overflow-hidden rounded-lg border border-yellow-200 bg-white">
-                  <iframe
-                    title="Ubicacion detectada en Google Maps"
-                    src={mapUrl}
-                    className="h-64 w-full"
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                  />
+                  {renderMap("Ubicacion detectada en Google Maps")}
+                  {GOOGLE_MAPS_API_KEY && (
+                    <p className="border-t border-yellow-200 px-3 py-2 text-xs text-yellow-900">
+                      Arrastra el pin si la ubicacion detectada no es exacta.
+                    </p>
+                  )}
                 </div>
                 <div className="mt-3 flex flex-col gap-2 sm:flex-row">
                   <button
@@ -628,10 +983,10 @@ export const CheckoutAdress = ({
                   </a>
                   <button
                     type="button"
-                    onClick={resetConfirmedShipping}
+                    onClick={editAddressFromMap}
                     className="inline-flex flex-1 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 font-semibold text-gray-700 transition hover:bg-gray-50"
                   >
-                    Editar direccion
+                    Modificar ubicacion
                   </button>
                 </div>
               </div>
