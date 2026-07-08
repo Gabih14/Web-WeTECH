@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import { Check, ChevronDown, ShoppingCart, Sparkles } from "lucide-react";
+import { Bell, Check, ChevronDown, ShoppingCart, Sparkles } from "lucide-react";
 import Isologo from "../assets/Isologo Fondo Negro SVG.svg";
 import { useCart } from "../context/CartContext";
 import { fetchProducts } from "../services/fetchProducts";
@@ -22,9 +22,10 @@ import {
   getPurchaseState,
   getVariantStock,
 } from "../utils/cartPurchase";
-import { getVariantPrice } from "../utils/pricing";
+import { getVariantItemId, getVariantPrice } from "../utils/pricing";
 import { formatPrice } from "../utils/money";
 import { ColorSwatch } from "../components/products/ColorSwatch";
+import { StockWaitRequestModal } from "../components/products/StockWaitRequestModal";
 
 const QUANTITY_OPTIONS = [1, 5, 10, 50];
 
@@ -38,6 +39,7 @@ export function ProductPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [isColorMenuOpen, setIsColorMenuOpen] = useState(false);
+  const [isStockWaitOpen, setIsStockWaitOpen] = useState(false);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedWeight, setSelectedWeight] = useState<number | null>(null);
   const [quantity, setQuantity] = useState(1);
@@ -205,6 +207,8 @@ export function ProductPage() {
     selectedColor,
     selectedWeight
   );
+  const selectedItemId = getVariantItemId(product, selectedColor, selectedWeight);
+  const canRequestStockNotice = availableStock === 0 && !variantSelectionIncomplete;
 
   const sortedColors = product.colors
     ? [...product.colors].sort((a, b) => {
@@ -511,6 +515,16 @@ export function ProductPage() {
                 </p>
               </div>
 
+              {canRequestStockNotice ? (
+              <button
+                type="button"
+                onClick={() => setIsStockWaitOpen(true)}
+                className="mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-gray-900 bg-gray-900 px-4 py-3 text-center text-sm font-semibold leading-tight text-white shadow-sm transition-all duration-200 hover:bg-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-500 focus-visible:ring-offset-2 active:scale-[0.98] sm:text-base"
+              >
+                <Bell className="h-5 w-5 flex-shrink-0" />
+                <span>Avisarme cuando ingrese</span>
+              </button>
+              ) : (
               <button
                 onClick={handleAddToCart}
                 disabled={isAddDisabled}
@@ -537,6 +551,13 @@ export function ProductPage() {
                   </>
                 )}
               </button>
+              )}
+              <StockWaitRequestModal
+                isOpen={isStockWaitOpen}
+                onClose={() => setIsStockWaitOpen(false)}
+                productName={product.name}
+                productoId={selectedItemId}
+              />
             </div>
           </aside>
         </div>

@@ -18,6 +18,7 @@ export interface Product {
   invoicePrice?: number;
   discountQuantity?: { [quantity: number]: number };
   promotionalPrice?: number;
+  itemId?: string;
   colors?: {
     name: string;
     hex: string;

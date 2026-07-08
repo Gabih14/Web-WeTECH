@@ -4,6 +4,25 @@ import { Coupon } from "../types";
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const BEARER_TOKEN = import.meta.env.VITE_API_BEARER_TOKEN; 
 
+export class ApiError extends Error {
+  status: number;
+
+  constructor(status: number, statusText: string) {
+    super(`Error en la API: ${status} ${statusText}`);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
+export type StockWaitRequestPayload = {
+  producto_id: string;
+  cliente_nombre: string;
+  cliente_id?: string;
+  cliente_tel?: string;
+  cantidad?: number;
+  nota?: string;
+};
+
 type ParsedAddress = {
   calle: string;
   numero: string;
@@ -74,10 +93,39 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
   });
 
   if (!response.ok) {
-    throw new Error(`Error en la API: ${response.status} ${response.statusText}`);
+    throw new ApiError(response.status, response.statusText);
   }
 
   return response.json();
+}
+
+async function publicApiFetch(endpoint: string, options: RequestInit = {}) {
+  const headers = {
+    ...options.headers,
+    "Content-Type": "application/json",
+  };
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new ApiError(response.status, response.statusText);
+  }
+
+  if (response.status === 204) {
+    return null;
+  }
+
+  return response.json();
+}
+
+export async function createStockWaitRequest(payload: StockWaitRequestPayload) {
+  return publicApiFetch("/espera", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }
 
 export async function fetchClienteByCuit(cuit: string) {

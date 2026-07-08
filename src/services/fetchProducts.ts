@@ -230,6 +230,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
           subcategory: item.subgrupo ? item.subgrupo.toUpperCase() : undefined,
           price,
           invoicePrice,
+          itemId: item.id,
           ...(isFilament && { colors: [] }), // Solo agregar `colors` si es filamento
           ...(!isFilament && { stock: 0 }), // Solo agregar `stock` si no es filamento
         };

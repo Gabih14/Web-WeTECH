@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Product } from "../../types";
-import { ChevronDown, ShoppingCart, Check, Zap } from "lucide-react";
+import { Bell, ChevronDown, ShoppingCart, Check, Zap } from "lucide-react";
 import { useCart } from "../../context/CartContext";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -18,9 +18,10 @@ import {
   getPurchaseState,
   getVariantStock,
 } from "../../utils/cartPurchase";
-import { getVariantPrice } from "../../utils/pricing";
+import { getVariantItemId, getVariantPrice } from "../../utils/pricing";
 import { formatPrice } from "../../utils/money";
 import { ColorSwatch } from "./ColorSwatch";
+import { StockWaitRequestModal } from "./StockWaitRequestModal";
 
 interface ProductCardProps {
   product: Product;
@@ -81,6 +82,7 @@ export function ProductCard({
   );
   const [quantity, setQuantity] = useState(1);
   const [isColorMenuOpen, setIsColorMenuOpen] = useState(false);
+  const [isStockWaitOpen, setIsStockWaitOpen] = useState(false);
   const [currentPrice, setCurrentPrice] = useState<number | undefined>(product.price);
   const [currentPromotionalPrice, setCurrentPromotionalPrice] = useState<number | undefined>(
     isFilament ? product.promotionalPrice : undefined
@@ -200,6 +202,11 @@ export function ProductCard({
     ? selectedColorData?.images?.[0]
     : undefined;
   const displayImage = selectedColorImage || product.image;
+  const selectedItemId = getVariantItemId(product, selectedColor, selectedWeight);
+  const canRequestStockNotice =
+    availableStock === 0 &&
+    (!product.colors || !!selectedColor) &&
+    (!product.weights || selectedWeight !== null);
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -372,6 +379,17 @@ export function ProductCard({
             </div>
           )}
 
+          {canRequestStockNotice ? (
+            <button
+              type="button"
+              onClick={() => setIsStockWaitOpen(true)}
+              className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-gray-900 bg-gray-900 px-3 py-2 text-center text-sm font-semibold leading-tight text-white shadow-sm transition-all duration-200 hover:bg-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-500 focus-visible:ring-offset-2 active:scale-[0.97]"
+            >
+              <Bell className="h-4 w-4 flex-shrink-0" />
+              <span className="sm:hidden">Avisarme</span>
+              <span className="hidden sm:inline">Avisarme cuando ingrese</span>
+            </button>
+          ) : (
           <button
             onClick={handleAddToCart}
             disabled={!canAddToCart || isOverStock}
@@ -397,8 +415,15 @@ export function ProductCard({
               hasStockInOtherColor ? "Sin stock en este color" : "Sin stock"
             )}
           </button>
+          )}
         </div>
       </div>
+      <StockWaitRequestModal
+        isOpen={isStockWaitOpen}
+        onClose={() => setIsStockWaitOpen(false)}
+        productName={product.name}
+        productoId={selectedItemId}
+      />
     </article>
   );
 }
