@@ -81,7 +81,7 @@ export function getVariantItemId(
   const key = weightKey(weight);
   const colorVariant = getColorVariant(product, color);
 
-  return colorVariant?.itemIds?.[key] ?? colorVariant?.itemId ?? product.id;
+  return colorVariant?.itemIds?.[key] ?? colorVariant?.itemId ?? product.itemId ?? product.id;
 }
 
 export function getCartItemPrice(item: CartItem): number | undefined {
