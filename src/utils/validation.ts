@@ -24,3 +24,19 @@ export const isValidCuitCuil = (value: string): boolean => {
 
   return Number(cuit[10]) === expectedDigit;
 };
+
+export const normalizePhoneDigits = (value: string): string =>
+  value.trim().replace(/\D/g, "");
+
+export const stripArgentinaMobilePrefix = (value: string): string => {
+  const phone = normalizePhoneDigits(value);
+
+  return phone.startsWith("549") ? phone.slice(3) : "";
+};
+
+export const formatArgentinaMobileForApi = (value: string): string => {
+  const phone = normalizePhoneDigits(value);
+  const phoneWithoutPrefix = phone.startsWith("549") ? phone.slice(3) : phone;
+
+  return phoneWithoutPrefix ? `549${phoneWithoutPrefix}` : "";
+};
