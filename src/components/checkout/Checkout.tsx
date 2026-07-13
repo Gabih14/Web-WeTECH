@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState, useEffect } from "react";
+﻿import React, { useCallback, useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Tag, AlertCircle, X, ChevronRight, ChevronLeft, Lock } from "lucide-react";
 import { useCart } from "../../context/CartContext";
@@ -950,6 +950,22 @@ export default function Checkout() {
                   <p className="text-xs sm:text-sm text-gray-600 mt-2 leading-relaxed">
                     Descuentos por cantidad en productos seleccionados
                   </p>
+                  {paymentMethod === "transfer" && (
+                    <div className="mt-3 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex gap-2 sm:gap-3">
+                        <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                        <div className="text-xs sm:text-sm text-blue-800 min-w-0">
+                          <p className="font-medium mb-1">Importante:</p>
+                          <ul className="list-disc list-inside space-y-1">
+                            <li>Recibirás los datos bancarios por email</li>
+                            <li>El pedido se procesará al confirmar el pago</li>
+                            <li>Tiempo de acreditación: 24-48 horas hábiles</li>
+                            <li>Descuentos aplicables: 15% (1+ unidad), 17% (5+), 20% (10+), 22% (50+)</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </label>
 
@@ -970,12 +986,12 @@ export default function Checkout() {
                   className="mt-1 h-4 w-4 text-yellow-600 focus:ring-yellow-500 flex-shrink-0"
                 />
                 <div className="ml-3 flex-1 min-w-0">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                    <span className="font-medium text-gray-900 text-sm sm:text-base">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm sm:text-base font-medium text-gray-900">
                       Pago en línea
                     </span>
-                    <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium w-fit">
-                      Inmediato
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                      Precio de lista
                     </span>
                   </div>
                   <p className="text-xs sm:text-sm text-gray-500 mt-1 leading-relaxed">
@@ -985,23 +1001,6 @@ export default function Checkout() {
               </label>
             </div>
 
-            {/* Mensaje informativo para transferencia (solo si estuviera habilitada) */}
-            {paymentMethod === "transfer" && (
-              <div className="mt-4 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex gap-2 sm:gap-3">
-                  <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                  <div className="text-xs sm:text-sm text-blue-800 min-w-0">
-                    <p className="font-medium mb-1">Importante:</p>
-                    <ul className="list-disc list-inside space-y-1">
-                      <li>Recibirás los datos bancarios por email</li>
-                      <li>El pedido se procesará al confirmar el pago</li>
-                      <li>Tiempo de acreditación: 24-48 horas hábiles</li>
-                      <li>Descuentos aplicables: 15% (1+ unidad), 17% (5+), 20% (10+), 22% (50+)</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         );
       case 3:
@@ -1714,3 +1713,5 @@ export default function Checkout() {
     </div>
   );
 }
+
+
