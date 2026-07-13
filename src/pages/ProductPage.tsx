@@ -356,7 +356,7 @@ export function ProductPage() {
                           selectedWeight ?? undefined,
                           effectiveDiscountQuantity
                         )}
-                        
+
                       </span>
                     </div>
 
@@ -516,41 +516,41 @@ export function ProductPage() {
               </div>
 
               {canRequestStockNotice ? (
-              <button
-                type="button"
-                onClick={() => setIsStockWaitOpen(true)}
-                className="mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-gray-900 bg-gray-900 px-4 py-3 text-center text-sm font-semibold leading-tight text-white shadow-sm transition-all duration-200 hover:bg-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-500 focus-visible:ring-offset-2 active:scale-[0.98] sm:text-base"
-              >
-                <Bell className="h-5 w-5 flex-shrink-0" />
-                <span>Avisarme cuando ingrese</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setIsStockWaitOpen(true)}
+                  className="mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-gray-900 bg-gray-900 px-4 py-3 text-center text-sm font-semibold leading-tight text-white shadow-sm transition-all duration-200 hover:bg-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-500 focus-visible:ring-offset-2 active:scale-[0.98] sm:text-base"
+                >
+                  <Bell className="h-5 w-5 flex-shrink-0" />
+                  <span>Avisarme cuando ingrese</span>
+                </button>
               ) : (
-              <button
-                onClick={handleAddToCart}
-                disabled={isAddDisabled}
-                className={`mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold text-white transition-all duration-200 active:scale-[0.98] ${justAdded
-                  ? "bg-emerald-500"
-                  : !isAddDisabled
-                    ? "bg-yellow-600 hover:bg-yellow-700"
-                    : "cursor-not-allowed bg-gray-300"
-                  }`}
-              >
-                {justAdded ? (
-                  <>
-                    <Check className="h-5 w-5" />
-                    ¡Agregado!
-                  </>
-                ) : (
-                  <>
-                    <ShoppingCart className="h-5 w-5" />
-                    {isAddDisabled
-                      ? hasStockInOtherColor
-                        ? "Sin stock en este color"
-                        : "Sin stock"
-                      : "Agregar al carrito"}
-                  </>
-                )}
-              </button>
+                <button
+                  onClick={handleAddToCart}
+                  disabled={isAddDisabled}
+                  className={`mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold text-white transition-all duration-200 active:scale-[0.98] ${justAdded
+                    ? "bg-emerald-500"
+                    : !isAddDisabled
+                      ? "bg-yellow-600 hover:bg-yellow-700"
+                      : "cursor-not-allowed bg-gray-300"
+                    }`}
+                >
+                  {justAdded ? (
+                    <>
+                      <Check className="h-5 w-5" />
+                      ¡Agregado!
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingCart className="h-5 w-5" />
+                      {isAddDisabled
+                        ? hasStockInOtherColor
+                          ? "Sin stock en este color"
+                          : "Sin stock"
+                        : "Agregar al carrito"}
+                    </>
+                  )}
+                </button>
               )}
               <StockWaitRequestModal
                 isOpen={isStockWaitOpen}
@@ -562,14 +562,6 @@ export function ProductPage() {
           </aside>
         </div>
 
-        {product.observaciones && (
-          <div className="mt-8 rounded-3xl border border-gray-100 bg-white p-5 shadow-lg shadow-yellow-100/10 sm:p-7">
-            <h2 className="text-lg font-bold text-gray-900">Observaciones</h2>
-            <p className="mt-3 whitespace-pre-line text-sm leading-7 text-gray-600">
-              {product.observaciones}
-            </p>
-          </div>
-        )}
       </div>
     </section>
   );
