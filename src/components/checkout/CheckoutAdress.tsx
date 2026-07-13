@@ -11,6 +11,7 @@ type Props = {
     postalCode: string;
     distance: number;
     observaciones: string;
+    addressWithoutNumber: boolean;
   };
   handleInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   setShippingData: (data: { itemId: string; costoTotal: number } | null) => void;
@@ -133,6 +134,7 @@ const getShippingErrorMessage = (data: DistanceResponse) => {
 
 const ENABLE_SHIPPING_MAP_PREVIEW = true;
 const STORE_ADDRESS = "Santiago de Liniers 670, Godoy Cruz, Mendoza, Argentina";
+const MANUAL_MAP_FALLBACK_POSITION = { lat: -32.9286, lng: -68.8458 };
 
 const loadGoogleMaps = (apiKey: string): Promise<GoogleMapsApi> => {
   if (window.google?.maps) {
@@ -251,19 +253,8 @@ const GoogleMapPicker = ({
         if (!isMounted || !containerRef.current) return;
 
         geocoderRef.current = new google.maps.Geocoder();
-        geocoderRef.current.geocode({ address }, (results, status) => {
-          if (!isMounted || !containerRef.current || status !== "OK" || !results?.[0]) {
-            console.error("GoogleMapPicker: no se pudo geocodificar la direccion.", {
-              address,
-              status,
-              results,
-            });
-            setLoadError("No se pudo ubicar esta direccion en el mapa.");
-            return;
-          }
-
-          const location = results[0].geometry.location;
-          const position = { lat: location.lat(), lng: location.lng() };
+        const initializeMap = (position: { lat: number; lng: number }) => {
+          if (!isMounted || !containerRef.current) return;
 
           if (!mapRef.current) {
             mapRef.current = new google.maps.Map(containerRef.current, {
@@ -296,6 +287,22 @@ const GoogleMapPicker = ({
           } else {
             markerRef.current.setPosition(position);
           }
+        };
+
+        geocoderRef.current.geocode({ address }, (results, status) => {
+          if (!isMounted || status !== "OK" || !results?.[0]) {
+            console.error("GoogleMapPicker: no se pudo geocodificar la direccion.", {
+              address,
+              status,
+              results,
+            });
+            initializeMap(MANUAL_MAP_FALLBACK_POSITION);
+            setLoadError("No se pudo ubicar esta direccion automaticamente. Arrastra el pin hasta tu domicilio.");
+            return;
+          }
+
+          const location = results[0].geometry.location;
+          initializeMap({ lat: location.lat(), lng: location.lng() });
         });
       })
       .catch((error) => {
@@ -340,10 +347,11 @@ export const CheckoutAdress = ({
   const [shippingError, setShippingError] = useState<{ message: string; retryable: boolean } | null>(null);
   const [pendingResolvedAddress, setPendingResolvedAddress] = useState<string | null>(null);
   const [pendingDistance, setPendingDistance] = useState<number | null>(null);
+  const [isManualMapEnabled, setIsManualMapEnabled] = useState(false);
   const streetInputRef = useRef<HTMLInputElement>(null);
   const isShippingFormComplete = Boolean(
     formData.street &&
-    formData.number &&
+    (formData.number || formData.addressWithoutNumber) &&
     formData.city &&
     formData.postalCode
   );
@@ -368,7 +376,7 @@ export const CheckoutAdress = ({
   const mapQuery = encodeURIComponent(
     pendingResolvedAddress ||
       confirmedAddress ||
-      `${formData.street} ${formData.number}, ${formData.city}, Mendoza, Argentina`
+      `${formData.street}${formData.addressWithoutNumber ? "" : ` ${formData.number}`}, ${formData.city}, Mendoza, Argentina`
   );
   const mapUrl = `https://www.google.com/maps?q=${mapQuery}&output=embed`;
   const externalMapUrl = `https://www.google.com/maps/search/?api=1&query=${mapQuery}`;
@@ -376,6 +384,7 @@ export const CheckoutAdress = ({
   const resetConfirmedShipping = () => {
     setPendingResolvedAddress(null);
     setPendingDistance(null);
+    setIsManualMapEnabled(false);
     setConfirmedAddress(null);
     setShippingData(null);
   };
@@ -392,6 +401,7 @@ export const CheckoutAdress = ({
     (selection: MapSelection) => {
       setConfirmedAddress(null);
       setShippingData(null);
+      setIsManualMapEnabled(true);
       setPendingResolvedAddress(selection.address);
       setPendingDistance(selection.distanceKm);
     },
@@ -434,7 +444,7 @@ export const CheckoutAdress = ({
 
     if (
       ENABLE_SHIPPING_MAP_PREVIEW &&
-      ["street", "number", "city", "postalCode"].includes(event.target.name)
+      ["street", "number", "city", "postalCode", "addressWithoutNumber"].includes(event.target.name)
     ) {
       resetConfirmedShipping();
     }
@@ -462,6 +472,7 @@ export const CheckoutAdress = ({
         setShippingData(shippingInfo);
         setPendingResolvedAddress(null);
         setPendingDistance(null);
+        setIsManualMapEnabled(false);
       } else {
         setShippingError({ message: "No se pudo calcular el costo de envÃ­o.", retryable: true });
         setShowShippingErrorModal(true);
@@ -486,7 +497,7 @@ export const CheckoutAdress = ({
     try {
       if (!isShippingFormComplete) {
         setShippingError({
-          message: "Completa calle, numero, ciudad y codigo postal para calcular el envio.",
+          message: "Completa calle, numero o marca sin numero, ciudad y codigo postal para calcular el envio.",
           retryable: true,
         });
         setShowShippingErrorModal(true);
@@ -522,7 +533,9 @@ export const CheckoutAdress = ({
           method: "POST",
           headers: { "Authorization": `Bearer ${BEARER_TOKEN}`,"Content-Type": "application/json" },
           body: JSON.stringify({
-            address: `${formData.street} ${formData.number}`,
+            address: formData.addressWithoutNumber
+              ? formData.street
+              : `${formData.street} ${formData.number}`,
             city: formData.city,
             province: "Mendoza",
             country: "Argentina",
@@ -533,6 +546,7 @@ export const CheckoutAdress = ({
         console.log("Respuesta del backend:", data);
 
         if (!response.ok || data.error || data.detail) {
+          setIsManualMapEnabled(data.needsMoreSpecificAddress ?? true);
           setShippingError({
             message: getShippingErrorMessage(data),
             retryable: data.needsMoreSpecificAddress ?? true,
@@ -571,6 +585,7 @@ export const CheckoutAdress = ({
         }
 
         setConfirmedAddress(data.destinationResolved);
+        setIsManualMapEnabled(false);
 
         if (previewDistanceValue > 20) {
           setShippingError({ message: "La distancia supera los 20 km. El envío no está permitido.", retryable: false });
@@ -588,11 +603,13 @@ export const CheckoutAdress = ({
         }
       } else {
         setShippingError({ message: getShippingErrorMessage(data), retryable: true });
+        setIsManualMapEnabled(true);
         setShowShippingErrorModal(true);
       }
     } catch (error) {
       console.error("Error al obtener la distancia:", error);
       setShippingError({ message: "Hubo un error al calcular la distancia. Inténtalo de nuevo.", retryable: true });
+      setIsManualMapEnabled(false);
       setShowShippingErrorModal(true);
     } finally {
       setCalculatingShipping(false);
@@ -606,6 +623,7 @@ export const CheckoutAdress = ({
       setShippingData(null);
       setPendingResolvedAddress(null);
       setPendingDistance(null);
+      setIsManualMapEnabled(false);
     }
     // Si es shipping, el costo se calcula con fetchDistance
   };
@@ -749,10 +767,21 @@ export const CheckoutAdress = ({
                   name="number"
                   value={formData.number}
                   onChange={handleAddressInputChange}
-                  required
-                  className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+                  required={!formData.addressWithoutNumber}
+                  disabled={formData.addressWithoutNumber}
+                  className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
                   placeholder="Ej: 670"
                 />
+                <label className="mt-2 flex items-center gap-2 text-sm text-gray-700">
+                  <input
+                    type="checkbox"
+                    name="addressWithoutNumber"
+                    checked={formData.addressWithoutNumber}
+                    onChange={handleAddressInputChange}
+                    className="h-4 w-4 rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
+                  />
+                  Sin número
+                </label>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -813,15 +842,15 @@ export const CheckoutAdress = ({
             {ENABLE_SHIPPING_MAP_PREVIEW &&
               deliveryMethod === "shipping" &&
               isShippingFormComplete &&
+              isManualMapEnabled &&
+              GOOGLE_MAPS_API_KEY &&
               !pendingResolvedAddress &&
               !confirmedAddress && (
                 <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-                  {renderMap("Vista previa de ubicacion en Google Maps", "h-56")}
-                  {GOOGLE_MAPS_API_KEY && (
-                    <p className="border-t border-gray-200 px-3 py-2 text-xs text-gray-600">
-                      Arrastra el pin para ajustar la ubicacion exacta.
-                    </p>
-                  )}
+                  {renderMap("Seleccion manual de ubicacion en Google Maps", "h-56")}
+                  <p className="border-t border-gray-200 px-3 py-2 text-xs text-gray-600">
+                    No pudimos ubicar la direccion automaticamente. Arrastra el pin hasta tu domicilio.
+                  </p>
                   <div className="flex flex-col gap-2 border-t border-gray-200 p-3 sm:flex-row">
                     <a
                       href={externalMapUrl}
@@ -926,34 +955,6 @@ export const CheckoutAdress = ({
               <div className="mt-2 p-3 rounded bg-green-50 border border-green-200 text-green-700 text-sm">
                 <strong>Ubicación confirmada:</strong>
                 <div>{confirmedAddress}</div>
-                {ENABLE_SHIPPING_MAP_PREVIEW && (
-                <div className="mt-3 overflow-hidden rounded-lg border border-green-200 bg-white">
-                  {renderMap("Ubicacion confirmada en Google Maps", "h-56")}
-                  {GOOGLE_MAPS_API_KEY && (
-                    <p className="border-t border-green-200 px-3 py-2 text-xs text-green-800">
-                      Arrastra el pin para cambiar la ubicacion y volver a confirmar el envio.
-                    </p>
-                  )}
-                  <div className="flex flex-col gap-2 border-t border-green-200 p-3 sm:flex-row">
-                    <a
-                      href={externalMapUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-green-600 bg-white px-4 py-2 font-semibold text-green-800 transition hover:bg-green-50"
-                    >
-                      <MapPin className="h-4 w-4" />
-                      Ver mapa ampliado
-                    </a>
-                    <button
-                      type="button"
-                      onClick={editAddressFromMap}
-                      className="inline-flex flex-1 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 font-semibold text-gray-700 transition hover:bg-gray-50"
-                    >
-                      Modificar ubicacion
-                    </button>
-                  </div>
-                </div>
-                )}
               </div>
             )}
             {ENABLE_SHIPPING_MAP_PREVIEW && pendingResolvedAddress && (
@@ -961,7 +962,11 @@ export const CheckoutAdress = ({
                 <div className="flex items-start gap-2">
                   <MapPin className="mt-0.5 h-5 w-5 flex-shrink-0 text-yellow-700" />
                   <div>
-                    <strong>Revisa la ubicacion detectada:</strong>
+                    <strong>
+                      {isManualMapEnabled
+                        ? "Revisa la ubicacion seleccionada:"
+                        : "Revisa la ubicacion detectada:"}
+                    </strong>
                     <div>{pendingResolvedAddress}</div>
                     {pendingDistance !== null && (
                       <div className="mt-1 text-xs text-gray-600">
@@ -970,14 +975,14 @@ export const CheckoutAdress = ({
                     )}
                   </div>
                 </div>
+                {isManualMapEnabled && GOOGLE_MAPS_API_KEY && (
                 <div className="mt-3 overflow-hidden rounded-lg border border-yellow-200 bg-white">
-                  {renderMap("Ubicacion detectada en Google Maps")}
-                  {GOOGLE_MAPS_API_KEY && (
+                  {renderMap("Ubicacion seleccionada en Google Maps")}
                     <p className="border-t border-yellow-200 px-3 py-2 text-xs text-yellow-900">
-                      Arrastra el pin si la ubicacion detectada no es exacta.
+                      Arrastra el pin si necesitas ajustar la ubicacion.
                     </p>
-                  )}
                 </div>
+                )}
                 <div className="mt-3 flex flex-col gap-2 sm:flex-row">
                   <button
                     type="button"
