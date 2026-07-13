@@ -97,6 +97,7 @@ export default function Checkout() {
     city: "",
     postalCode: "",
     observaciones: "",
+    addressWithoutNumber: false,
     // Sección de facturación:
     billingStreet: "",
     billingNumber: "",
@@ -167,7 +168,7 @@ export default function Checkout() {
       setFormData((prev) => ({
         ...prev,
         billingStreet: prev.street,
-        billingNumber: prev.number,
+        billingNumber: prev.addressWithoutNumber ? "" : prev.number,
         billingCity: prev.city,
         billingPostalCode: prev.postalCode,
       }));
@@ -176,6 +177,7 @@ export default function Checkout() {
     sameBillingAddress,
     formData.street,
     formData.number,
+    formData.addressWithoutNumber,
     formData.city,
     formData.postalCode,
   ]);
@@ -496,7 +498,7 @@ export default function Checkout() {
     // Dirección de facturación (siempre se envía)
     const billing_address = {
       street: formData.billingStreet,
-      number: formData.billingNumber,
+      number: formData.addressWithoutNumber ? "" : formData.billingNumber,
       city: formData.billingCity,
       region: region,
       country: pais,
@@ -703,7 +705,18 @@ export default function Checkout() {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
+    const { name, value, checked } = e.target;
+
+    if (name === "addressWithoutNumber") {
+      setFormData((prev) => ({
+        ...prev,
+        addressWithoutNumber: checked,
+        number: checked ? "" : prev.number,
+        billingNumber: checked ? "" : prev.billingNumber,
+      }));
+      return;
+    }
+
     const nextValue =
       name === "phone"
         ? stripArgentinaMobilePrefix(value) || normalizePhoneDigits(value)
@@ -734,6 +747,9 @@ export default function Checkout() {
         // Autocompletar dirección SIEMPRE
         street: clienteData.calle ? clienteData.calle : prev.street,
         number: clienteData.numero ? clienteData.numero : prev.number,
+        addressWithoutNumber: clienteData.numero
+          ? false
+          : prev.addressWithoutNumber,
         city: clienteData.ciudad ? clienteData.ciudad : prev.city,
         postalCode: clienteData.codigo_postal
           ? clienteData.codigo_postal
@@ -864,7 +880,7 @@ export default function Checkout() {
       case 3: // Entrega
         if (
           !formData.street ||
-          !formData.number ||
+          (!formData.number && !formData.addressWithoutNumber) ||
           !formData.city ||
           !formData.postalCode
         ) {
@@ -1263,10 +1279,10 @@ export default function Checkout() {
             {currentStep === 3 && !canProceedToNextStep() && !isLoading && (
               <div className="mt-2 text-center text-sm text-red-600 font-semibold">
                 {!formData.street ||
-                !formData.number ||
+                (!formData.number && !formData.addressWithoutNumber) ||
                 !formData.city ||
                 !formData.postalCode
-                  ? "Debes completar la dirección antes de continuar."
+                  ? "Debes completar la dirección o marcar sin número antes de continuar."
                   : deliveryMethod === "shipping" && !shippingData
                     ? "Debes calcular el costo de envío antes de continuar."
                     : deliveryMethod === "shipping" && !confirmedAddress
