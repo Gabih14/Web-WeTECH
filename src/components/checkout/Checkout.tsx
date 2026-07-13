@@ -30,8 +30,11 @@ import { fetchClienteByCuit, verifyCoupon, useCoupon } from "../../services/api"
 import { fetchProducts } from "../../services/fetchProducts";
 import {
   hasAtLeastTwoWords,
+  formatArgentinaMobileForApi,
   isValidCuitCuil,
   normalizeCuitCuil,
+  normalizePhoneDigits,
+  stripArgentinaMobilePrefix,
 } from "../../utils/validation";
 
 function useMediaQuery(query: string): boolean {
@@ -515,7 +518,7 @@ export default function Checkout() {
       codigo_cupon: shouldSendCouponInOrder ? appliedCoupon?.code || "" : "",
       metodo_pago: paymentMethod,
       email: formData.email,
-      telefono: formData.phone,
+      telefono: formatArgentinaMobileForApi(formData.phone),
       calle,
       ciudad,
       region,
@@ -701,7 +704,12 @@ export default function Checkout() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const nextValue =
+      name === "phone"
+        ? stripArgentinaMobilePrefix(value) || normalizePhoneDigits(value)
+        : value;
+
+    setFormData((prev) => ({ ...prev, [name]: nextValue }));
   };
 
   const handleCuitBlur = async () => {
@@ -720,7 +728,9 @@ export default function Checkout() {
         ...prev,
         name: clienteData.nombre ? clienteData.nombre : prev.name,
         email: clienteData.email ? clienteData.email : prev.email,
-        phone: clienteData.telefono ? clienteData.telefono : prev.phone,
+        phone: clienteData.telefono
+          ? stripArgentinaMobilePrefix(clienteData.telefono) || prev.phone
+          : prev.phone,
         // Autocompletar dirección SIEMPRE
         street: clienteData.calle ? clienteData.calle : prev.street,
         number: clienteData.numero ? clienteData.numero : prev.number,
@@ -1065,7 +1075,9 @@ export default function Checkout() {
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-gray-600">Teléfono:</dt>
-                  <dd className="text-gray-900 font-medium">{formData.phone}</dd>
+                  <dd className="text-gray-900 font-medium">
+                    +54 9 {formData.phone}
+                  </dd>
                 </div>
                 {/*
                   TODO: Reactivar resumen de facturacion cuando se implemente el flujo completo.

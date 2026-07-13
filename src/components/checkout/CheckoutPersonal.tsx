@@ -128,16 +128,28 @@ export const CheckoutPersonal = ({
           >
             Teléfono
           </label>
-          <input
-            type="tel"
-            id="phone"
-            name="phone"
-            value={formData.phone}
-            onChange={handleInputChange}
-            required
-            disabled={arePersonalFieldsDisabled}
-            className="mt-1 p-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
-          />
+          <div className="mt-1 flex rounded-md shadow-sm">
+            <span className="inline-flex flex-shrink-0 items-center whitespace-nowrap rounded-l-md border-2 border-r-0 border-gray-300 bg-gray-100 px-3 text-sm font-medium text-gray-700">
+              +54 9
+            </span>
+            <input
+              type="tel"
+              id="phone"
+              name="phone"
+              value={formData.phone}
+              onChange={handleInputChange}
+              required
+              disabled={arePersonalFieldsDisabled}
+              inputMode="numeric"
+              autoComplete="tel-national"
+              aria-describedby="phone-help"
+              className="block w-full min-w-0 rounded-none rounded-r-md border-2 border-gray-300 p-1 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+              placeholder="261 555-1234"
+            />
+          </div>
+          <p id="phone-help" className="mt-1 text-xs text-gray-500">
+            Completá código de área + número, sin 0 ni 15, espacios ni guiones.
+          </p>
         </div>
         {/*
           TODO: Reactivar facturacion cuando se implemente el flujo completo.
