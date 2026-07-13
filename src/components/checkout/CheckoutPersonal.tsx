@@ -4,6 +4,9 @@ import {
   hasAtLeastTwoWords,
 } from "../../utils/validation";
 
+const CUIT_HELP_URL =
+  "https://serviciosweb.afip.gob.ar/publico/cuitonline/infopersonal.aspx";
+
 type Props = {
   formData: {
     name: string;
@@ -13,15 +16,20 @@ type Props = {
   };
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleCuitBlur?: () => void;
+  isCuitValid: boolean;
+  showCuitHelp: boolean;
 };
 
 export const CheckoutPersonal = ({
   formData,
   handleInputChange,
   handleCuitBlur,
+  isCuitValid,
+  showCuitHelp,
 }: Props) => {
   const isNameIncomplete =
     formData.name.trim().length > 0 && !hasAtLeastTwoWords(formData.name);
+  const arePersonalFieldsDisabled = !isCuitValid;
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
@@ -50,9 +58,26 @@ export const CheckoutPersonal = ({
               }
             }}
             required
-            className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+            aria-invalid={showCuitHelp}
+            aria-describedby={showCuitHelp ? "cuit-help" : undefined}
+            className={`mt-1 p-2 block w-full rounded-md border-2 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 ${
+              showCuitHelp ? "border-red-400" : "border-gray-300"
+            }`}
             placeholder="Ej: 20-12345678-9"
           />
+          {showCuitHelp && (
+            <p id="cuit-help" className="mt-1 text-sm text-red-600">
+              Ingresá un CUIT/CUIL válido.{" "}
+              <a
+                href={CUIT_HELP_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="font-medium text-yellow-700 underline hover:text-yellow-800"
+              >
+                No conozco mi cuit/cuil
+              </a>
+            </p>
+          )}
         </div>
         <div>
           <label
@@ -70,7 +95,8 @@ export const CheckoutPersonal = ({
             pattern={FULL_NAME_PATTERN}
             title={FULL_NAME_MESSAGE}
             required
-            className="mt-1 p-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            disabled={arePersonalFieldsDisabled}
+            className="mt-1 p-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
             placeholder="Nombre y apellido"
           />
           {isNameIncomplete && (
@@ -91,7 +117,8 @@ export const CheckoutPersonal = ({
             value={formData.email}
             onChange={handleInputChange}
             required
-            className="mt-1 p-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            disabled={arePersonalFieldsDisabled}
+            className="mt-1 p-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
           />
         </div>
         <div>
@@ -108,7 +135,8 @@ export const CheckoutPersonal = ({
             value={formData.phone}
             onChange={handleInputChange}
             required
-            className="mt-1 p-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            disabled={arePersonalFieldsDisabled}
+            className="mt-1 p-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
           />
         </div>
         {/*

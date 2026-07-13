@@ -28,7 +28,11 @@ import type { FacturaTipo } from "../../utils/invoice";
 
 import { fetchClienteByCuit, verifyCoupon, useCoupon } from "../../services/api";
 import { fetchProducts } from "../../services/fetchProducts";
-import { hasAtLeastTwoWords } from "../../utils/validation";
+import {
+  hasAtLeastTwoWords,
+  isValidCuitCuil,
+  normalizeCuitCuil,
+} from "../../utils/validation";
 
 function useMediaQuery(query: string): boolean {
   const getMatches = () => {
@@ -118,6 +122,8 @@ export default function Checkout() {
     import.meta.env.VITE_CHECKOUT_PASSWORD_ENABLED !== "false";
   const CHECKOUT_ACCESS_PASSWORD =
     import.meta.env.VITE_CHECKOUT_ACCESS_PASSWORD || "desarrollo";
+  const isCuitValid = isValidCuitCuil(formData.cuit);
+  const showCuitHelp = formData.cuit.trim().length > 0 && !isCuitValid;
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
@@ -446,6 +452,12 @@ export default function Checkout() {
 
   /* PAYMENT REQUEST */
   const createPaymentRequest = async () => {
+    if (!isValidCuitCuil(formData.cuit)) {
+      setCurrentStep(1);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
     try {
       const syncResult = await refreshCartPricesFromCatalog();
 
@@ -492,7 +504,7 @@ export default function Checkout() {
     const orderTotal = requiresInvoice(facturaTipo)
       ? finalTotal
       : roundDisplayedPrice(finalTotal);
-    const cleanCuit = formData.cuit.trim().replace(/\D/g, ''); // Remover guiones y caracteres no numéricos
+    const cleanCuit = normalizeCuitCuil(formData.cuit); // Remover guiones y caracteres no numéricos
 
     const body = {
       cliente_nombre: formData.name,
@@ -578,7 +590,7 @@ export default function Checkout() {
       if (data?.naveUrl) {
         // Si el cupón fue el descuento ganador, usarlo después de crear la orden
         if (shouldSendCouponInOrder && appliedCoupon && data?.id) {
-          const cuitForCouponUse = formData.cuit.trim();
+          const cuitForCouponUse = normalizeCuitCuil(formData.cuit);
           try {
             await useCoupon(appliedCoupon.code, cuitForCouponUse, data.id);
             console.log("Cupón utilizado exitosamente");
@@ -693,12 +705,11 @@ export default function Checkout() {
   };
 
   const handleCuitBlur = async () => {
-    const cuit = formData.cuit.trim().replace(/\D/g, ''); 
+    const cuit = normalizeCuitCuil(formData.cuit);
     if (!cuit) return;
 
     // Validar que el CUIT tenga exactamente 11 dígitos
-    if (cuit.length !== 11) {
-      alert('El CUIT debe tener 11 dígitos');
+    if (!isValidCuitCuil(cuit)) {
       return;
     }
 
@@ -833,7 +844,7 @@ export default function Checkout() {
     switch (currentStep) {
       case 1: // Información Personal
         return !!(
-          formData.cuit &&
+          isCuitValid &&
           hasAtLeastTwoWords(formData.name) &&
           formData.email &&
           formData.phone
@@ -888,6 +899,8 @@ export default function Checkout() {
             formData={formData}
             handleInputChange={handleInputChange}
             handleCuitBlur={handleCuitBlur}
+            isCuitValid={isCuitValid}
+            showCuitHelp={showCuitHelp}
           />
         );
       case 2:
@@ -1219,7 +1232,7 @@ export default function Checkout() {
                   type="button"
                   onClick={handleConfirmOrder}
                   className="flex-1 py-3 px-4 rounded-md transition-colors bg-yellow-400 hover:bg-yellow-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                  disabled={isLoading}
+                  disabled={isLoading || !isCuitValid}
                 >
                   {isLoading ? (
                     <div className="flex items-center justify-center">
