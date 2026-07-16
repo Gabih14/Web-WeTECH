@@ -11,42 +11,48 @@ export const QUANTITY_DISCOUNTS = {
 // Descuento base para todos los filamentos por transferencia
 export const BASE_FILAMENT_DISCOUNT = 0.15; // 15%
 
-// Marcas elegibles para descuentos por cantidad (solo filamentos de 1kg)
-export const ELIGIBLE_BRANDS_FOR_QUANTITY_DISCOUNT = [
-  "3N3-PLA",
-  "3NMAX-PLA+",
-  "3N-PLA",
-  "ELEGOO-PLA",
-  "ELEGOO-PLA-MATTE",
-  "GRILON3-PLA BOUTIQUE",
-  "GRILON3-PLA",
-  "G3-PLA",
-  "GST3D-PLA",
-  "GST3D-PLA+",
-  "GST3D-PLA-LITE",
-  "GS-PLA",
-  "HELLBOT-PLA",
-  "HB-PLA",
-  "3NMAX-PLA",
-  "3X-PLA",
-  "FREMOVER-PLA",
-  "FM-PLA",
-  "FREMOVER-HIGH SPEED PLA",
-  "FREMOVER-HIGH SPEED PLA MATTE",
-  "FM-PLAF",
-  "FM-PLAM"
-] as const;
+/**
+ * Pares (Marca, Material) de filamentos con descuento por cantidad (solo 1kg).
+ * ⚠️ Debe mantenerse IDÉNTICA a `ELIGIBLE_FILAMENT_ATTRIBUTES` del backend
+ * (api-we-tech-v2/src/pricing/discounts.ts): es la misma regla de negocio, y si
+ * divergen reaparece el ERR_ORDER_TOTAL_MISMATCH en el checkout.
+ */
+export const ELIGIBLE_FILAMENT_ATTRIBUTES: ReadonlyArray<{
+  marca: string;
+  material: string;
+}> = [
+  { marca: "3n3", material: "PLA" },
+  { marca: "Grilon3", material: "PLA" },
+  { marca: "Grilon3", material: "PLA Boutique" },
+  { marca: "GST3D", material: "PLA" },
+  { marca: "Hellbot", material: "PLA" },
+  { marca: "3nMax", material: "PLA+ Matte" },
+  { marca: "Fremover", material: "High Speed PLA" },
+  { marca: "Fremover", material: "High Speed PLA Matte" },
+  { marca: "Elegoo", material: "PLA" },
+];
 
 const normalizeDiscountIdentifier = (value: string): string =>
   value.trim().replace(/\s+/g, " ").toUpperCase();
 
-const getDiscountIdentifiersForProductId = (productId: string): string[] => {
-  const normalizedId = normalizeDiscountIdentifier(productId);
-  const parts = normalizedId.split("-");
-  const variantFamily =
-    parts.length >= 2 ? `${parts[0]}-${parts[1]}` : normalizedId;
+const ELIGIBLE_ATTRIBUTE_KEYS = new Set(
+  ELIGIBLE_FILAMENT_ATTRIBUTES.map(
+    (e) =>
+      `${normalizeDiscountIdentifier(e.marca)}|${normalizeDiscountIdentifier(
+        e.material
+      )}`
+  )
+);
 
-  return Array.from(new Set([normalizedId, variantFamily]));
+/**
+ * Deriva la clave "MARCA|MATERIAL" del id del producto. El id se arma como
+ * MARCA-MATERIAL-LÍNEA-ORIGEN (desde atributos), así que los dos primeros
+ * segmentos separados por "-" son Marca y Material (ninguno contiene "-").
+ */
+const eligibleKeyFromProductId = (productId: string): string | null => {
+  const parts = normalizeDiscountIdentifier(productId).split("-");
+  if (parts.length < 2) return null;
+  return `${parts[0]}|${parts[1]}`;
 };
 
 // Categorías que comparten la misma regla de descuento (aceptamos legacy y nuevo nombre)
@@ -90,12 +96,10 @@ export const isEligibleForQuantityDiscount = (
   
   // Debe ser de 1kg
   if (weight !== 1) return false;
-  
-  // Debe ser de una marca elegible (comparación exacta)
-  const productIdentifiers = getDiscountIdentifiersForProductId(product.id);
-  return ELIGIBLE_BRANDS_FOR_QUANTITY_DISCOUNT.some((brand) =>
-    productIdentifiers.includes(normalizeDiscountIdentifier(brand))
-  );
+
+  // Debe ser un par (Marca, Material) elegible, derivado del id del producto.
+  const key = eligibleKeyFromProductId(product.id);
+  return Boolean(key && ELIGIBLE_ATTRIBUTE_KEYS.has(key));
 };
 
 export type QuantityDiscountCartItem = {

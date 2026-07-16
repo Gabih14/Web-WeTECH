@@ -4,37 +4,91 @@ import { shouldExcludeFamily } from "../data/excludedFamilies";
 import sparePartsFallbackImage from "../assets/pngtree-no-image-vector-illustration-isolated-png-image_1694547.jpg";
 
 const MINIMUM_PRODUCT_PRICE = 100;
+const MINIMUM_FILAMENT_PRICE = 10000;
+const FILAMENT_GROUP = "FILAMENTO 3D";
+const SPARE_PARTS_GROUP = "REPUESTOS & ACCESORIOS";
+const BASE_FILAMENT_DISCOUNT = 0.15;
 
-const getSalePriceFromList = (
-  item: any,
-  listName: string
-): number | undefined => {
-  const normalizedListName = listName.trim().toUpperCase();
-  const priceData = Array.isArray(item.stkPrecios)
-    ? item.stkPrecios.find(
-        (price: any) =>
-          typeof price?.lista === "string" &&
-          price.lista.trim().toUpperCase() === normalizedListName
-      )
-    : undefined;
-  const parsedPrice = Number(priceData?.precioVta ?? priceData?.precio);
+// ---- Tipos de la respuesta de /stk-item/catalogo (backend) ----
+interface CatalogoAtributo {
+  clase: string;
+  valor: string;
+  color: string | null;
+  heredado: boolean;
+  orden: number | null;
+}
+interface CatalogoVariante {
+  id: string;
+  descripcion: string | null;
+  observaciones: string | null;
+  fotoUrl: string | null;
+  precioVtaCotizadoMin: string | null;
+  invoicePrice: string | null;
+  promotionalPrice: string | null;
+  stock: number;
+  pesoKg: number | null;
+  familia: string | null;
+  visible: boolean;
+  opciones: Record<string, string>;
+  atributos: CatalogoAtributo[];
+}
+interface CatalogoProducto {
+  key: string;
+  nombre: string;
+  marca: string | null;
+  material: string | null;
+  linea: string | null;
+  origen: string | null;
+  grupo: string | null;
+  subgrupo: string | null;
+  precioDesde: string | null;
+  atributos: CatalogoAtributo[];
+  dimensiones: { clase: string; valores: { valor: string; color: string | null }[] }[];
+  variantes: CatalogoVariante[];
+}
 
-  return Number.isFinite(parsedPrice) && parsedPrice > 0
-    ? parsedPrice
-    : undefined;
+type ColorVariant = NonNullable<Product["colors"]>[number];
+
+const isFilamentGroup = (group?: string | null) => {
+  const upper = (group ?? "").toUpperCase();
+  return upper === FILAMENT_GROUP || upper === "FILAMENTOS"; // aceptar legacy
 };
 
-const getDefaultSalePrice = (item: any): number => {
-  const parsedPrice = Number(item.precioVtaCotizadoMin);
-  const listPrice = getSalePriceFromList(item, "MINORISTA");
-
-  return Number.isFinite(parsedPrice) && parsedPrice > 0
-    ? parsedPrice
-    : listPrice ?? 0;
+const toNumber = (value: string | null | undefined): number | undefined => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
 };
 
-const getInvoiceSalePrice = (item: any, fallbackPrice: number): number =>
-  getSalePriceFromList(item, "MINORISTA CON IVA") ?? fallbackPrice;
+const imageFor = (fotoUrl: string | null, isSparePart: boolean): string | null => {
+  const raw = typeof fotoUrl === "string" && fotoUrl.trim() ? fotoUrl.trim() : null;
+  return raw ?? (isSparePart ? sparePartsFallbackImage : null);
+};
+
+const uniqueImages = (images: (string | null)[]): string[] =>
+  Array.from(new Set(images.filter((img): img is string => !!img)));
+
+/**
+ * ID del producto compatible con `discounts.ts`, que deriva la familia de descuento
+ * partiendo por "-" y tomando MARCA-MATERIAL. Para filamentos usamos los 4 atributos
+ * de identidad (garantiza unicidad entre líneas/orígenes); para el resto, el id real.
+ */
+const buildProductId = (prod: CatalogoProducto): string => {
+  if (prod.key.startsWith("fam")) {
+    return [prod.marca, prod.material, prod.linea, prod.origen]
+      .filter(Boolean)
+      .join("-")
+      .toUpperCase();
+  }
+  if (prod.key.startsWith("item:")) {
+    return prod.key.slice("item:".length);
+  }
+  return prod.variantes[0]?.id ?? prod.key;
+};
+
+const colorNameOf = (variante: CatalogoVariante): string =>
+  variante.opciones?.["Colores"] ??
+  variante.atributos.find((a) => a.clase === "Colores")?.valor ??
+  "Sin color";
 
 const fetchColors = async (): Promise<Colors[]> => {
   const colorData = await apiFetch("/colors");
@@ -73,365 +127,174 @@ const fetchColors = async (): Promise<Colors[]> => {
 };
 
 export const fetchProducts = async (): Promise<Product[]> => {
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
-  const FILAMENT_GROUP = "FILAMENTO 3D";
-  const SPARE_PARTS_GROUP = "REPUESTOS & ACCESORIOS";
-  const isFilamentGroup = (group: string) => {
-    const upper = group?.toUpperCase();
-    return upper === FILAMENT_GROUP || upper === "FILAMENTOS"; // aceptar legacy
-  };
-  if (!API_URL) {
-    throw new Error("API URL is not defined");
-  }
-  if (API_URL === "http://localhost:3000") {
-    console.warn("Using default API URL:", API_URL);
-  }
   try {
-    // Petición
-    // Usando apiFetch con token incluido
-    const [rawProducts, colors] = await Promise.all([
-      apiFetch("/stk-item"),
+    // El backend ya arma los productos (agrupa variantes por atributos). Solo
+    // aplicamos los filtros de publicación y mapeamos a la forma `Product`.
+    const [catalogo, colors] = await Promise.all([
+      apiFetch("/stk-item/catalogo"),
       fetchColors(),
     ]);
+
     if (import.meta.env.DEV) {
-      console.log("Productos crudos recibidos:", rawProducts);
+      console.log("Catálogo recibido:", catalogo);
     }
-    // Transformar los datos
-    const groupedProducts: { [key: string]: Product } = {};
 
-    rawProducts.forEach((item: any) => {
-      const isFilament = isFilamentGroup(item.grupo);
-      const normalizedGroup = isFilament ? FILAMENT_GROUP : item.grupo;
-      const isSparePart =
-        typeof normalizedGroup === "string" &&
-        normalizedGroup.trim().toUpperCase() === SPARE_PARTS_GROUP;
+    const colorByName = new Map<string, Colors>();
+    colors.forEach((color) => colorByName.set(color.name.toLowerCase(), color));
 
-      // Ignorar productos cuya descripción termina en "mm" (diámetros, etc)
-      if (
-        isFilament &&
-        String(item.descripcion || "")
-          .trim()
-          .toLowerCase()
-          .endsWith("mm")
-      ) {
-        return;
-      }
+    const products: Product[] = [];
 
-      // TEMP: mostrar solo productos cuya descripción empieza con "Grilon3" (testing)
-      //const desc = (item.descripcion || "").trim();
-      /* if (!desc.startsWith("Grilon3")) {
-        return;
-      } */
+    for (const prod of (catalogo as CatalogoProducto[]) ?? []) {
+      const isFilament = isFilamentGroup(prod.grupo);
+      const category = isFilament ? FILAMENT_GROUP : prod.grupo ?? "";
+      const upperGroup = String(prod.grupo ?? "").toUpperCase();
+      const isSparePart = upperGroup === SPARE_PARTS_GROUP;
 
-      // Ignorar ítems filamentos cuyo id no cumpla el patrón con 3 guiones: XXXX-XXXX-XXXX-XXXX
-      const id: string = String(item.id || "");
-      const hasFourPartsWithThreeHyphens = /^[^-]+-[^-]+-[^-]+-[^-]+$/.test(id);
-      if (!hasFourPartsWithThreeHyphens && isFilament) {
-        return;
-      }
+      // Ignorar impresoras (paridad con el flujo actual)
+      if (upperGroup === "IMPRESORAS 3D") continue;
 
-      // Generar una clave de agrupación basada en las primeras dos partes de la descripción
-      // Esto permite agrupar productos con diferentes pesos pero mismo material
-      const descriptionParts = String(item.descripcion || "")
-        .split("|")
-        .map((p: string) => p.trim())
-        .filter(Boolean);
-      const brand = descriptionParts[0] || undefined;
-      const groupingKey = (() => {
-        if (descriptionParts.length >= 2) {
-          return `${descriptionParts[0]}-${descriptionParts[1]}`.toUpperCase(); // e.g., "3N3-PLA"
+      // Filtros de publicación (política de la tienda: se mantienen en el front)
+      const variantesValidas = prod.variantes.filter((v) => {
+        if (v.visible === false) return false;
+        if (shouldExcludeFamily(v.familia ?? "")) return false;
+        if (isFilament && !v.familia) return false;
+
+        // Descripción que termina en "mm" (diámetros, etc.)
+        if (
+          isFilament &&
+          String(v.descripcion ?? "").trim().toLowerCase().endsWith("mm")
+        ) {
+          return false;
         }
 
-        // Fallback a familia o id si no hay descripción válida
-        return item.familia || item.id;
-      })();
-
-      // Usar familia original para verificar exclusiones
-      const familia = item.familia || item.id;
-
-      // Ignorar familias en la lista de exclusión
-      if (shouldExcludeFamily(familia)) {
-        return; // Salir de esta iteración
-      }
-
-      // Ignorar productos no visibles
-      if (item.visible === false) {
-        return; // Salir de esta iteración
-      }
-
-      // Ignorar ítems del grupo de filamentos sin familia
-      if (isFilament && !item.familia) {
-        return; // Salir de esta iteración
-      }
-
-      // Ignorar ítems con precio menor al mínimo publicable
-      const price = getDefaultSalePrice(item);
-      const invoicePrice = getInvoiceSalePrice(item, price);
-
-      if (price < MINIMUM_PRODUCT_PRICE) {
-        return; // Salir de esta iteración
-      }
-
-      // Ignorar filamentos con precio < 10.000 ARS
-      if (isFilament && price < 10000) {
-        return; // Salir de esta iteración
-      }
-
-      // Ignorar impresoras con precio < 300.000 ARS
-      if (
-        item.category?.toUpperCase() === "IMPRESORAS 3D" &&
-        price < 300000
-      ) {
-        return; // Salir de esta iteración
-      }
-      // Ignorar impresoras BORRAR
-      if (item.grupo?.toUpperCase() === "IMPRESORAS 3D") {
-        return; // Salir de esta iteración
-      }
-      const rawItemImageUrl =
-        typeof item.fotoUrl === "string" && item.fotoUrl.trim()
-          ? item.fotoUrl.trim()
-          : null;
-      const itemImageUrl =
-        rawItemImageUrl ?? (isSparePart ? sparePartsFallbackImage : null);
-
-      // Ignorar productos sin fotoUrl
-      if (!itemImageUrl || itemImageUrl.trim() === "") {
-        return; // Salir de esta iteración
-      }
-
-      if (!groupedProducts[groupingKey]) {
-        // Derivar el nombre usando los dos primeros segmentos de la descripción ("Marca Material")
-        const productName = (() => {
-          if (descriptionParts.length >= 2) {
-            return `${descriptionParts[0]} ${descriptionParts[1]}`;
-          }
-          return groupingKey;
-        })();
-
-        const productImages = itemImageUrl ? [itemImageUrl] : [];
-
-        // Para filamentos, la imagen principal será la primera imagen de color (se actualizará luego)
-        let primaryImage = itemImageUrl || "";
-
-        // Crear el producto principal
-        groupedProducts[groupingKey] = {
-          id: groupingKey, // Usar groupingKey (ej: "GRILON3-PLA BOUTIQUE") para identificación consistente
-          name: productName,
-          description: item.descripcion,
-          observaciones:
-            typeof item.observaciones === "string" && item.observaciones.trim()
-              ? item.observaciones
-              : undefined,
-          image: primaryImage, // Se actualizará después con la primera imagen de color para filamentos
-          images: productImages.length ? productImages : undefined, // Array completo de imágenes
-          brand,
-          category: normalizedGroup,
-          subcategory: item.subgrupo ? item.subgrupo.toUpperCase() : undefined,
-          price,
-          invoicePrice,
-          itemId: item.id,
-          ...(isFilament && { colors: [] }), // Solo agregar `colors` si es filamento
-          ...(!isFilament && { stock: 0 }), // Solo agregar `stock` si no es filamento
-        };
-
-        // Solo agregar `weights` si el grupo es "FILAMENTOS"
-        if (isFilament) {
-          groupedProducts[groupingKey].weights = [];
+        // Filamentos: id con patrón de 4 segmentos (XXXX-XXXX-XXXX-XXXX)
+        if (isFilament && !/^[^-]+-[^-]+-[^-]+-[^-]+$/.test(String(v.id ?? ""))) {
+          return false;
         }
-      }
 
-      // Agregar imagen del ítem al producto agrupado (si existe y no está ya)
-      if (!groupedProducts[groupingKey].brand && brand) {
-        groupedProducts[groupingKey].brand = brand;
-      }
+        // Precio mínimo publicable
+        const price = toNumber(v.precioVtaCotizadoMin) ?? 0;
+        if (price < MINIMUM_PRODUCT_PRICE) return false;
+        if (isFilament && price < MINIMUM_FILAMENT_PRICE) return false;
 
-      const currentImages = groupedProducts[groupingKey].images || [];
-      if (itemImageUrl && !currentImages.includes(itemImageUrl)) {
-        groupedProducts[groupingKey].images = [...currentImages, itemImageUrl];
-      }
+        // Debe tener imagen (o fallback para repuestos)
+        if (!imageFor(v.fotoUrl, isSparePart)) return false;
 
-      if (
-        !groupedProducts[groupingKey].observaciones &&
-        typeof item.observaciones === "string" &&
-        item.observaciones.trim()
-      ) {
-        groupedProducts[groupingKey].observaciones = item.observaciones;
-      }
+        // Filamentos: debe tener peso numérico (descarta "Kit 20 Colores", etc.)
+        if (isFilament && v.pesoKg == null) return false;
 
-      // Si el grupo es "FILAMENTOS", manejar los weights y precios
+        return true;
+      });
+
+      if (variantesValidas.length === 0) continue;
+
+      const id = buildProductId(prod);
+      const first = variantesValidas[0];
+      const firstPrice = toNumber(first.precioVtaCotizadoMin) ?? 0;
+      const observaciones = variantesValidas
+        .map((v) => v.observaciones)
+        .find((o): o is string => typeof o === "string" && o.trim().length > 0);
+      const images = uniqueImages(
+        variantesValidas.map((v) => imageFor(v.fotoUrl, isSparePart)),
+      );
+
+      const product: Product = {
+        id,
+        name: prod.nombre,
+        description: first.descripcion ?? prod.nombre,
+        observaciones: observaciones ?? undefined,
+        image: images[0] ?? "",
+        images: images.length ? images : undefined,
+        brand: prod.marca ?? undefined,
+        category,
+        subcategory: prod.subgrupo ? String(prod.subgrupo).toUpperCase() : undefined,
+        price: firstPrice,
+        invoicePrice: toNumber(first.invoicePrice) ?? firstPrice,
+        promotionalPrice: toNumber(first.promotionalPrice),
+        itemId: first.id,
+      };
+
       if (isFilament) {
-        // Extraer el peso del TERCER elemento de la descripción, en MAYÚSCULAS (e.g., "1kg" -> "1KG")
-        const descParts = String(item.descripcion || "")
-          .split("|")
-          .map((p: string) => p.trim());
-        const thirdPartUpper = (descParts[2] || "").toUpperCase();
-        const weightMatch = thirdPartUpper.match(/(\d+\.?\d*)\s*(KG|G)/);
+        const weights: NonNullable<Product["weights"]> = [];
+        const colorMap = new Map<string, ColorVariant>();
 
-        if (!weightMatch) {
-          return;
-        }
+        for (const v of variantesValidas) {
+          const weight = v.pesoKg as number;
+          const weightKey = weight.toString();
+          const price = toNumber(v.precioVtaCotizadoMin) ?? 0;
+          const invoicePrice = toNumber(v.invoicePrice) ?? price;
+          const promotionalPrice =
+            toNumber(v.promotionalPrice) ?? price * (1 - BASE_FILAMENT_DISCOUNT);
+          const colorName = colorNameOf(v);
+          const colorData = colorByName.get(colorName.toLowerCase());
+          const stock = Math.max(0, v.stock ?? 0);
+          const img = imageFor(v.fotoUrl, isSparePart);
 
-        const value = parseFloat(weightMatch[1]);
-        const unit = weightMatch[2]; // already uppercase KG/G
-        // Convertir a kilogramos si es necesario
-        const weight = unit === "G" ? value / 1000 : value;
-        const promotionalPrice = price - price * 0.15; // Calcular el precio promocional (15% de descuento)
-
-        // Verificar si el peso ya existe en `weights`
-        const existingWeight = groupedProducts[groupingKey].weights?.find(
-          (w) => w.weight === weight,
-        );
-
-        if (!existingWeight) {
-          // Agregar el peso y precio a `weights` solo si no existe
-          groupedProducts[groupingKey].weights?.push({
-            weight,
-            price,
-            invoicePrice,
-            promotionalPrice,
-          });
-        }
-
-        // Manejar el stock por colores
-        // Extraer el color del ÚLTIMO segmento de la descripción (e.g., "Grilon3 | PLA | 1kg | Premium | Amarillo" -> "Amarillo")
-        const colorName = (() => {
-          const parts = String(item.descripcion || "")
-            .split("|")
-            .map((p: string) => p.trim())
-            .filter(Boolean);
-          return parts.length > 0 ? parts[parts.length - 1] : "Sin color";
-        })();
-        const cantidad = parseFloat(item.stkExistencias?.[0]?.cantidad || "0");
-        const comprometido = parseFloat(
-          item.stkExistencias?.[0]?.comprometido || "0",
-        );
-        const stock = Math.max(0, cantidad - comprometido); // Stock disponible = cantidad - comprometido (mínimo 0)
-
-        // Buscar el color en el array `colors` para obtener su valor `hex`
-        const colorData = colors.find(
-          (color) => color.name.toLowerCase() === colorName.toLowerCase(),
-        );
-        const hexValue = colorData ? colorData.hex : ""; // Usar el valor encontrado o un valor predeterminado
-
-        const existingColor = groupedProducts[groupingKey].colors?.find(
-          (color) => color.name === colorName,
-        );
-
-        if (existingColor) {
-          // Si el color ya existe, sumar el stock para el peso específico
-          existingColor.stock[weight] =
-            (existingColor.stock[weight] || 0) + stock;
-          existingColor.prices = {
-            ...(existingColor.prices || {}),
-            [weight]: price,
-          };
-          existingColor.invoicePrices = {
-            ...(existingColor.invoicePrices || {}),
-            [weight]: invoicePrice,
-          };
-          existingColor.promotionalPrices = {
-            ...(existingColor.promotionalPrices || {}),
-            [weight]: promotionalPrice,
-          };
-          existingColor.itemIds = {
-            ...(existingColor.itemIds || {}),
-            [weight]: item.id,
-          };
-          // Asegurar que conservamos el ID original del ítem
-          if (!existingColor.itemId) {
-            existingColor.itemId = item.id;
+          if (!weights.some((w) => w.weight === weight)) {
+            weights.push({ weight, price, invoicePrice, promotionalPrice });
           }
-          if (!existingColor.colorGroup) {
-            existingColor.colorGroup = colorData?.colorGroup;
-          }
-          // Asociar imagen si no estaba
-          if (itemImageUrl) {
-            const existingImages = existingColor.images || [];
-            if (!existingImages.includes(itemImageUrl)) {
-              existingColor.images = [...existingImages, itemImageUrl];
+
+          const existing = colorMap.get(colorName);
+          if (existing) {
+            existing.stock[weightKey] = (existing.stock[weightKey] || 0) + stock;
+            existing.prices = { ...(existing.prices || {}), [weightKey]: price };
+            existing.invoicePrices = {
+              ...(existing.invoicePrices || {}),
+              [weightKey]: invoicePrice,
+            };
+            existing.promotionalPrices = {
+              ...(existing.promotionalPrices || {}),
+              [weightKey]: promotionalPrice,
+            };
+            existing.itemIds = { ...(existing.itemIds || {}), [weightKey]: v.id };
+            if (!existing.itemId) existing.itemId = v.id;
+            if (!existing.colorGroup) existing.colorGroup = colorData?.colorGroup;
+            if (img && !(existing.images || []).includes(img)) {
+              existing.images = [...(existing.images || []), img];
             }
+          } else {
+            colorMap.set(colorName, {
+              name: colorName,
+              hex: colorData?.hex ?? "",
+              colorGroup: colorData?.colorGroup,
+              stock: { [weightKey]: stock },
+              prices: { [weightKey]: price },
+              invoicePrices: { [weightKey]: invoicePrice },
+              promotionalPrices: { [weightKey]: promotionalPrice },
+              itemIds: { [weightKey]: v.id },
+              images: img ? [img] : [],
+              itemId: v.id,
+            });
           }
-        } else {
-          // Generar imágenes específicas para este color usando fotoUrl del item (si existe)
-          const colorImages = itemImageUrl ? [itemImageUrl] : [];
-
-          // Si el color no existe, agregarlo
-          groupedProducts[groupingKey].colors?.push({
-            name: colorName,
-            hex: hexValue, // Puedes asignar un color genérico o específico
-            colorGroup: colorData?.colorGroup,
-            stock: {
-              [weight]: stock, // Manejar el stock por peso
-            },
-            prices: {
-              [weight]: price,
-            },
-            invoicePrices: {
-              [weight]: invoicePrice,
-            },
-            promotionalPrices: {
-              [weight]: promotionalPrice,
-            },
-            itemIds: {
-              [weight]: item.id,
-            },
-            images: colorImages, // Solo una imagen por color para filamentos
-            itemId: item.id, // Guardar el ID original del item para la variante de color
-          });
         }
-      } else {
-        // Para otras categorías, sumar el stock de forma general (cantidad - comprometido)
-        const cantidad = parseFloat(item.stkExistencias?.[0]?.cantidad || "0");
-        const comprometido = parseFloat(
-          item.stkExistencias?.[0]?.comprometido || "0",
-        );
-        const stockDisponible = Math.max(0, cantidad - comprometido);
 
-        groupedProducts[groupingKey].stock =
-          (groupedProducts[groupingKey].stock || 0) + stockDisponible;
-      }
-    });
-
-    // Convertir el objeto agrupado en un array
-    const transformedProducts = Object.values(groupedProducts);
-
-    // Para filamentos, actualizar la imagen principal con la primera imagen de color disponible
-    transformedProducts.forEach((product) => {
-      if (
-        product.category === FILAMENT_GROUP &&
-        product.colors &&
-        product.colors.length > 0
-      ) {
-        // Ordenar colores alfabéticamente para consistencia
-        const sortedColors = product.colors.sort((a, b) =>
+        const sortedColors = Array.from(colorMap.values()).sort((a, b) =>
           a.name.localeCompare(b.name),
         );
+        product.colors = sortedColors;
+        product.weights = weights;
 
+        // Imagen principal = primera imagen de color disponible
         const colorWithImage = sortedColors.find(
           (c) => c.images && c.images.length > 0,
         );
-        if (colorWithImage && colorWithImage.images) {
-          product.image = colorWithImage.images[0];
-        } else if (!product.image) {
-          product.image = "";
-        }
-
-        // Actualizar el array de colores con el orden alfabético
-        product.colors = sortedColors;
-      } else if (
-        !product.image &&
-        product.images &&
-        product.images.length > 0
-      ) {
-        // Para otros productos, si no se asignó imagen principal usar la primera disponible
-        product.image = product.images[0];
+        product.image = colorWithImage?.images?.[0] ?? images[0] ?? "";
+      } else {
+        // Otras categorías: stock agregado (cantidad − comprometido sumado)
+        product.stock = variantesValidas.reduce(
+          (total, v) => total + Math.max(0, v.stock ?? 0),
+          0,
+        );
       }
-    });
-    if (import.meta.env.DEV) {
-    console.log("Productos transformados:", transformedProducts);
+
+      products.push(product);
     }
-    return transformedProducts;
+
+    if (import.meta.env.DEV) {
+      console.log("Productos transformados:", products);
+    }
+
+    return products;
   } catch (error: any) {
     console.error("Error al obtener los productos:", error.message);
     throw new Error(
@@ -439,5 +302,3 @@ export const fetchProducts = async (): Promise<Product[]> => {
     );
   }
 };
-
-
