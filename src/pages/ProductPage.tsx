@@ -25,6 +25,7 @@ import {
 import { getVariantItemId, getVariantPrice } from "../utils/pricing";
 import { formatPrice } from "../utils/money";
 import { ColorSwatch } from "../components/products/ColorSwatch";
+import { ProductDescription } from "../components/products/ProductDescription";
 import { StockWaitRequestModal } from "../components/products/StockWaitRequestModal";
 
 const QUANTITY_OPTIONS = [1, 5, 10, 50];
@@ -388,9 +389,7 @@ export function ProductPage() {
                 )}
               </div>
 
-              <p className="mt-5 whitespace-pre-line text-sm leading-6 text-gray-600">
-                {product.observaciones}
-              </p>
+              <ProductDescription product={product} />
 
               {product.weights && (
                 <div className="mt-6 space-y-2">
