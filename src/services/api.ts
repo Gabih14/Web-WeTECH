@@ -136,15 +136,27 @@ export async function fetchClienteByCuit(cuit: string) {
     }
     if (!data) return null;
     const parsedAddress = parseAddress(data.direccion);
+    const separatedStreet = cleanAddressValue(data.direccionSeparada?.calle);
+    const separatedNumber = cleanAddressValue(data.direccionSeparada?.numero);
+    const domicilioStreet = cleanAddressValue(data.domicilio?.calle);
+    const domicilioNumber = cleanAddressValue(data.domicilio?.numero);
+    const preferredStreet = separatedStreet || domicilioStreet;
+    const preferredNumber = separatedNumber || domicilioNumber;
+    const parsedPreferredStreet = preferredNumber
+      ? { calle: preferredStreet, numero: preferredNumber }
+      : parseAddress(preferredStreet);
 
     return {
       nombre: data.razonSocial || data.nombre || "",
       email: data.email || "",
       telefono: data.telefono || "",
-      calle: cleanAddressValue(data.domicilio?.calle) || parsedAddress.calle,
-      numero: cleanAddressValue(data.domicilio?.numero) || parsedAddress.numero,
-      ciudad: data.localidad || "",
-      codigo_postal: cleanAddressValue(data.cpa),
+      calle: parsedPreferredStreet.calle || parsedAddress.calle,
+      numero: parsedPreferredStreet.numero || parsedAddress.numero,
+      ciudad:
+        cleanAddressValue(data.direccionSeparada?.ciudad) || data.localidad || "",
+      codigo_postal:
+        cleanAddressValue(data.direccionSeparada?.codigoPostal) ||
+        cleanAddressValue(data.cpa),
       observaciones: data.observaciones || "",
     };
   } catch (error) {
