@@ -131,7 +131,9 @@ export async function createStockWaitRequest(payload: StockWaitRequestPayload) {
 export async function fetchClienteByCuit(cuit: string) {
   try {
     const data = await apiFetch(`/vta-cliente/${cuit}`);
-    //console.log(`Respuesta de la API para CUIT ${cuit}:`, data);
+    if (import.meta.env.DEV) {
+      console.log(`Respuesta de GET /vta-cliente/${cuit}:`, data);
+    }
     if (!data) return null;
     const parsedAddress = parseAddress(data.direccion);
 
