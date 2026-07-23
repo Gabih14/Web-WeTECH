@@ -3,6 +3,7 @@ import { Coupon } from "../types";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const BEARER_TOKEN = import.meta.env.VITE_API_BEARER_TOKEN; 
+const READ_API_TOKEN = import.meta.env.VITE_READ_API_TOKEN;
 
 export class ApiError extends Error {
   status: number;
@@ -99,6 +100,25 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
   return response.json();
 }
 
+export async function dashboardReadApiFetch(endpoint: string, options: RequestInit = {}) {
+  const headers = {
+    ...options.headers,
+    "Authorization": `Bearer ${READ_API_TOKEN}`,
+    "Content-Type": "application/json",
+  };
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new ApiError(response.status, response.statusText);
+  }
+
+  return response.json();
+}
+
 async function publicApiFetch(endpoint: string, options: RequestInit = {}) {
   const headers = {
     ...options.headers,
@@ -131,18 +151,32 @@ export async function createStockWaitRequest(payload: StockWaitRequestPayload) {
 export async function fetchClienteByCuit(cuit: string) {
   try {
     const data = await apiFetch(`/vta-cliente/${cuit}`);
-    //console.log(`Respuesta de la API para CUIT ${cuit}:`, data);
+    if (import.meta.env.DEV) {
+      console.log(`Respuesta de GET /vta-cliente/${cuit}:`, data);
+    }
     if (!data) return null;
     const parsedAddress = parseAddress(data.direccion);
+    const separatedStreet = cleanAddressValue(data.direccionSeparada?.calle);
+    const separatedNumber = cleanAddressValue(data.direccionSeparada?.numero);
+    const domicilioStreet = cleanAddressValue(data.domicilio?.calle);
+    const domicilioNumber = cleanAddressValue(data.domicilio?.numero);
+    const preferredStreet = separatedStreet || domicilioStreet;
+    const preferredNumber = separatedNumber || domicilioNumber;
+    const parsedPreferredStreet = preferredNumber
+      ? { calle: preferredStreet, numero: preferredNumber }
+      : parseAddress(preferredStreet);
 
     return {
       nombre: data.razonSocial || data.nombre || "",
       email: data.email || "",
       telefono: data.telefono || "",
-      calle: cleanAddressValue(data.domicilio?.calle) || parsedAddress.calle,
-      numero: cleanAddressValue(data.domicilio?.numero) || parsedAddress.numero,
-      ciudad: data.localidad || "",
-      codigo_postal: cleanAddressValue(data.cpa),
+      calle: parsedPreferredStreet.calle || parsedAddress.calle,
+      numero: parsedPreferredStreet.numero || parsedAddress.numero,
+      ciudad:
+        cleanAddressValue(data.direccionSeparada?.ciudad) || data.localidad || "",
+      codigo_postal:
+        cleanAddressValue(data.direccionSeparada?.codigoPostal) ||
+        cleanAddressValue(data.cpa),
       observaciones: data.observaciones || "",
     };
   } catch (error) {
