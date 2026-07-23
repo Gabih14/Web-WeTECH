@@ -203,6 +203,7 @@ export function ProductCard({
     : undefined;
   const displayImage = selectedColorImage || product.image;
   const selectedItemId = getVariantItemId(product, selectedColor, selectedWeight);
+  const productPath = `/product/${encodeURIComponent(product.id)}`;
   const canRequestStockNotice =
     availableStock === 0 &&
     (!product.colors || !!selectedColor) &&
@@ -221,7 +222,7 @@ export function ProductCard({
 
       {/* Image */}
       <Link
-        to={`/product/${product.id}`}
+        to={productPath}
         state={{ from }}
         className="block aspect-square overflow-hidden rounded-t-2xl bg-gray-50"
       >
@@ -241,7 +242,7 @@ export function ProductCard({
 
         {/* Name + stock — min-h para alinear cards vecinos */}
         <div className="min-h-[3.5rem]">
-          <Link to={`/product/${product.id}`} state={{ from }}>
+          <Link to={productPath} state={{ from }}>
             <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 leading-snug hover:text-yellow-500 transition-colors">
               {product.name}
             </h3>
