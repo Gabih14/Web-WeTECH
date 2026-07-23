@@ -30,8 +30,17 @@ import { StockWaitRequestModal } from "../components/products/StockWaitRequestMo
 
 const QUANTITY_OPTIONS = [1, 5, 10, 50];
 
+const safeDecodeURIComponent = (value: string) => {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+};
+
 export function ProductPage() {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams();
+  const id = params["*"] ? safeDecodeURIComponent(params["*"]) : undefined;
   const location = useLocation();
   const navigate = useNavigate();
   const { addToCart, items } = useCart();
