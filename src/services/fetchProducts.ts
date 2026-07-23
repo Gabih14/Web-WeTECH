@@ -1,4 +1,4 @@
-import { apiFetch } from "../services/api";
+import { apiFetch, dashboardReadApiFetch } from "../services/api";
 import { Colors, Product } from "../types";
 import { shouldExcludeFamily } from "../data/excludedFamilies";
 import sparePartsFallbackImage from "../assets/pngtree-no-image-vector-illustration-isolated-png-image_1694547.jpg";
@@ -91,7 +91,7 @@ const colorNameOf = (variante: CatalogoVariante): string =>
   "Sin color";
 
 const fetchColors = async (): Promise<Colors[]> => {
-  const colorData = await apiFetch("/colors");
+  const colorData = await dashboardReadApiFetch("/colors");
 
   return Array.isArray(colorData)
     ? colorData

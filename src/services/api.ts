@@ -3,6 +3,7 @@ import { Coupon } from "../types";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const BEARER_TOKEN = import.meta.env.VITE_API_BEARER_TOKEN; 
+const READ_API_TOKEN = import.meta.env.VITE_READ_API_TOKEN;
 
 export class ApiError extends Error {
   status: number;
@@ -84,6 +85,25 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
   const headers = {
     ...options.headers,
     "Authorization": `Bearer ${BEARER_TOKEN}`,
+    "Content-Type": "application/json",
+  };
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new ApiError(response.status, response.statusText);
+  }
+
+  return response.json();
+}
+
+export async function dashboardReadApiFetch(endpoint: string, options: RequestInit = {}) {
+  const headers = {
+    ...options.headers,
+    "Authorization": `Bearer ${READ_API_TOKEN}`,
     "Content-Type": "application/json",
   };
 

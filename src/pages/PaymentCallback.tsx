@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { RefreshCw } from "lucide-react";
-import { apiFetch } from "../services/api";
+import { dashboardReadApiFetch } from "../services/api";
 import SurveyModal from "../components/SurveyModal";
 import { formatCurrency } from "../utils/money";
 import { useCart } from "../context/CartContext";
@@ -351,7 +351,7 @@ const PaymentCallback = () => {
     if (!externalId || isRefreshing) return;
     try {
       setIsRefreshing(true);
-      const data: PedidoData = await apiFetch(`/pedido/${externalId}`);
+      const data: PedidoData = await dashboardReadApiFetch(`/pedido/${externalId}`);
       setPedidoData(data);
       console.log("Pedido refreshed:", data);
       if (data.estado === "APROBADO") setStatus(PaymentStatus.SUCCESS);
@@ -375,7 +375,7 @@ const PaymentCallback = () => {
         return;
       }
       try {
-        const data: PedidoData = await apiFetch(`/pedido/${externalId}`);
+        const data: PedidoData = await dashboardReadApiFetch(`/pedido/${externalId}`);
         setPedidoData(data);
         if (data.estado === "APROBADO") setStatus(PaymentStatus.SUCCESS);
         else if (data.estado === "RECHAZADO" || data.estado === "CANCELADO") setStatus(PaymentStatus.FAIL);
@@ -393,7 +393,7 @@ const PaymentCallback = () => {
     if (pedidoData?.estado === "PENDIENTE") {
       interval = setInterval(async () => {
         try {
-          const data: PedidoData = await apiFetch(`/pedido/${externalId}`);
+          const data: PedidoData = await dashboardReadApiFetch(`/pedido/${externalId}`);
           setPedidoData(data);
           if (data.estado === "APROBADO") setStatus(PaymentStatus.SUCCESS);
           else if (data.estado === "RECHAZADO" || data.estado === "CANCELADO") setStatus(PaymentStatus.FAIL);
