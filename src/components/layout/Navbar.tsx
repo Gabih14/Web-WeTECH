@@ -1,21 +1,23 @@
 import { useEffect, useRef, useState } from "react";
+import {
+  Show,
+  SignInButton,
+  SignUpButton,
+  UserButton,
+} from "@clerk/react";
 import { ShoppingCart } from "lucide-react"; // UserCircle
 import { FaWhatsapp } from "react-icons/fa"; // FaMapMarkerAlt
 import { useCart } from "../../context/CartContext";
-//import { useAuth } from "../context/AuthContext";
 import CartModal from "../cart/CartModal";
-import LoginModal from "../../components/LoginModal";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import Isologo from "../../assets/Isologo Fondo Negro SVG.svg";
 
 export default function Navbar() {
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isBadgeBumping, setIsBadgeBumping] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   //const [selectedProvince, setSelectedProvince] = useState("Mendoza");
   const { items } = useCart();
-  //const { isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -122,26 +124,33 @@ export default function Navbar() {
             </form>
 
             <div className="flex items-center space-x-2 pl-2 sm:space-x-4">
-              {/* {isAuthenticated ? (
-                <button
-                  onClick={logout}
-                  className="text-black hover:text-white transition-colors flex items-center"
-                >
-                  <UserCircle className="h-6 w-6 mr-2" />
-                  <span className="hidden lg:flex">Cerrar Sesión</span>
-                </button>
-              ) : (
-                <button
-                  onClick={() => setIsLoginOpen(true)}
-                  className="text-black hover:text-white transition-colors flex items-center"
-                >
-                  <UserCircle className="h-6 w-6 mr-2" />
-                  <span className="hidden lg:flex">Iniciar Sesión</span>
-                </button>
-              )} */}
+              <Show when="signed-out">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <SignInButton mode="modal">
+                    <button className="rounded-md border border-black px-2 py-2 text-xs font-semibold text-black transition-colors hover:bg-black hover:text-white sm:px-3 sm:text-sm">
+                      Ingresar
+                    </button>
+                  </SignInButton>
+                  <SignUpButton mode="modal">
+                    <button className="rounded-md bg-black px-2 py-2 text-xs font-semibold text-white transition-colors hover:bg-gray-800 sm:px-3 sm:text-sm">
+                      Crear cuenta
+                    </button>
+                  </SignUpButton>
+                </div>
+              </Show>
+              <Show when="signed-in">
+                <UserButton
+                  appearance={{
+                    elements: {
+                      avatarBox: "h-9 w-9",
+                    },
+                  }}
+                />
+              </Show>
               <button
                 className="p-2 rounded-full text-black hover:bg-white relative"
                 onClick={() => setIsCartOpen(true)}
+                aria-label="Abrir carrito"
               >
                 <ShoppingCart className="h-6 w-6" />
                 {itemCount > 0 && (
@@ -200,7 +209,6 @@ export default function Navbar() {
       </header>
 
       <CartModal isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
-      <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
 
       {/* WhatsApp Floating Button - Solo mostrar si NO estamos en franquicias */}
       {!isInFranquiciasPage && (
