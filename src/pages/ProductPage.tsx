@@ -17,6 +17,7 @@ import {
 import { useAddToCartFeedback } from "../hooks/useAddToCartFeedback";
 import {
   getFirstColorWithStock,
+  getDefaultProductWeight,
   hasPurchasableStockInOtherColor,
   isFilamentProduct,
   getPurchaseState,
@@ -93,7 +94,7 @@ export function ProductPage() {
     setCurrentPrice(product.price);
     setCurrentPromotionalPrice(isFilament ? product.promotionalPrice : undefined);
     setSelectedColor(getFirstColorWithStock(product));
-    setSelectedWeight(product.weights?.[0]?.weight ?? null);
+    setSelectedWeight(getDefaultProductWeight(product));
     setQuantity(1);
 
     if (isFilament) {
@@ -225,12 +226,12 @@ export function ProductPage() {
       const stockA = getVariantStock(
         product,
         a.name,
-        selectedWeight ?? product.weights?.[0]?.weight ?? 0
+        selectedWeight ?? getDefaultProductWeight(product) ?? 0
       );
       const stockB = getVariantStock(
         product,
         b.name,
-        selectedWeight ?? product.weights?.[0]?.weight ?? 0
+        selectedWeight ?? getDefaultProductWeight(product) ?? 0
       );
 
       if (stockA > 0 && stockB === 0) return -1;
@@ -454,7 +455,7 @@ export function ProductPage() {
                         const stock = getVariantStock(
                           product,
                           color.name,
-                          selectedWeight ?? product.weights?.[0]?.weight ?? 0
+                          selectedWeight ?? getDefaultProductWeight(product) ?? 0
                         );
 
                         const disabledByStock = stock === 0;

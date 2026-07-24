@@ -3,6 +3,14 @@ import { CartItem, Product } from "../types";
 export const isFilamentProduct = (product: Product): boolean =>
   product.category === "FILAMENTO 3D";
 
+export function getDefaultProductWeight(product: Product): number | null {
+  return (
+    product.weights?.find((variantWeight) => variantWeight.weight === 1)?.weight ??
+    product.weights?.[0]?.weight ??
+    null
+  );
+}
+
 function getFilamentVariantStock(
   product: Product,
   color: string,
@@ -20,7 +28,7 @@ export function getFirstColorWithStock(product: Product): string | null {
     return product.colors?.[0]?.name ?? null;
   }
 
-  const defaultWeight = product.weights[0]?.weight ?? 0;
+  const defaultWeight = getDefaultProductWeight(product) ?? 0;
   const firstInStock = product.colors.find(
     (color) => (color.stock[defaultWeight.toString()] ?? 0) > 0
   );
