@@ -30,10 +30,13 @@ import { fetchClienteByCuit, verifyCoupon, useCoupon } from "../../services/api"
 import { fetchProducts } from "../../services/fetchProducts";
 import {
   hasAtLeastTwoWords,
+  formatCustomerNameForOrder,
+  getDocumentType,
   formatArgentinaMobileForApi,
   isValidCuitCuil,
   normalizeCuitCuil,
   normalizePhoneDigits,
+  splitPersonalNameFromRazonSocial,
   stripArgentinaMobilePrefix,
 } from "../../utils/validation";
 
@@ -89,6 +92,8 @@ export default function Checkout() {
   const [formData, setFormData] = useState({
     cuit: "",
     name: "",
+    firstName: "",
+    lastName: "",
     email: "",
     phone: "",
     street: "",
@@ -127,6 +132,7 @@ export default function Checkout() {
   const CHECKOUT_ACCESS_PASSWORD =
     import.meta.env.VITE_CHECKOUT_ACCESS_PASSWORD || "desarrollo";
   const isCuitValid = isValidCuitCuil(formData.cuit);
+  const documentType = getDocumentType(formData.cuit);
   const showCuitHelp = formData.cuit.trim().length > 0 && !isCuitValid;
 
   useEffect(() => {
@@ -510,9 +516,15 @@ export default function Checkout() {
       ? finalTotal
       : roundDisplayedPrice(finalTotal);
     const cleanCuit = normalizeCuitCuil(formData.cuit); // Remover guiones y caracteres no numéricos
+    const clienteNombre = formatCustomerNameForOrder({
+      documentType,
+      name: formData.name,
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+    });
 
     const body = {
-      cliente_nombre: formData.name,
+      cliente_nombre: clienteNombre,
       cliente_cuit: cleanCuit,
       total: orderTotal,
       costo_envio: shippingTotal,
@@ -722,7 +734,23 @@ export default function Checkout() {
         ? stripArgentinaMobilePrefix(value) || normalizePhoneDigits(value)
         : value;
 
-    setFormData((prev) => ({ ...prev, [name]: nextValue }));
+    setFormData((prev) => {
+      if (name === "cuit") {
+        const nextDocumentType = getDocumentType(nextValue);
+        const previousDocumentType = getDocumentType(prev.cuit);
+
+        if (nextDocumentType !== previousDocumentType) {
+          return {
+            ...prev,
+            cuit: nextValue,
+            firstName: nextDocumentType === "cuit" ? "" : prev.firstName,
+            lastName: nextDocumentType === "cuit" ? "" : prev.lastName,
+          };
+        }
+      }
+
+      return { ...prev, [name]: nextValue };
+    });
   };
 
   const handleCuitBlur = async () => {
@@ -737,9 +765,25 @@ export default function Checkout() {
     const clienteData = await fetchClienteByCuit(cuit);
     //console.log("Datos del cliente obtenidos por CUIT:", clienteData);
     if (clienteData) {
+      const fetchedDocumentType = getDocumentType(cuit);
+      const fetchedPersonalName = splitPersonalNameFromRazonSocial(
+        clienteData.nombre
+      );
+
       setFormData((prev) => ({
         ...prev,
-        name: clienteData.nombre ? clienteData.nombre : prev.name,
+        name:
+          fetchedDocumentType === "cuit" && clienteData.nombre
+            ? clienteData.nombre
+            : prev.name,
+        firstName:
+          fetchedDocumentType === "cuil" && fetchedPersonalName.firstName
+            ? fetchedPersonalName.firstName
+            : prev.firstName,
+        lastName:
+          fetchedDocumentType === "cuil" && fetchedPersonalName.lastName
+            ? fetchedPersonalName.lastName
+            : prev.lastName,
         email: clienteData.email ? clienteData.email : prev.email,
         phone: clienteData.telefono
           ? stripArgentinaMobilePrefix(clienteData.telefono) || prev.phone
@@ -871,7 +915,9 @@ export default function Checkout() {
       case 1: // Información Personal
         return !!(
           isCuitValid &&
-          hasAtLeastTwoWords(formData.name) &&
+          (documentType === "cuil"
+            ? formData.firstName.trim() && formData.lastName.trim()
+            : hasAtLeastTwoWords(formData.name)) &&
           formData.email &&
           formData.phone
         );
@@ -926,6 +972,7 @@ export default function Checkout() {
             handleInputChange={handleInputChange}
             handleCuitBlur={handleCuitBlur}
             isCuitValid={isCuitValid}
+            documentType={documentType}
             showCuitHelp={showCuitHelp}
           />
         );
@@ -1081,8 +1128,14 @@ export default function Checkout() {
                   <dd className="text-gray-900 font-medium">{formData.cuit}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-gray-600">Nombre:</dt>
-                  <dd className="text-gray-900 font-medium">{formData.name}</dd>
+                  <dt className="text-gray-600">
+                    {documentType === "cuil" ? "Nombre:" : "Razón social:"}
+                  </dt>
+                  <dd className="text-gray-900 font-medium">
+                    {documentType === "cuil"
+                      ? `${formData.firstName} ${formData.lastName}`.trim()
+                      : formData.name}
+                  </dd>
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-gray-600">Email:</dt>
