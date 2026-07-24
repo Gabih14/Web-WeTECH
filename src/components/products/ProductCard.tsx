@@ -14,6 +14,7 @@ import {
 import { useAddToCartFeedback } from "../../hooks/useAddToCartFeedback";
 import {
   getFirstColorWithStock,
+  getDefaultProductWeight,
   hasPurchasableStockInOtherColor,
   getPurchaseState,
   getVariantStock,
@@ -60,7 +61,7 @@ export function ProductCard({
         return getFirstColorWithStock(product);
       }
 
-      const selectedWeight = weight ?? product.weights?.[0]?.weight ?? 0;
+      const selectedWeight = weight ?? getDefaultProductWeight(product) ?? 0;
       const firstInStock = groupColors.find(
         (color) => selectedStock(color.name, selectedWeight) > 0
       );
@@ -74,11 +75,11 @@ export function ProductCard({
   const [selectedColor, setSelectedColor] = useState<string | null>(() => {
     return getFirstColorForGroup(
       selectedColorGroupId,
-      product.weights?.[0]?.weight ?? null
+      getDefaultProductWeight(product)
     );
   });
   const [selectedWeight, setSelectedWeight] = useState<number | null>(
-    product.weights?.[0]?.weight ?? null
+    getDefaultProductWeight(product)
   );
   const [quantity, setQuantity] = useState(1);
   const [isColorMenuOpen, setIsColorMenuOpen] = useState(false);
@@ -182,8 +183,8 @@ export function ProductCard({
 
   const sortedColors = product.colors
     ? [...product.colors].sort((a, b) => {
-        const wa = selectedStock(a.name, selectedWeight ?? product.weights?.[0]?.weight ?? 0);
-        const wb = selectedStock(b.name, selectedWeight ?? product.weights?.[0]?.weight ?? 0);
+        const wa = selectedStock(a.name, selectedWeight ?? getDefaultProductWeight(product) ?? 0);
+        const wb = selectedStock(b.name, selectedWeight ?? getDefaultProductWeight(product) ?? 0);
         if (wa > 0 && wb === 0) return -1;
         if (wa === 0 && wb > 0) return 1;
         return a.name.localeCompare(b.name);
@@ -281,7 +282,7 @@ export function ProductCard({
                 {sortedColors.map((color) => {
                   const stock = selectedStock(
                     color.name,
-                    selectedWeight ?? product.weights?.[0]?.weight ?? 0
+                    selectedWeight ?? getDefaultProductWeight(product) ?? 0
                   );
                   const isColorDisabled = stock === 0;
                   return (

@@ -272,7 +272,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
           a.name.localeCompare(b.name),
         );
         product.colors = sortedColors;
-        product.weights = weights;
+        product.weights = weights.sort((a, b) => a.weight - b.weight);
 
         // Imagen principal = primera imagen de color disponible
         const colorWithImage = sortedColors.find(
