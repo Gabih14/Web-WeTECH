@@ -7,6 +7,80 @@ export const hasAtLeastTwoWords = (value: string): boolean =>
 export const normalizeCuitCuil = (value: string): string =>
   value.trim().replace(/\D/g, "");
 
+export type DocumentType = "cuil" | "cuit";
+
+const CUIL_PREFIXES = new Set(["20", "23", "24", "27"]);
+const CUIT_PREFIXES = new Set(["30", "33", "34"]);
+
+const normalizeWhitespace = (value: string): string =>
+  value.replace(/\s+/g, " ").trim();
+
+export const getDocumentType = (value: string): DocumentType | null => {
+  const cuitCuil = normalizeCuitCuil(value);
+  const prefix = cuitCuil.slice(0, 2);
+
+  if (CUIL_PREFIXES.has(prefix)) return "cuil";
+  if (CUIT_PREFIXES.has(prefix)) return "cuit";
+
+  return null;
+};
+
+export const splitPersonalNameFromRazonSocial = (
+  value: string
+): { firstName: string; lastName: string } => {
+  const normalizedValue = normalizeWhitespace(value);
+
+  if (!normalizedValue) {
+    return { firstName: "", lastName: "" };
+  }
+
+  const [lastNamePart, ...firstNameParts] = normalizedValue.split(",");
+  const hasCommaFormat = firstNameParts.length > 0;
+
+  if (hasCommaFormat) {
+    return {
+      firstName: normalizeWhitespace(firstNameParts.join(",")),
+      lastName: normalizeWhitespace(lastNamePart),
+    };
+  }
+
+  const nameParts = normalizedValue.split(" ").filter(Boolean);
+
+  if (nameParts.length <= 1) {
+    return { firstName: normalizedValue, lastName: "" };
+  }
+
+  return {
+    firstName: nameParts.slice(0, -1).join(" "),
+    lastName: nameParts[nameParts.length - 1],
+  };
+};
+
+export const formatCustomerNameForOrder = ({
+  documentType,
+  name,
+  firstName,
+  lastName,
+}: {
+  documentType: DocumentType | null;
+  name: string;
+  firstName: string;
+  lastName: string;
+}): string => {
+  if (documentType !== "cuil") {
+    return normalizeWhitespace(name);
+  }
+
+  const cleanFirstName = normalizeWhitespace(firstName);
+  const cleanLastName = normalizeWhitespace(lastName);
+
+  if (cleanFirstName && cleanLastName) {
+    return `${cleanLastName}, ${cleanFirstName}`;
+  }
+
+  return normalizeWhitespace(`${cleanFirstName} ${cleanLastName}`);
+};
+
 export const isValidCuitCuil = (value: string): boolean => {
   const cuit = normalizeCuitCuil(value);
 

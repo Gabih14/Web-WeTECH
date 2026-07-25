@@ -3,6 +3,7 @@ import {
   FULL_NAME_PATTERN,
   hasAtLeastTwoWords,
 } from "../../utils/validation";
+import type { DocumentType } from "../../utils/validation";
 
 const CUIT_HELP_URL =
   "https://serviciosweb.afip.gob.ar/publico/cuitonline/infopersonal.aspx";
@@ -10,13 +11,16 @@ const CUIT_HELP_URL =
 type Props = {
   formData: {
     name: string;
+    firstName: string;
+    lastName: string;
     email: string;
     phone: string;
-    cuit: string; // Agregado el campo cuit
+    cuit: string;
   };
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleCuitBlur?: () => void;
   isCuitValid: boolean;
+  documentType: DocumentType | null;
   showCuitHelp: boolean;
 };
 
@@ -25,16 +29,26 @@ export const CheckoutPersonal = ({
   handleInputChange,
   handleCuitBlur,
   isCuitValid,
+  documentType,
   showCuitHelp,
 }: Props) => {
+  const completeCuilName = `${formData.firstName} ${formData.lastName}`;
   const isNameIncomplete =
-    formData.name.trim().length > 0 && !hasAtLeastTwoWords(formData.name);
+    documentType === "cuil"
+      ? (formData.firstName.trim().length > 0 ||
+          formData.lastName.trim().length > 0) &&
+        !hasAtLeastTwoWords(completeCuilName)
+      : formData.name.trim().length > 0 && !hasAtLeastTwoWords(formData.name);
   const arePersonalFieldsDisabled = !isCuitValid;
+  const singleNameLabel =
+    documentType === "cuit" ? "Razon social" : "Nombre completo";
+  const singleNamePlaceholder =
+    documentType === "cuit" ? "Razon social" : "Nombre y apellido";
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
       <h2 className="text-lg font-medium text-gray-900 mb-4">
-        Información Personal
+        Informacion Personal
       </h2>
       <div className="grid grid-cols-1 gap-4">
         <div>
@@ -67,7 +81,7 @@ export const CheckoutPersonal = ({
           />
           {showCuitHelp && (
             <p id="cuit-help" className="mt-1 text-sm text-red-600">
-              Ingresá un CUIT/CUIL válido.{" "}
+              Ingresa un CUIT/CUIL valido.{" "}
               <a
                 href={CUIT_HELP_URL}
                 target="_blank"
@@ -79,30 +93,80 @@ export const CheckoutPersonal = ({
             </p>
           )}
         </div>
-        <div>
-          <label
-            htmlFor="name"
-            className="block text-sm font-medium text-gray-700"
-          >
-            Nombre completo
-          </label>
-          <input
-            type="text"
-            id="name"
-            name="name"
-            value={formData.name}
-            onChange={handleInputChange}
-            pattern={FULL_NAME_PATTERN}
-            title={FULL_NAME_MESSAGE}
-            required
-            disabled={arePersonalFieldsDisabled}
-            className="mt-1 p-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
-            placeholder="Nombre y apellido"
-          />
-          {isNameIncomplete && (
-            <p className="mt-1 text-sm text-red-600">{FULL_NAME_MESSAGE}</p>
-          )}
-        </div>
+
+        {documentType === "cuil" ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label
+                htmlFor="firstName"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Nombre
+              </label>
+              <input
+                type="text"
+                id="firstName"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleInputChange}
+                required
+                disabled={arePersonalFieldsDisabled}
+                className="mt-1 p-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                placeholder="Nombre"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="lastName"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Apellido
+              </label>
+              <input
+                type="text"
+                id="lastName"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleInputChange}
+                required
+                disabled={arePersonalFieldsDisabled}
+                className="mt-1 p-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                placeholder="Apellido"
+              />
+            </div>
+            {isNameIncomplete && (
+              <p className="sm:col-span-2 mt-[-0.5rem] text-sm text-red-600">
+                {FULL_NAME_MESSAGE}
+              </p>
+            )}
+          </div>
+        ) : (
+          <div>
+            <label
+              htmlFor="name"
+              className="block text-sm font-medium text-gray-700"
+            >
+              {singleNameLabel}
+            </label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              value={formData.name}
+              onChange={handleInputChange}
+              pattern={FULL_NAME_PATTERN}
+              title={FULL_NAME_MESSAGE}
+              required
+              disabled={arePersonalFieldsDisabled}
+              className="mt-1 p-1 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+              placeholder={singleNamePlaceholder}
+            />
+            {isNameIncomplete && (
+              <p className="mt-1 text-sm text-red-600">{FULL_NAME_MESSAGE}</p>
+            )}
+          </div>
+        )}
+
         <div>
           <label
             htmlFor="email"
@@ -126,7 +190,7 @@ export const CheckoutPersonal = ({
             htmlFor="phone"
             className="block text-sm font-medium text-gray-700"
           >
-            Teléfono
+            Telefono
           </label>
           <div className="mt-1 flex rounded-md shadow-sm">
             <span className="inline-flex flex-shrink-0 items-center whitespace-nowrap rounded-l-md border-2 border-r-0 border-gray-300 bg-gray-100 px-3 text-sm font-medium text-gray-700">
@@ -148,7 +212,7 @@ export const CheckoutPersonal = ({
             />
           </div>
           <p id="phone-help" className="mt-1 text-xs text-gray-500">
-            Completá código de área + número, sin 0 ni 15, espacios ni guiones.
+            Completa codigo de area + numero, sin 0 ni 15, espacios ni guiones.
           </p>
         </div>
         {/*
