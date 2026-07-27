@@ -52,6 +52,10 @@ test("reconoce familias elegibles desde codigos de variantes", () => {
     true
   );
   assert.equal(
+    isEligibleForQuantityDiscount(filament("FM-PLA-1KG-AMAR"), 1),
+    true
+  );
+  assert.equal(
     calculateDiscountedPriceForProduct(
       filament("FM-PLA-1KG-AMAR"),
       28234,

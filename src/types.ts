@@ -76,6 +76,11 @@ export interface ShippingCost {
   cost: number;
 }
 
+export type CouponApplicableCategory =
+  | "filamento"
+  | "impresora"
+  | "repuesto";
+
 export interface Coupon {
   code: string;
   porcentajeDescuento: number;
@@ -85,6 +90,7 @@ export interface Coupon {
   fechaDesde: Date;
   fechaHasta: Date;
   descripcion?: string;
+  categoriaAplicable?: CouponApplicableCategory | null;
 }
 
 export interface Colors {
