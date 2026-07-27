@@ -1,10 +1,11 @@
-import { roundPrice } from "./money";
-
 export type CheckoutLinePricing = {
   subtotalBruto: number;
   subtotalNeto: number;
   precioUnitarioNeto: number;
 };
+
+export const normalizeBackendBasePrice = (price: number): number =>
+  Math.round(price);
 
 export const calculateCheckoutLinePricing = (
   precioBaseUnitario: number,
@@ -19,11 +20,15 @@ export const calculateCheckoutLinePricing = (
     };
   }
 
-  const subtotalBruto = roundPrice(precioBaseUnitario * cantidad);
-  const subtotalNeto = roundPrice(
-    precioBaseUnitario * cantidad * (1 - descuentoPorcentaje / 100)
+  const normalizedBasePrice =
+    normalizeBackendBasePrice(precioBaseUnitario);
+  const subtotalBruto = Math.round(normalizedBasePrice * cantidad);
+  const subtotalNeto = Math.round(
+    normalizedBasePrice *
+      cantidad *
+      (1 - descuentoPorcentaje / 100)
   );
-  const precioUnitarioNeto = roundPrice(subtotalNeto / cantidad);
+  const precioUnitarioNeto = Math.round(subtotalNeto / cantidad);
 
   return {
     subtotalBruto,

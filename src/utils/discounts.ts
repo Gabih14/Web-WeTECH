@@ -1,4 +1,5 @@
 import { roundPrice } from "./money";
+import { calculateCheckoutLinePricing } from "./checkoutPricing";
 
 // Configuración de descuentos por cantidad (legacy por compatibilidad)
 export const QUANTITY_DISCOUNTS = {
@@ -44,6 +45,17 @@ const ELIGIBLE_ATTRIBUTE_KEYS = new Set(
   )
 );
 
+const LEGACY_PRODUCT_ATTRIBUTE_KEYS = new Map<string, string>([
+  ["3N|PLA", "3N3|PLA"],
+  ["G3|BOUT", "GRILON3|PLA BOUTIQUE"],
+  ["G3|PLA", "GRILON3|PLA"],
+  ["GS|PLA", "GST3D|PLA"],
+  ["HB|PLA", "HELLBOT|PLA"],
+  ["3X|PLA", "3NMAX|PLA+ MATTE"],
+  ["FM|PLA", "FREMOVER|HIGH SPEED PLA"],
+  ["EG|PLA", "ELEGOO|PLA"],
+]);
+
 /**
  * Deriva la clave "MARCA|MATERIAL" del id del producto. El id se arma como
  * MARCA-MATERIAL-LÍNEA-ORIGEN (desde atributos), así que los dos primeros
@@ -52,7 +64,9 @@ const ELIGIBLE_ATTRIBUTE_KEYS = new Set(
 const eligibleKeyFromProductId = (productId: string): string | null => {
   const parts = normalizeDiscountIdentifier(productId).split("-");
   if (parts.length < 2) return null;
-  return `${parts[0]}|${parts[1]}`;
+  const normalizedFamily = parts[1].replace(/\d+$/, "");
+  const key = `${parts[0]}|${normalizedFamily}`;
+  return LEGACY_PRODUCT_ATTRIBUTE_KEYS.get(key) ?? key;
 };
 
 // Categorías que comparten la misma regla de descuento (aceptamos legacy y nuevo nombre)
@@ -161,7 +175,11 @@ export const calculateDiscountedPriceForProduct = (
   effectiveQuantity = quantity
 ): number => {
   const rate = getDiscountRateForProduct(product, effectiveQuantity, weight);
-  return roundPrice(originalPrice * (1 - rate));
+  return calculateCheckoutLinePricing(
+    originalPrice,
+    quantity,
+    rate * 100
+  ).precioUnitarioNeto;
 };
 
 export const calculateDiscountedLineTotalForProduct = (
@@ -172,7 +190,11 @@ export const calculateDiscountedLineTotalForProduct = (
   effectiveQuantity = quantity
 ): number => {
   const rate = getDiscountRateForProduct(product, effectiveQuantity, weight);
-  return roundPrice(originalPrice * quantity * (1 - rate));
+  return calculateCheckoutLinePricing(
+    originalPrice,
+    quantity,
+    rate * 100
+  ).subtotalNeto;
 };
 
 export const getDiscountPercentageForProduct = (
@@ -208,7 +230,11 @@ export const getDiscountForQuantity = (quantity: number): number => {
 // Función para calcular el precio con descuento
 export const calculateDiscountedPrice = (originalPrice: number, quantity: number): number => {
   const discount = getDiscountForQuantity(quantity);
-  return roundPrice(originalPrice * (1 - discount));
+  return calculateCheckoutLinePricing(
+    originalPrice,
+    quantity,
+    discount * 100
+  ).precioUnitarioNeto;
 };
 
 // Función para obtener el porcentaje de descuento como string

@@ -5,6 +5,7 @@ import { dashboardReadApiFetch } from "../services/api";
 import SurveyModal from "../components/SurveyModal";
 import { formatCurrency } from "../utils/money";
 import { useCart } from "../context/CartContext";
+import { isShippingProductName } from "../utils/orderPricing";
 
 const PaymentStatus = {
   LOADING: "loading",
@@ -18,6 +19,7 @@ interface Producto {
   descripcion: string;
   cantidad: number;
   precio_unitario: number;
+  subtotal: number;
 }
 
 interface PedidoData {
@@ -33,6 +35,8 @@ interface PedidoData {
   costo_envio?: string;
   descuento_cupon?: string;
   codigo_cupon?: string;
+  factura_tipo?: "A" | "B" | null;
+  factura_iva_importe?: number | string | null;
   delivery_method?: string;
   cliente_mail?: string;
   cliente_ubicacion?: string;
@@ -55,6 +59,10 @@ const PaymentCallback = () => {
   const [isSurveyOpen, setIsSurveyOpen] = useState(false);
 
   const paymentMethod = pedidoData?.payment_method ?? pedidoData?.metodo_pago;
+  const hasShippingProduct =
+    pedidoData?.productos?.some((product) =>
+      isShippingProductName(product.nombre)
+    ) ?? false;
   const isTransferPending =
     paymentMethod === "transfer" && pedidoData?.estado === "PENDIENTE";
 
@@ -548,11 +556,13 @@ const PaymentCallback = () => {
                   <span className="product-name">{p.descripcion}</span>
                   <span className="product-qty"> × {p.cantidad}</span>
                 </div>
-                <span className="product-price">{fmt(p.precio_unitario * p.cantidad)}</span>
+                <span className="product-price">{fmt(p.subtotal)}</span>
               </div>
             ))}
 
-            {pedidoData?.costo_envio && parseFloat(pedidoData.costo_envio) > 0 && (
+            {pedidoData?.costo_envio &&
+              parseFloat(pedidoData.costo_envio) > 0 &&
+              !hasShippingProduct && (
               <div className="order-row" style={{ marginTop: 10 }}>
                 <span className="order-row-label">Envío</span>
                 <span className="order-row-value">{fmt(pedidoData.costo_envio)}</span>
@@ -562,10 +572,23 @@ const PaymentCallback = () => {
               <div className="order-row">
                 <span className="order-row-label">Cupón {pedidoData.codigo_cupon}</span>
                 <span className="order-row-value" style={{ color: "#16a34a" }}>
-                  {pedidoData.descuento_cupon ? `−${fmt(pedidoData.descuento_cupon)}` : "aplicado"}
+                  {pedidoData.descuento_cupon
+                    ? `Incluido (−${fmt(pedidoData.descuento_cupon)})`
+                    : "Aplicado"}
                 </span>
               </div>
             )}
+            {pedidoData?.factura_iva_importe != null &&
+              Number(pedidoData.factura_iva_importe) > 0 && (
+                <div className="order-row">
+                  <span className="order-row-label">
+                    IVA factura {pedidoData.factura_tipo ?? ""}
+                  </span>
+                  <span className="order-row-value">
+                    {fmt(pedidoData.factura_iva_importe)}
+                  </span>
+                </div>
+              )}
             <div className="order-total">
               <span>Total</span>
               <span>{fmt(pedidoData?.total ?? 0)}</span>

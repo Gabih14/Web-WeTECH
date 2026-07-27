@@ -36,12 +36,13 @@ export const calculateInvoiceLine = ({
     };
   }
 
+  const precioBaseNormalizado = roundPeso(precioMinoristaConIva);
   const ivaFactor = 1 + INVOICE_SURCHARGE_RATE;
   const descuentoFactor = 1 - descuentoPorcentaje / 100;
   const subtotalSA =
     subtotalSAOverride !== undefined
       ? round2(subtotalSAOverride)
-      : applyInvoiceTax(precioMinoristaConIva * cantidad);
+      : applyInvoiceTax(precioBaseNormalizado * cantidad);
   const brutoFinalPrevio = round2(subtotalSA * descuentoFactor);
   const netoFinal = roundPeso(brutoFinalPrevio / ivaFactor);
   const iva = round2(netoFinal * INVOICE_SURCHARGE_RATE);

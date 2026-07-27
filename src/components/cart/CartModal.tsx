@@ -11,6 +11,7 @@ import {
 } from "../../utils/discounts";
 import { getVariantPrice } from "../../utils/pricing";
 import { formatPrice, roundPrice } from "../../utils/money";
+import { calculateCheckoutLinePricing } from "../../utils/checkoutPricing";
 
 interface CartModalProps {
   isOpen: boolean;
@@ -95,7 +96,13 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
   const calculateOriginalTotal = () => {
     return items.reduce((sum, item) => {
       const price = getPrice(item.product, item.color, item.weight);
-      const itemTotal = price ? roundPrice(price) * item.quantity : 0;
+      const itemTotal = price
+        ? calculateCheckoutLinePricing(
+            price,
+            item.quantity,
+            0
+          ).subtotalBruto
+        : 0;
       return sum + itemTotal;
     }, 0);
   };

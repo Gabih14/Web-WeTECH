@@ -210,6 +210,8 @@ export async function verifyCoupon(couponCode: string): Promise<Coupon | null> {
         data.porcentajeDescuentoTransferencia,
         defaultDiscount
       ),
+      categoriaAplicable:
+        data.categoriaAplicable ?? data.categoria_aplicable ?? null,
       activo: data.activo,
       fechaDesde: new Date(data.fechaDesde),
       fechaHasta: new Date(data.fechaHasta),
