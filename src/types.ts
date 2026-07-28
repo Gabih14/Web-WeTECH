@@ -8,6 +8,7 @@ export interface Product {
   brand?: string;
   category: string;
   subcategory?: string;
+  difficultyLevel?: string;
   weights?: {
     weight: number;
     price: number;

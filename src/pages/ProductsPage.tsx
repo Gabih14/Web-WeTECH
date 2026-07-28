@@ -20,17 +20,139 @@ interface BrandFilterProps {
   onBrandChange: (brand: string | null) => void;
 }
 
+interface DifficultyFilterProps {
+  levels: string[];
+  selectedLevel: string | null;
+  onLevelChange: (level: string | null) => void;
+}
+
 const normalizeBrand = (brand: string) => brand.trim().toUpperCase();
+const normalizeDifficulty = (level: string) =>
+  level
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase();
 const SPARE_PARTS_CATEGORY = "REPUESTOS & ACCESORIOS";
+const DIFFICULTY_ORDER = ["PRINCIPIANTE", "INTERMEDIO", "AVANZADO", "EXPERTO"];
+
+const difficultyColorClasses = (level: string, isSelected: boolean) => {
+  switch (normalizeDifficulty(level)) {
+    case "PRINCIPIANTE":
+      return isSelected
+        ? "border-green-600 bg-green-200 text-green-950 ring-2 ring-green-300"
+        : "border-green-300 bg-green-100 text-green-800 hover:bg-green-200";
+    case "INTERMEDIO":
+      return isSelected
+        ? "border-yellow-600 bg-yellow-200 text-yellow-950 ring-2 ring-yellow-300"
+        : "border-yellow-300 bg-yellow-100 text-yellow-800 hover:bg-yellow-200";
+    case "AVANZADO":
+    case "EXPERTO":
+      return isSelected
+        ? "border-red-600 bg-red-200 text-red-950 ring-2 ring-red-300"
+        : "border-red-300 bg-red-100 text-red-800 hover:bg-red-200";
+    default:
+      return isSelected
+        ? "border-sky-600 bg-sky-200 text-sky-950 ring-2 ring-sky-300"
+        : "border-sky-300 bg-sky-100 text-sky-800 hover:bg-sky-200";
+  }
+};
+
+const difficultyDotCount = (level: string) => {
+  switch (normalizeDifficulty(level)) {
+    case "INTERMEDIO":
+      return 2;
+    case "AVANZADO":
+    case "EXPERTO":
+      return 3;
+    default:
+      return 1;
+  }
+};
+
+function DifficultyFilter({
+  levels,
+  selectedLevel,
+  onLevelChange,
+}: DifficultyFilterProps) {
+  if (levels.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mb-6 rounded-lg border border-sky-200 bg-sky-50 p-4 shadow">
+      <div className="mb-4">
+        <div>
+          <h2 className="text-lg font-bold leading-tight text-sky-950 sm:text-xl">
+            ¿Recién empezás?
+          </h2>
+          <p className="mt-1 text-xs leading-snug text-sky-800 sm:text-sm">
+            Filtrá por nivel de dificultad y encontrá filamentos pensados para
+            tu experiencia.
+          </p>
+        </div>
+        {selectedLevel !== null && (
+          <button
+            onClick={() => onLevelChange(null)}
+            className="mt-2 block text-xs font-medium text-sky-700 hover:text-sky-950 sm:text-sm"
+            type="button"
+          >
+            Limpiar
+          </button>
+        )}
+      </div>
+
+      <div className="grid grid-cols-3 gap-1.5">
+        {levels.map((level) => {
+          const isSelected =
+            selectedLevel !== null &&
+            normalizeDifficulty(selectedLevel) === normalizeDifficulty(level);
+
+          return (
+            <button
+              key={level}
+              onClick={() => onLevelChange(isSelected ? null : level)}
+              className={`flex min-w-0 flex-col items-center overflow-hidden rounded-md border px-0.5 py-2 text-center text-[9px] font-semibold tracking-tight transition-colors sm:px-1 sm:text-[10px] ${difficultyColorClasses(
+                level,
+                isSelected,
+              )}`}
+              type="button"
+            >
+              <span
+                className="mb-1 flex h-3 items-center justify-center gap-1"
+                aria-hidden="true"
+              >
+                {Array.from({ length: difficultyDotCount(level) }).map(
+                  (_, index) => (
+                    <span
+                      key={index}
+                      className="h-2 w-2 rounded-full bg-current"
+                    />
+                  ),
+                )}
+              </span>
+              <span className="w-full whitespace-nowrap">{level}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 function BrandFilter({
   brands,
   selectedBrand,
   onBrandChange,
 }: BrandFilterProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   if (brands.length === 0) {
     return null;
   }
+
+  const visibleBrands = isExpanded ? brands : brands.slice(0, 5);
+  const hasMoreBrands = brands.length > 5;
 
   return (
     <div className="bg-white p-4 rounded-lg shadow mb-6">
@@ -48,7 +170,7 @@ function BrandFilter({
       </div>
 
       <div className="space-y-2">
-        {brands.map((brand) => {
+        {visibleBrands.map((brand) => {
           const isSelected =
             selectedBrand !== null &&
             normalizeBrand(selectedBrand) === normalizeBrand(brand);
@@ -67,6 +189,17 @@ function BrandFilter({
           );
         })}
       </div>
+
+      {hasMoreBrands && (
+        <button
+          onClick={() => setIsExpanded((expanded) => !expanded)}
+          className="mt-4 w-full rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-900"
+          type="button"
+          aria-expanded={isExpanded}
+        >
+          {isExpanded ? "Ver menos" : `Ver las ${brands.length} marcas`}
+        </button>
+      )}
     </div>
   );
 }
@@ -76,9 +209,16 @@ function ColorFilter({
   selectedColorGroupId,
   onColorGroupChange,
 }: ColorFilterProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   if (colorGroups.length === 0) {
     return null;
   }
+
+  const visibleColorGroups = isExpanded
+    ? colorGroups
+    : colorGroups.slice(0, 8);
+  const hasMoreColors = colorGroups.length > 8;
 
   return (
     <div className="bg-white p-4 rounded-lg shadow mb-6">
@@ -96,7 +236,7 @@ function ColorFilter({
       </div>
 
       <div className="grid grid-cols-4 gap-3 sm:grid-cols-5 lg:grid-cols-4">
-        {colorGroups.map((colorGroup) => {
+        {visibleColorGroups.map((colorGroup) => {
           const isSelected = selectedColorGroupId === colorGroup.id;
 
           return (
@@ -126,6 +266,19 @@ function ColorFilter({
           );
         })}
       </div>
+
+      {hasMoreColors && (
+        <button
+          onClick={() => setIsExpanded((expanded) => !expanded)}
+          className="mt-4 w-full rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-900"
+          type="button"
+          aria-expanded={isExpanded}
+        >
+          {isExpanded
+            ? "Ver menos"
+            : `Ver los ${colorGroups.length} colores`}
+        </button>
+      )}
     </div>
   );
 }
@@ -143,6 +296,9 @@ export function ProductsPage() {
     number | null
   >(null);
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(
+    null
+  );
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -258,6 +414,30 @@ export function ProductsPage() {
     return Array.from(brandMap.values()).sort((a, b) => a.localeCompare(b));
   }, [matchesSelectedCategory, products]);
 
+  const availableDifficultyLevels = useMemo(() => {
+    const levels = new Map<string, string>();
+
+    products.filter(matchesSelectedCategory).forEach((product) => {
+      if (!product.difficultyLevel?.trim()) {
+        return;
+      }
+
+      const normalizedLevel = normalizeDifficulty(product.difficultyLevel);
+      if (!levels.has(normalizedLevel)) {
+        levels.set(normalizedLevel, product.difficultyLevel.trim());
+      }
+    });
+
+    return Array.from(levels.values()).sort((a, b) => {
+      const aIndex = DIFFICULTY_ORDER.indexOf(normalizeDifficulty(a));
+      const bIndex = DIFFICULTY_ORDER.indexOf(normalizeDifficulty(b));
+      const normalizedAIndex = aIndex === -1 ? DIFFICULTY_ORDER.length : aIndex;
+      const normalizedBIndex = bIndex === -1 ? DIFFICULTY_ORDER.length : bIndex;
+
+      return normalizedAIndex - normalizedBIndex || a.localeCompare(b);
+    });
+  }, [matchesSelectedCategory, products]);
+
   useEffect(() => {
     if (
       selectedColorGroupId !== null &&
@@ -280,6 +460,19 @@ export function ProductsPage() {
     }
   }, [availableBrands, selectedBrand]);
 
+  useEffect(() => {
+    if (
+      selectedDifficulty !== null &&
+      !availableDifficultyLevels.some(
+        (level) =>
+          normalizeDifficulty(level) ===
+          normalizeDifficulty(selectedDifficulty)
+      )
+    ) {
+      setSelectedDifficulty(null);
+    }
+  }, [availableDifficultyLevels, selectedDifficulty]);
+
   const filteredProducts = products.filter((product) => {
     const matchesColor =
       selectedColorGroupId === null ||
@@ -290,8 +483,18 @@ export function ProductsPage() {
       selectedBrand === null ||
       (product.brand &&
         normalizeBrand(product.brand) === normalizeBrand(selectedBrand));
+    const matchesDifficulty =
+      selectedDifficulty === null ||
+      (product.difficultyLevel &&
+        normalizeDifficulty(product.difficultyLevel) ===
+          normalizeDifficulty(selectedDifficulty));
 
-    return matchesSelectedCategory(product) && matchesColor && matchesBrand;
+    return (
+      matchesSelectedCategory(product) &&
+      matchesColor &&
+      matchesBrand &&
+      matchesDifficulty
+    );
   });
 
   const toggleMobileFilter = () => {
@@ -316,10 +519,14 @@ export function ProductsPage() {
     handleCategoryChange(null);
     setSelectedColorGroupId(null);
     setSelectedBrand(null);
+    setSelectedDifficulty(null);
   };
 
   const hasActiveFilters =
-    !!selectedCategory || selectedColorGroupId !== null || selectedBrand !== null;
+    !!selectedCategory ||
+    selectedColorGroupId !== null ||
+    selectedBrand !== null ||
+    selectedDifficulty !== null;
 
   if (loading) {
     return (
@@ -472,6 +679,11 @@ export function ProductsPage() {
             onCategoryChange={handleCategoryChange}
             onSubcategoryChange={handleSubcategoryChange}
           />
+          <DifficultyFilter
+            levels={availableDifficultyLevels}
+            selectedLevel={selectedDifficulty}
+            onLevelChange={setSelectedDifficulty}
+          />
           <ColorFilter
             colorGroups={availableColorGroups}
             selectedColorGroupId={selectedColorGroupId}
@@ -576,6 +788,14 @@ export function ProductsPage() {
             }}
             onSubcategoryChange={(subcategory) => {
               handleSubcategoryChange(subcategory);
+              setIsMobileFilterOpen(false);
+            }}
+          />
+          <DifficultyFilter
+            levels={availableDifficultyLevels}
+            selectedLevel={selectedDifficulty}
+            onLevelChange={(level) => {
+              setSelectedDifficulty(level);
               setIsMobileFilterOpen(false);
             }}
           />
