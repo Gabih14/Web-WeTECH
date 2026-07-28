@@ -90,6 +90,26 @@ const colorNameOf = (variante: CatalogoVariante): string =>
   variante.atributos.find((a) => a.clase === "Colores")?.valor ??
   "Sin color";
 
+const normalizeAttributeName = (value: string): string =>
+  value
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase();
+
+const difficultyLevelOf = (
+  productAttributes: CatalogoAtributo[],
+  variantAttributes: CatalogoAtributo[],
+): string | undefined => {
+  const difficultyAttribute = [...productAttributes, ...variantAttributes].find(
+    (attribute) =>
+      normalizeAttributeName(attribute.clase) === "NIVEL DE DIFICULTAD",
+  );
+  const value = difficultyAttribute?.valor?.trim();
+
+  return value || undefined;
+};
+
 const fetchColors = async (): Promise<Colors[]> => {
   const colorData = await dashboardReadApiFetch("/colors");
 
@@ -208,6 +228,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
         brand: prod.marca ?? undefined,
         category,
         subcategory: prod.subgrupo ? String(prod.subgrupo).toUpperCase() : undefined,
+        difficultyLevel: difficultyLevelOf(prod.atributos, first.atributos),
         price: firstPrice,
         invoicePrice: toNumber(first.invoicePrice) ?? firstPrice,
         promotionalPrice: toNumber(first.promotionalPrice),

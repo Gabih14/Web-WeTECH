@@ -1,5 +1,4 @@
 import { Category } from "../../types";
-import { ChevronDown } from "lucide-react";
 
 interface CategoryFilterProps {
   categories: Category[];
@@ -12,9 +11,7 @@ interface CategoryFilterProps {
 export function CategoryFilter({
   categories,
   selectedCategory,
-  selectedSubcategory,
   onCategoryChange,
-  onSubcategoryChange,
 }: CategoryFilterProps) {
   return (
     <div className="bg-white p-4 rounded-lg shadow mb-6">
@@ -31,26 +28,7 @@ export function CategoryFilter({
               }`}
             >
               <span>{category.name}</span>
-              {category.subcategories && <ChevronDown className="w-4 h-4" />}
             </button>
-
-            {selectedCategory === category.id && category.subcategories && (
-              <div className="ml-4 mt-1 space-y-1">
-                {category.subcategories.map((sub) => (
-                  <button
-                    key={sub.id}
-                    onClick={() => onSubcategoryChange(sub.id)}
-                    className={`w-full text-left p-2 rounded ${
-                      selectedSubcategory === sub.id
-                        ? "bg-yellow-50 text-yellow-600"
-                        : "hover:bg-gray-50"
-                    }`}
-                  >
-                    {sub.name}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
         ))}
       </div>
