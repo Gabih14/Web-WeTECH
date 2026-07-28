@@ -50,6 +50,7 @@ import {
   splitPersonalNameFromRazonSocial,
   stripArgentinaMobilePrefix,
 } from "../../utils/validation";
+import { buildOrderAddressPayload } from "../../utils/orderAddress";
 
 function useMediaQuery(query: string): boolean {
   const getMatches = () => {
@@ -526,23 +527,16 @@ export default function Checkout() {
       setShowErrorModal(true);
       return;
     }
-    // Dirección de envío
-    const calle = formData.street;
-    // const numero = formData.number;
-    const ciudad = formData.city;
-    const codigo_postal = formData.postalCode;
-    const region = "Mendoza";
-    const pais = "AR";
-
-    // Dirección de facturación (siempre se envía)
-    const billing_address = {
-      street: formData.billingStreet,
-      number: formData.addressWithoutNumber ? "" : formData.billingNumber,
-      city: formData.billingCity,
-      region: region,
-      country: pais,
-      postal_code: formData.billingPostalCode,
-    };
+    const orderAddress = buildOrderAddressPayload({
+      originalAddress: {
+        street: formData.street,
+        number: formData.number,
+        city: formData.city,
+        postalCode: formData.postalCode,
+        addressWithoutNumber: formData.addressWithoutNumber,
+      },
+      googleFormattedAddress: confirmedAddress,
+    });
 
     const cleanCuit = normalizeCuitCuil(formData.cuit); // Remover guiones y caracteres no numéricos
     const clienteNombre = formatCustomerNameForOrder({
@@ -576,17 +570,11 @@ export default function Checkout() {
       metodo_pago: paymentMethod,
       email: formData.email,
       telefono: formatArgentinaMobileForApi(formData.phone),
-      calle,
-      ciudad,
-      region,
-      pais,
-      codigo_postal,
+      ...orderAddress,
       tipo_envio: deliveryMethod,
       observaciones: formData.observaciones,
-      direccion: confirmedAddress || "",
       mobile: isMobile,
       productos,
-      billing_address,
       ...(requiresInvoice(facturaTipo) ? { factura_tipo: facturaTipo } : {}),
     };
     const API_URL = import.meta.env.VITE_API_URL; // Se usará cuando el pago esté activo
