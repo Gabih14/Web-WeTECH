@@ -145,9 +145,14 @@ function BrandFilter({
   selectedBrand,
   onBrandChange,
 }: BrandFilterProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   if (brands.length === 0) {
     return null;
   }
+
+  const visibleBrands = isExpanded ? brands : brands.slice(0, 5);
+  const hasMoreBrands = brands.length > 5;
 
   return (
     <div className="bg-white p-4 rounded-lg shadow mb-6">
@@ -165,7 +170,7 @@ function BrandFilter({
       </div>
 
       <div className="space-y-2">
-        {brands.map((brand) => {
+        {visibleBrands.map((brand) => {
           const isSelected =
             selectedBrand !== null &&
             normalizeBrand(selectedBrand) === normalizeBrand(brand);
@@ -184,6 +189,17 @@ function BrandFilter({
           );
         })}
       </div>
+
+      {hasMoreBrands && (
+        <button
+          onClick={() => setIsExpanded((expanded) => !expanded)}
+          className="mt-4 w-full rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-900"
+          type="button"
+          aria-expanded={isExpanded}
+        >
+          {isExpanded ? "Ver menos" : `Ver las ${brands.length} marcas`}
+        </button>
+      )}
     </div>
   );
 }
@@ -193,9 +209,16 @@ function ColorFilter({
   selectedColorGroupId,
   onColorGroupChange,
 }: ColorFilterProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   if (colorGroups.length === 0) {
     return null;
   }
+
+  const visibleColorGroups = isExpanded
+    ? colorGroups
+    : colorGroups.slice(0, 8);
+  const hasMoreColors = colorGroups.length > 8;
 
   return (
     <div className="bg-white p-4 rounded-lg shadow mb-6">
@@ -213,7 +236,7 @@ function ColorFilter({
       </div>
 
       <div className="grid grid-cols-4 gap-3 sm:grid-cols-5 lg:grid-cols-4">
-        {colorGroups.map((colorGroup) => {
+        {visibleColorGroups.map((colorGroup) => {
           const isSelected = selectedColorGroupId === colorGroup.id;
 
           return (
@@ -243,6 +266,19 @@ function ColorFilter({
           );
         })}
       </div>
+
+      {hasMoreColors && (
+        <button
+          onClick={() => setIsExpanded((expanded) => !expanded)}
+          className="mt-4 w-full rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-900"
+          type="button"
+          aria-expanded={isExpanded}
+        >
+          {isExpanded
+            ? "Ver menos"
+            : `Ver los ${colorGroups.length} colores`}
+        </button>
+      )}
     </div>
   );
 }
