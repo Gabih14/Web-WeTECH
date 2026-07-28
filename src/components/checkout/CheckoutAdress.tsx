@@ -47,72 +47,88 @@ type MapSelection = {
   distanceKm: number;
 };
 
+type LatLngLiteral = {
+  lat: number;
+  lng: number;
+};
+
+type GoogleLatLng = {
+  lat: () => number;
+  lng: () => number;
+};
+
 type GoogleMapsApi = {
   maps: {
     Map: new (
       element: HTMLElement,
       options: {
-        center: { lat: number; lng: number };
+        center: LatLngLiteral;
         zoom: number;
+        mapId?: string;
         mapTypeControl?: boolean;
         streetViewControl?: boolean;
         fullscreenControl?: boolean;
       }
     ) => GoogleMap;
-    Marker: new (
-      options: {
-        map: GoogleMap;
-        position: { lat: number; lng: number };
-        draggable?: boolean;
-      }
-    ) => GoogleMarker;
     Geocoder: new () => GoogleGeocoder;
-    DistanceMatrixService: new () => GoogleDistanceMatrixService;
-    DistanceMatrixStatus: { OK: string };
-    DistanceMatrixElementStatus: { OK: string };
-    TravelMode: { DRIVING: string };
+    marker: {
+      AdvancedMarkerElement: new (options: {
+        map: GoogleMap;
+        position: LatLngLiteral;
+        title?: string;
+        gmpDraggable?: boolean;
+      }) => GoogleAdvancedMarker;
+    };
+    routes: {
+      RouteMatrix: {
+        computeRouteMatrix: (request: {
+          origins: string[];
+          destinations: LatLngLiteral[];
+          travelMode: "DRIVING";
+          fields: string[];
+        }) => Promise<{
+          matrix: {
+            rows: Array<{
+              items: Array<{
+                condition?: string;
+                distanceMeters?: number;
+                error?: unknown;
+              }>;
+            }>;
+          };
+        }>;
+      };
+    };
   };
 };
 
 type GoogleMap = {
-  setCenter: (position: { lat: number; lng: number }) => void;
+  setCenter: (position: LatLngLiteral) => void;
 };
 
-type GoogleMarker = {
-  setPosition: (position: { lat: number; lng: number }) => void;
-  addListener: (eventName: string, callback: () => void) => void;
-  getPosition: () => { lat: () => number; lng: () => number } | null;
+type GoogleAdvancedMarker = {
+  position?: LatLngLiteral | GoogleLatLng | null;
+  title: string;
+  gmpDraggable: boolean;
+  map?: GoogleMap | null;
+  addListener: (
+    eventName: string,
+    callback: () => void
+  ) => GoogleMapsEventListener;
+};
+
+type GoogleMapsEventListener = {
+  remove: () => void;
 };
 
 type GoogleGeocoder = {
   geocode: (
-    request: { address?: string; location?: { lat: number; lng: number } },
+    request: { address?: string; location?: LatLngLiteral },
     callback: (
       results: Array<{
         formatted_address: string;
-        geometry: { location: { lat: () => number; lng: () => number } };
+        geometry: { location: GoogleLatLng };
       }> | null,
-      status: string
-    ) => void
-  ) => void;
-};
-
-type GoogleDistanceMatrixService = {
-  getDistanceMatrix: (
-    request: {
-      origins: string[];
-      destinations: Array<{ lat: number; lng: number }>;
-      travelMode: string;
-    },
-    callback: (
-      response: {
-        rows: Array<{
-          elements: Array<{
-            status: string;
-            distance?: { value: number };
-          }>;
-        }>;
-      } | null,
       status: string
     ) => void
   ) => void;
@@ -122,6 +138,7 @@ declare global {
   interface Window {
     google?: GoogleMapsApi;
     __checkoutGoogleMapsPromise?: Promise<GoogleMapsApi>;
+    __checkoutGoogleMapsReady?: () => void;
   }
 }
 
@@ -133,11 +150,22 @@ const getShippingErrorMessage = (data: DistanceResponse) => {
 };
 
 const ENABLE_SHIPPING_MAP_PREVIEW = true;
+const ENABLE_DISTANCE_SIMULATION = false;
 const STORE_ADDRESS = "Santiago de Liniers 670, Godoy Cruz, Mendoza, Argentina";
 const MANUAL_MAP_FALLBACK_POSITION = { lat: -32.9286, lng: -68.8458 };
 
+const hasRequiredGoogleMapsLibraries = (
+  google: GoogleMapsApi | undefined
+): google is GoogleMapsApi =>
+  Boolean(
+    google?.maps?.Map &&
+      google.maps.Geocoder &&
+      google.maps.marker?.AdvancedMarkerElement &&
+      google.maps.routes?.RouteMatrix
+  );
+
 const loadGoogleMaps = (apiKey: string): Promise<GoogleMapsApi> => {
-  if (window.google?.maps) {
+  if (hasRequiredGoogleMapsLibraries(window.google)) {
     return Promise.resolve(window.google);
   }
 
@@ -151,22 +179,45 @@ const loadGoogleMaps = (apiKey: string): Promise<GoogleMapsApi> => {
     );
 
     if (existingScript) {
+      if (window.google?.maps) {
+        reject(
+          new Error(
+            "Google Maps se cargo sin las librerias requeridas. Recarga la pagina."
+          )
+        );
+        return;
+      }
+
       existingScript.addEventListener("load", () => {
-        if (window.google?.maps) resolve(window.google);
-        else reject(new Error("Google Maps no esta disponible."));
+        if (hasRequiredGoogleMapsLibraries(window.google)) {
+          resolve(window.google);
+        } else {
+          reject(new Error("Google Maps no cargo las librerias requeridas."));
+        }
       });
       existingScript.addEventListener("error", () => reject(new Error("No se pudo cargar Google Maps.")));
       return;
     }
 
     const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}`;
+    const query = new URLSearchParams({
+      key: apiKey,
+      loading: "async",
+      language: "es",
+      region: "AR",
+      v: "weekly",
+      libraries: "marker,routes,geocoding",
+      callback: "__checkoutGoogleMapsReady",
+    });
+    script.src = `https://maps.googleapis.com/maps/api/js?${query.toString()}`;
     script.async = true;
-    script.defer = true;
     script.dataset.checkoutGoogleMaps = "true";
-    script.onload = () => {
-      if (window.google?.maps) resolve(window.google);
-      else reject(new Error("Google Maps no esta disponible."));
+    window.__checkoutGoogleMapsReady = () => {
+      if (hasRequiredGoogleMapsLibraries(window.google)) {
+        resolve(window.google);
+      } else {
+        reject(new Error("Google Maps no cargo las librerias requeridas."));
+      }
     };
     script.onerror = () => reject(new Error("No se pudo cargar Google Maps."));
     document.head.appendChild(script);
@@ -177,67 +228,117 @@ const loadGoogleMaps = (apiKey: string): Promise<GoogleMapsApi> => {
 
 const getDistanceFromStore = (
   google: GoogleMapsApi,
-  destination: { lat: number; lng: number }
-) =>
-  new Promise<number>((resolve, reject) => {
-    const distanceService = new google.maps.DistanceMatrixService();
+  destination: LatLngLiteral
+) => {
+  const { RouteMatrix } = google.maps.routes;
 
-    distanceService.getDistanceMatrix(
-      {
-        origins: [STORE_ADDRESS],
-        destinations: [destination],
-        travelMode: google.maps.TravelMode.DRIVING,
-      },
-      (response, status) => {
-        const element = response?.rows?.[0]?.elements?.[0];
+  return RouteMatrix.computeRouteMatrix({
+    origins: [STORE_ADDRESS],
+    destinations: [destination],
+    travelMode: "DRIVING",
+    fields: ["distanceMeters", "condition"],
+  }).then(({ matrix }) => {
+    const route = matrix.rows?.[0]?.items?.[0];
 
-        if (
-          status !== google.maps.DistanceMatrixStatus.OK ||
-          !element ||
-          element.status !== google.maps.DistanceMatrixElementStatus.OK ||
-          !element.distance
-        ) {
-          reject(new Error("No se pudo calcular la distancia desde el mapa."));
-          return;
-        }
+    if (
+      !route ||
+      route.error ||
+      route.condition !== "ROUTE_EXISTS" ||
+      typeof route.distanceMeters !== "number"
+    ) {
+      throw new Error("No se pudo calcular la distancia desde el mapa.");
+    }
 
-        resolve(element.distance.value / 1000);
-      }
-    );
+    return route.distanceMeters / 1000;
   });
+};
+
+const getMarkerPosition = (
+  marker: GoogleAdvancedMarker | null
+): LatLngLiteral | null => {
+  const position = marker?.position;
+  if (!position) return null;
+
+  if (typeof position.lat === "function" && typeof position.lng === "function") {
+    return { lat: position.lat(), lng: position.lng() };
+  }
+
+  return { lat: position.lat, lng: position.lng };
+};
 
 const GoogleMapPicker = ({
   address,
   apiKey,
+  mapId,
+  editable,
+  heightClass,
   onLocationChange,
 }: {
   address: string;
   apiKey: string;
+  mapId: string;
+  editable: boolean;
+  heightClass: string;
   onLocationChange: (selection: MapSelection) => void;
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<GoogleMap | null>(null);
-  const markerRef = useRef<GoogleMarker | null>(null);
+  const markerRef = useRef<GoogleAdvancedMarker | null>(null);
   const geocoderRef = useRef<GoogleGeocoder | null>(null);
+  const addressRef = useRef(address);
+  const editableRef = useRef(editable);
+  const onLocationChangeRef = useRef(onLocationChange);
+  const selectionRequestRef = useRef(0);
   const [loadError, setLoadError] = useState("");
+
+  addressRef.current = address;
+  editableRef.current = editable;
+  onLocationChangeRef.current = onLocationChange;
+
+  useEffect(() => {
+    if (!markerRef.current) return;
+
+    markerRef.current.title = editable
+      ? "Arrastra el marcador hasta tu domicilio"
+      : "Ubicacion detectada";
+    markerRef.current.gmpDraggable = editable;
+  }, [editable]);
 
   useEffect(() => {
     let isMounted = true;
+    let dragListener: GoogleMapsEventListener | null = null;
+    const initialAddress = addressRef.current;
 
     const updateSelection = async (
       google: GoogleMapsApi,
-      position: { lat: number; lng: number }
+      position: LatLngLiteral
     ) => {
+      if (!editableRef.current) return;
       if (!geocoderRef.current) return;
 
+      const requestId = ++selectionRequestRef.current;
+
       geocoderRef.current.geocode({ location: position }, async (results, status) => {
-        if (!isMounted || status !== "OK" || !results?.[0]) return;
+        if (
+          !isMounted ||
+          requestId !== selectionRequestRef.current ||
+          status !== "OK" ||
+          !results?.[0]
+        ) {
+          return;
+        }
 
         try {
           const distanceKm = await getDistanceFromStore(google, position);
-          if (!isMounted) return;
+          if (
+            !isMounted ||
+            requestId !== selectionRequestRef.current
+          ) {
+            return;
+          }
 
-          onLocationChange({
+          setLoadError("");
+          onLocationChangeRef.current({
             address: results[0].formatted_address,
             distanceKm,
           });
@@ -253,13 +354,14 @@ const GoogleMapPicker = ({
         if (!isMounted || !containerRef.current) return;
 
         geocoderRef.current = new google.maps.Geocoder();
-        const initializeMap = (position: { lat: number; lng: number }) => {
+        const initializeMap = (position: LatLngLiteral) => {
           if (!isMounted || !containerRef.current) return;
 
           if (!mapRef.current) {
             mapRef.current = new google.maps.Map(containerRef.current, {
               center: position,
               zoom: 16,
+              mapId,
               mapTypeControl: false,
               streetViewControl: false,
               fullscreenControl: false,
@@ -269,30 +371,34 @@ const GoogleMapPicker = ({
           }
 
           if (!markerRef.current) {
-            markerRef.current = new google.maps.Marker({
+            markerRef.current = new google.maps.marker.AdvancedMarkerElement({
               map: mapRef.current,
               position,
-              draggable: true,
+              title: editableRef.current
+                ? "Arrastra el marcador hasta tu domicilio"
+                : "Ubicacion detectada",
+              gmpDraggable: editableRef.current,
             });
 
-            markerRef.current.addListener("dragend", () => {
-              const markerPosition = markerRef.current?.getPosition();
+            dragListener = markerRef.current.addListener("dragend", () => {
+              const markerPosition = getMarkerPosition(markerRef.current);
               if (!markerPosition) return;
 
-              updateSelection(google, {
-                lat: markerPosition.lat(),
-                lng: markerPosition.lng(),
-              });
+              updateSelection(google, markerPosition);
             });
           } else {
-            markerRef.current.setPosition(position);
+            markerRef.current.position = position;
+            markerRef.current.title = editableRef.current
+              ? "Arrastra el marcador hasta tu domicilio"
+              : "Ubicacion detectada";
+            markerRef.current.gmpDraggable = editableRef.current;
           }
         };
 
-        geocoderRef.current.geocode({ address }, (results, status) => {
+        geocoderRef.current.geocode({ address: initialAddress }, (results, status) => {
           if (!isMounted || status !== "OK" || !results?.[0]) {
             console.error("GoogleMapPicker: no se pudo geocodificar la direccion.", {
-              address,
+              address: initialAddress,
               status,
               results,
             });
@@ -307,7 +413,7 @@ const GoogleMapPicker = ({
       })
       .catch((error) => {
         console.error("GoogleMapPicker: no se pudo cargar Google Maps.", {
-          address,
+          address: initialAddress,
           error,
         });
         if (isMounted) setLoadError("No se pudo cargar el mapa interactivo.");
@@ -315,12 +421,20 @@ const GoogleMapPicker = ({
 
     return () => {
       isMounted = false;
+      selectionRequestRef.current += 1;
+      dragListener?.remove();
+      if (markerRef.current) {
+        markerRef.current.map = null;
+      }
+      markerRef.current = null;
+      mapRef.current = null;
+      geocoderRef.current = null;
     };
-  }, [address, apiKey, onLocationChange]);
+  }, [apiKey, mapId]);
 
   return (
     <>
-      <div ref={containerRef} className="h-64 w-full" />
+      <div ref={containerRef} className={`${heightClass} w-full`} />
       {loadError && (
         <p className="border-t border-yellow-100 bg-yellow-50 px-3 py-2 text-xs text-yellow-800">
           {loadError}
@@ -372,6 +486,8 @@ export const CheckoutAdress = ({
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
   const BEARER_TOKEN = import.meta.env.VITE_API_BEARER_TOKEN;
   const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  const GOOGLE_MAPS_MAP_ID =
+    import.meta.env.VITE_GOOGLE_MAPS_MAP_ID || "DEMO_MAP_ID";
   const hasLoggedMissingGoogleMapsApiKeyRef = useRef(false);
   const mapQuery = encodeURIComponent(
     pendingResolvedAddress ||
@@ -408,7 +524,11 @@ export const CheckoutAdress = ({
     [setConfirmedAddress, setShippingData]
   );
 
-  const renderMap = (title: string, heightClass = "h-64") => {
+  const renderMap = (
+    title: string,
+    heightClass = "h-64",
+    editable = false
+  ) => {
     if (!GOOGLE_MAPS_API_KEY) {
       if (!hasLoggedMissingGoogleMapsApiKeyRef.current) {
         console.warn(
@@ -432,6 +552,9 @@ export const CheckoutAdress = ({
       <GoogleMapPicker
         address={decodeURIComponent(mapQuery)}
         apiKey={GOOGLE_MAPS_API_KEY}
+        mapId={GOOGLE_MAPS_MAP_ID}
+        editable={editable}
+        heightClass={heightClass}
         onLocationChange={handleMapSelection}
       />
     );
@@ -507,7 +630,7 @@ export const CheckoutAdress = ({
       let data: DistanceResponse;
       
       // Simulación en desarrollo
-      if (false) { //import.meta.env.DEV
+      if (ENABLE_DISTANCE_SIMULATION) {
         // Simular respuesta de la API
         data = {
           distance: "3.6 km",
@@ -844,10 +967,13 @@ export const CheckoutAdress = ({
               isShippingFormComplete &&
               isManualMapEnabled &&
               GOOGLE_MAPS_API_KEY &&
-              !pendingResolvedAddress &&
               !confirmedAddress && (
                 <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-                  {renderMap("Seleccion manual de ubicacion en Google Maps", "h-56")}
+                  {renderMap(
+                    "Seleccion manual de ubicacion en Google Maps",
+                    "h-56",
+                    true
+                  )}
                   <p className="border-t border-gray-200 px-3 py-2 text-xs text-gray-600">
                     No pudimos ubicar la direccion automaticamente. Arrastra el pin hasta tu domicilio.
                   </p>
@@ -975,13 +1101,17 @@ export const CheckoutAdress = ({
                     )}
                   </div>
                 </div>
-                {isManualMapEnabled && GOOGLE_MAPS_API_KEY && (
-                <div className="mt-3 overflow-hidden rounded-lg border border-yellow-200 bg-white">
-                  {renderMap("Ubicacion seleccionada en Google Maps")}
+                {!isManualMapEnabled && (
+                  <div className="mt-3 overflow-hidden rounded-lg border border-yellow-200 bg-white">
+                    {renderMap(
+                      "Ubicacion detectada en Google Maps",
+                      "h-64",
+                      false
+                    )}
                     <p className="border-t border-yellow-200 px-3 py-2 text-xs text-yellow-900">
-                      Arrastra el pin si necesitas ajustar la ubicacion.
+                      El mapa es una referencia visual de la direccion detectada.
                     </p>
-                </div>
+                  </div>
                 )}
                 <div className="mt-3 flex flex-col gap-2 sm:flex-row">
                   <button

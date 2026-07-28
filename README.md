@@ -37,11 +37,228 @@ Web-WeTECH
 - 📱 Diseño responsive con enfoque mobile-first
 - 🌐 Página de franquicias con información general
 
-## Facturacion e IVA
+## Reglas monetarias de carrito y pedidos
 
-- El checkout permite requerir Factura A o B y, para los productos actuales, aplica un recargo general de IVA del 21%.
-- Importante: cuando se incorporen impresoras al catalogo/carrito, esas lineas no deben usar el 21%; las impresoras llevan IVA del 10.5%.
-- Al implementar impresoras, actualizar el calculo de facturacion para aplicar la alicuota por tipo de producto, incluyendo el payload enviado a `/pedido`.
+Estas reglas deben mantenerse sincronizadas con:
+
+- `api-we-tech-v2/src/pedido/pedido.service.ts`
+- `api-we-tech-v2/src/pricing/discounts.ts`
+- `api-we-tech-v2/src/cupon/cupon.service.ts`
+
+Los cálculos reutilizables del frontend están centralizados principalmente en
+`src/utils/checkoutPricing.ts`, `src/utils/checkoutDiscount.ts`,
+`src/utils/discounts.ts`, `src/utils/invoice.ts` y
+`src/utils/orderPricing.ts`.
+
+### Precio base
+
+El backend normaliza el precio de lista cotizado al peso antes de calcular una
+línea:
+
+```ts
+const precioBase = Math.round(precioCatalogo);
+```
+
+Este es el único redondeo anterior al cálculo de la línea. No se debe redondear
+un precio unitario descontado para después multiplicarlo por la cantidad.
+
+### Productos sin factura
+
+```ts
+const subtotalBruto = Math.round(precioBase * cantidad);
+const subtotalNeto = Math.round(
+  precioBase * cantidad * (1 - descuentoPorcentaje / 100)
+);
+const precioUnitario = Math.round(subtotalNeto / cantidad);
+```
+
+`subtotalNeto` es la fuente de verdad. Es válido que:
+
+```ts
+subtotalNeto !== precioUnitario * cantidad
+```
+
+El carrito, el resumen, el payload de `POST /pedido` y el callback de pago no
+deben reconstruir el subtotal multiplicando el precio unitario redondeado.
+
+Ejemplo:
+
+```text
+precio base:       23528
+cantidad:          5
+descuento:         17%
+subtotal neto:     97641
+precio unitario:   19528
+unitario × cantidad = 97640 (diferencia válida)
+```
+
+### Descuento automático
+
+El descuento automático sólo se aplica en pagos por transferencia.
+
+- Categorías admitidas: `FILAMENTOS` y su representación frontend
+  `FILAMENTO 3D`.
+- Los filamentos no elegibles para descuento por cantidad reciben el descuento
+  base del 15%.
+- Para el descuento diferencial, el producto debe pesar exactamente 1 kg y su
+  identidad Marca + Material debe estar en la misma lista que el backend.
+- La cantidad usada por los niveles se acumula entre todos los productos
+  elegibles del carrito.
+- Niveles: 15% desde 1 unidad, 17% desde 5, 20% desde 10 y 22% desde 50.
+- Deben conservarse las equivalencias de variantes legacy, incluyendo `3N`,
+  `G3`, `GS`, `HB`, `3X`, `FM` y `EG`.
+- El producto de envío nunca participa del descuento ni de la cantidad
+  acumulada.
+
+### Cupones
+
+El porcentaje depende del método de pago:
+
+- `online`: `porcentajeDescuentoTarjeta`.
+- `transfer`: `porcentajeDescuentoTransferencia`.
+- Si el campo específico no está disponible, se usa
+  `porcentajeDescuento` como compatibilidad legacy.
+
+Un cupón puede ser general o limitarse a `filamento`, `impresora` o
+`repuesto`. La categoría debe evaluarse por cada línea.
+
+Para cada producto:
+
+```ts
+const porcentajeAplicado = Math.max(
+  descuentoAutomatico,
+  descuentoCuponAplicable
+);
+```
+
+Los porcentajes nunca se suman. En caso de empate gana el descuento
+automático.
+
+`descuento_cupon` representa el ahorro completo desde el precio base, pero
+sólo para las líneas donde el cupón supera al automático:
+
+```ts
+const descuentoCuponLinea =
+  descuentoCuponAplicable > descuentoAutomatico
+    ? Math.round(precioBase * cantidad - subtotalNeto)
+    : 0;
+
+const descuento_cupon = suma(descuentoCuponLinea);
+```
+
+Ejemplo:
+
+```text
+precio base total:       117640
+automático:              17%
+cupón:                   20%
+subtotal neto:           94112
+descuento_cupon:         23528
+```
+
+No debe enviarse `3529`, ya que ésa sería solamente la diferencia incremental
+entre 17% y 20%.
+
+`descuento_cupon` es informativo y de validación: no se resta nuevamente del
+total porque el descuento ya está incorporado en los subtotales netos.
+
+### Envío y total
+
+El envío:
+
+- usa `ajuste_porcentaje: 0`;
+- no recibe descuento automático ni cupón;
+- no participa de `descuento_cupon`;
+- conserva su subtotal como producto `ENV-...-DELIVERY`;
+- se incluye exactamente una vez en el total.
+
+Sin factura:
+
+```ts
+const total =
+  suma(subtotalesNetosDeProductos) +
+  costoEnvio;
+```
+
+Aunque el envío viaje también dentro de `productos`, no se debe sumar el
+producto de envío y volver a agregar `costo_envio`.
+
+Caso de referencia:
+
+```text
+producto: 10 × 3499 = 34990
+envío:    1 × 5599  = 5599
+total:                  40589
+```
+
+### Factura A/B e IVA
+
+La selección A/B está actualmente deshabilitada en la interfaz, pero su
+cálculo y payload están implementados y probados por separado.
+
+Para factura se usa la lista `MINORISTA CON IVA`, normalizada al peso. La
+secuencia debe coincidir con Nacional y con `PedidoService`:
+
+```ts
+const subtotalBrutoConIva = round2(
+  precioBase * cantidad * 1.21
+);
+const brutoConDescuento = round2(
+  subtotalBrutoConIva * (1 - descuentoPorcentaje / 100)
+);
+const subtotalNetoSinIva = Math.round(
+  brutoConDescuento / 1.21
+);
+const ivaLinea = round2(subtotalNetoSinIva * 0.21);
+const subtotalFinalConIva = round2(
+  subtotalNetoSinIva + ivaLinea
+);
+const precioUnitarioEnviado = round2(
+  subtotalFinalConIva / cantidad
+);
+```
+
+En el payload de una línea con factura:
+
+- `subtotal` es `subtotalBrutoConIva`, previo al descuento;
+- `precio_unitario` es el precio final con IVA;
+- `ajuste_porcentaje` es el mayor porcentaje aplicable.
+
+El total de cabecera se calcula sobre el neto agregado:
+
+```ts
+const subtotalSinIva = round2(
+  suma(subtotalesNetosSinIva) + costoEnvioNeto
+);
+const facturaIvaImporte = round2(subtotalSinIva * 0.21);
+const total = round2(subtotalSinIva + facturaIvaImporte);
+```
+
+El envío también forma parte de la base de IVA, pero no recibe descuentos.
+Para un cupón ganador en factura, `descuento_cupon` se calcula como
+`Math.round(precioBase * cantidad - subtotalNetoSinIva)`.
+
+Actualmente frontend y backend aplican 21% a los productos facturados. Existe
+un pendiente compartido: las impresoras tributan 10,5%, por lo que antes de
+habilitarlas en este flujo debe resolverse la alícuota por producto en ambos
+proyectos.
+
+### Pruebas de regresión
+
+Ejecutar antes de modificar precios, descuentos, cupones, envío o factura:
+
+```bash
+npm test
+npm run build
+```
+
+Las pruebas relevantes están en:
+
+- `tests/checkoutPricing.test.cjs`
+- `tests/checkoutDiscount.test.cjs`
+- `tests/discounts.test.cjs`
+- `tests/invoice.test.cjs`
+- `tests/orderPricing.test.cjs`
 
 ## ⚙️ Tecnologías utilizadas
 
