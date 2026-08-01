@@ -150,7 +150,7 @@ const getShippingErrorMessage = (data: DistanceResponse) => {
 };
 
 const ENABLE_SHIPPING_MAP_PREVIEW = true;
-const ENABLE_DISTANCE_SIMULATION = false;
+const ENABLE_DISTANCE_SIMULATION = true;
 const STORE_ADDRESS = "Santiago de Liniers 670, Godoy Cruz, Mendoza, Argentina";
 const MANUAL_MAP_FALLBACK_POSITION = { lat: -32.9286, lng: -68.8458 };
 

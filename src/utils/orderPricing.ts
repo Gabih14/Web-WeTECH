@@ -105,20 +105,29 @@ export const calculateOrderLineAmounts = (
 
 export const calculateShippingLineAmounts = ({
   shippingCost,
+  ajustePorcentaje = 0,
   facturaTipo = "none",
 }: {
   shippingCost: number;
+  ajustePorcentaje?: number;
   facturaTipo?: FacturaTipo;
 }): OrderLineAmounts =>
-  calculateOrderProduct({
-    cantidad: 1,
-    precioBaseUnitario: requiresInvoice(facturaTipo)
-      ? round2(shippingCost)
-      : Math.round(shippingCost),
-    ajustePorcentaje: 0,
-    couponApplied: false,
-    facturaTipo,
-  }).line;
+  ajustePorcentaje === 100
+    ? {
+        cantidad: 1,
+        precio_unitario: 0,
+        subtotal: 0,
+        ajuste_porcentaje: 100,
+      }
+    : calculateOrderProduct({
+        cantidad: 1,
+        precioBaseUnitario: requiresInvoice(facturaTipo)
+          ? round2(shippingCost)
+          : Math.round(shippingCost),
+        ajustePorcentaje,
+        couponApplied: false,
+        facturaTipo,
+      }).line;
 
 export const calculateOrderTotal = (
   netProductSubtotals: number[],
@@ -184,7 +193,7 @@ export const buildOrderAmounts = ({
   facturaTipo = "none",
 }: {
   products: OrderProductPricingInput[];
-  shipping?: { nombre: string; costo: number };
+  shipping?: { nombre: string; costo: number; ajustePorcentaje?: number };
   facturaTipo?: FacturaTipo;
 }): {
   productos: NamedOrderLine[];
@@ -209,17 +218,30 @@ export const buildOrderAmounts = ({
     };
   });
 
-  const shippingCalculation = shipping
-    ? calculateOrderProduct({
-        cantidad: 1,
-        precioBaseUnitario: requiresInvoice(facturaTipo)
-          ? round2(shipping.costo)
-          : Math.round(shipping.costo),
-        ajustePorcentaje: 0,
-        couponApplied: false,
-        facturaTipo,
-      })
-    : null;
+  const shippingAdjustment = shipping?.ajustePorcentaje ?? 0;
+  const shippingCalculation =
+    shipping && shippingAdjustment === 100
+      ? {
+          line: {
+            cantidad: 1,
+            precio_unitario: 0,
+            subtotal: 0,
+            ajuste_porcentaje: 100,
+          },
+          netSubtotal: 0,
+          couponDiscount: 0,
+        }
+      : shipping
+        ? calculateOrderProduct({
+            cantidad: 1,
+            precioBaseUnitario: requiresInvoice(facturaTipo)
+              ? round2(shipping.costo)
+              : Math.round(shipping.costo),
+            ajustePorcentaje: shippingAdjustment,
+            couponApplied: false,
+            facturaTipo,
+          })
+        : null;
   const shippingLine =
     shipping && shippingCalculation
       ? {
