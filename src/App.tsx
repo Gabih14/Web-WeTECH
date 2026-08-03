@@ -1,4 +1,5 @@
-import { Routes, Route } from "react-router-dom";
+import { useEffect } from "react";
+import { Routes, Route, useLocation } from "react-router-dom";
 import { HomePage } from "./pages/HomePage";
 import { ProductsPage } from "./pages/ProductsPage";
 import Navbar from "./components/layout/Navbar";
@@ -12,6 +13,17 @@ import PaymentCallback from "./pages/PaymentCallback";
 import { Franquicias } from "./pages/Franquicias";
 import { UnderDevelopment } from "./pages/UnderDevelopment";
 import { useMetaPixel } from "./hooks/useMetaPixel";
+import { captureCouponFromSearch } from "./utils/couponPrefill";
+
+function CouponUrlCapture() {
+  const location = useLocation();
+
+  useEffect(() => {
+    captureCouponFromSearch(location.search, window.sessionStorage);
+  }, [location.search]);
+
+  return null;
+}
 
 function App() {
 
@@ -23,6 +35,7 @@ function App() {
       {/* bg-gradient-to-b from-yellow-50 to-yellow-500 */}
       <AuthProvider>
         <CartProvider>
+          <CouponUrlCapture />
           <Navbar />
           <main className="pt-40 sm:pt-32 w-full overflow-x-hidden">
             <Routes>
