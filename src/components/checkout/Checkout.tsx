@@ -1,5 +1,5 @@
 ﻿import React, { useCallback, useRef, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, Tag, AlertCircle, X, ChevronRight, ChevronLeft, Lock } from "lucide-react";
 import { useCart } from "../../context/CartContext";
 import { Product, Coupon } from "../../types";
@@ -51,6 +51,11 @@ import {
   stripArgentinaMobilePrefix,
 } from "../../utils/validation";
 import { buildOrderAddressPayload } from "../../utils/orderAddress";
+import {
+  clearStoredCoupon,
+  getCouponCodeFromSearch,
+  readStoredCoupon,
+} from "../../utils/couponPrefill";
 
 function useMediaQuery(query: string): boolean {
   const getMatches = () => {
@@ -88,6 +93,7 @@ function useMediaQuery(query: string): boolean {
 export default function Checkout() {
   const [confirmedAddress, setConfirmedAddress] = useState<string | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
   const isMobile = useMediaQuery("(max-width: 768px)"); // Detecta si es móvil
   const { items, total, clearCart, syncCartWithProducts } = useCart();
   const eligibleQuantityDiscountCartQuantity =
@@ -200,13 +206,19 @@ export default function Checkout() {
     formData.postalCode,
   ]);
 
-  const [couponCode, setCouponCode] = useState("");
+  const urlCouponCode = getCouponCodeFromSearch(location.search);
+  const [couponCode, setCouponCode] = useState(() =>
+    urlCouponCode || readStoredCoupon(window.sessionStorage)
+  );
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [couponError, setCouponError] = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
+  const autoAppliedCouponRef = useRef<string | null>(null);
 
-  const applyCoupon = async () => {
-    if (!couponCode.trim()) {
+  const applyCoupon = useCallback(async (couponCodeOverride?: string) => {
+    const codeToApply = couponCodeOverride ?? couponCode;
+
+    if (!codeToApply.trim()) {
       setCouponError("Ingresa un código de cupón");
       return;
     }
@@ -214,7 +226,7 @@ export default function Checkout() {
     setCouponLoading(true);
     setCouponError("");
 
-    const normalizedCouponCode = couponCode.trim().toUpperCase();
+    const normalizedCouponCode = codeToApply.trim().toUpperCase();
     setCouponCode(normalizedCouponCode);
 
     const couponData = await verifyCoupon(normalizedCouponCode);
@@ -258,12 +270,29 @@ export default function Checkout() {
     }
 
     setCouponLoading(false);
-  };
+  }, [couponCode, items]);
+
+  useEffect(() => {
+    const couponCodeToApply =
+      urlCouponCode || readStoredCoupon(window.sessionStorage);
+
+    if (
+      !couponCodeToApply ||
+      autoAppliedCouponRef.current === couponCodeToApply
+    ) {
+      return;
+    }
+
+    autoAppliedCouponRef.current = couponCodeToApply;
+    setCouponCode(couponCodeToApply);
+    void applyCoupon(couponCodeToApply);
+  }, [applyCoupon, urlCouponCode]);
 
   const removeCoupon = () => {
     setAppliedCoupon(null);
     setCouponCode("");
     setCouponError("");
+    clearStoredCoupon(window.sessionStorage);
   };
 
   const getPrice = (
@@ -1468,7 +1497,7 @@ export default function Checkout() {
                     </div>
                     <button
                       type="button"
-                      onClick={applyCoupon}
+                      onClick={() => void applyCoupon()}
                       disabled={couponLoading}
                       className="bg-gray-100 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-200 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                     >

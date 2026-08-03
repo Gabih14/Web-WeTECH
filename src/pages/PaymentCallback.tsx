@@ -6,6 +6,7 @@ import SurveyModal from "../components/SurveyModal";
 import { formatCurrency } from "../utils/money";
 import { useCart } from "../context/CartContext";
 import { isShippingProductName } from "../utils/orderPricing";
+import { clearStoredCoupon } from "../utils/couponPrefill";
 
 const PaymentStatus = {
   LOADING: "loading",
@@ -347,6 +348,7 @@ const PaymentCallback = () => {
 
     if (status === PaymentStatus.SUCCESS || isTransferPending) {
       clearCart();
+      clearStoredCoupon(window.sessionStorage);
       sessionStorage.removeItem("clearCartAfterPaymentSuccess");
     }
 

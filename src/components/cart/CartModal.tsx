@@ -1,4 +1,4 @@
-import { X, Minus, Plus, ShoppingCart } from "lucide-react";
+import { X, Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
 import { useCart } from "../../context/CartContext";
 import { Product } from "../../types";
 import { useNavigate } from "react-router-dom";
@@ -19,7 +19,7 @@ interface CartModalProps {
 }
 
 export default function CartModal({ isOpen, onClose }: CartModalProps) {
-  const { items, updateQuantity, removeFromCart, total } = useCart();
+  const { items, updateQuantity, removeFromCart, clearCart, total } = useCart();
 
   const navigate = useNavigate();
 
@@ -114,6 +114,12 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
     onClose();
   };
 
+  const handleClearCart = () => {
+    if (window.confirm("¿Querés borrar todos los productos del carrito?")) {
+      clearCart();
+    }
+  };
+
   return (
     <div
       id="cart-modal-overlay"
@@ -131,12 +137,27 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
               <ShoppingCart className="h-6 w-6 text-black" />
               <h2 className="ml-2 text-xl font-bold text-gray-900">Carrito</h2>
             </div>
-            <button
-              onClick={onClose}
-              className="p-1 hover:bg-gray-100 rounded-full"
-            >
-              <X className="h-6 w-6 text-gray-500" />
-            </button>
+            <div className="flex items-center gap-2">
+              {items.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleClearCart}
+                  className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+                  aria-label="Vaciar carrito"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span>Vaciar carrito</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-1 hover:bg-gray-100 rounded-full"
+                aria-label="Cerrar carrito"
+              >
+                <X className="h-6 w-6 text-gray-500" />
+              </button>
+            </div>
           </div>
 
           {items.length === 0 ? (
