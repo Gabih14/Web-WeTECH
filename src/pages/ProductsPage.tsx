@@ -20,6 +20,12 @@ interface BrandFilterProps {
   onBrandChange: (brand: string | null) => void;
 }
 
+interface LineFilterProps {
+  lines: string[];
+  selectedLine: string | null;
+  onLineChange: (line: string | null) => void;
+}
+
 interface DifficultyFilterProps {
   levels: string[];
   selectedLevel: string | null;
@@ -27,6 +33,12 @@ interface DifficultyFilterProps {
 }
 
 const normalizeBrand = (brand: string) => brand.trim().toUpperCase();
+const normalizeLine = (line: string) =>
+  line
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase();
 const normalizeDifficulty = (level: string) =>
   level
     .trim()
@@ -35,6 +47,20 @@ const normalizeDifficulty = (level: string) =>
     .toUpperCase();
 const SPARE_PARTS_CATEGORY = "REPUESTOS & ACCESORIOS";
 const DIFFICULTY_ORDER = ["PRINCIPIANTE", "INTERMEDIO", "AVANZADO", "EXPERTO"];
+const LINE_ORDER = ["PREMIUM", "ESTANDAR", "BASICO"];
+
+const lineBarCount = (line: string) => {
+  switch (normalizeLine(line)) {
+    case "PREMIUM":
+      return 3;
+    case "ESTANDAR":
+      return 2;
+    case "BASICO":
+      return 1;
+    default:
+      return 0;
+  }
+};
 
 const difficultyColorClasses = (level: string, isSelected: boolean) => {
   switch (normalizeDifficulty(level)) {
@@ -204,6 +230,70 @@ function BrandFilter({
   );
 }
 
+function LineFilter({
+  lines,
+  selectedLine,
+  onLineChange,
+}: LineFilterProps) {
+  if (lines.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="bg-white p-4 rounded-lg shadow mb-6">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h2 className="text-xl font-bold">Línea</h2>
+        {selectedLine !== null && (
+          <button
+            onClick={() => onLineChange(null)}
+            className="text-sm font-medium text-yellow-700 hover:text-yellow-900"
+            type="button"
+          >
+            Limpiar
+          </button>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        {lines.map((line) => {
+          const isSelected =
+            selectedLine !== null &&
+            normalizeLine(selectedLine) === normalizeLine(line);
+
+          return (
+            <button
+              key={line}
+              onClick={() => onLineChange(isSelected ? null : line)}
+              className={`flex w-full items-center gap-3 rounded p-2 text-left transition-colors ${
+                isSelected ? "bg-yellow-100 text-black" : "hover:bg-gray-100"
+              }`}
+              type="button"
+            >
+              <span
+                className="flex flex-col gap-0.5"
+                aria-label={`${lineBarCount(line)} de 3 barras`}
+                role="img"
+              >
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <span
+                    key={index}
+                    className={`h-1 w-5 rounded-full ${
+                      index >= 3 - lineBarCount(line)
+                        ? "bg-yellow-500"
+                        : "bg-gray-200"
+                    }`}
+                  />
+                ))}
+              </span>
+              <span>{line}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function ColorFilter({
   colorGroups,
   selectedColorGroupId,
@@ -296,6 +386,7 @@ export function ProductsPage() {
     number | null
   >(null);
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
+  const [selectedLine, setSelectedLine] = useState<string | null>(null);
   const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(
     null
   );
@@ -414,6 +505,30 @@ export function ProductsPage() {
     return Array.from(brandMap.values()).sort((a, b) => a.localeCompare(b));
   }, [matchesSelectedCategory, products]);
 
+  const availableLines = useMemo(() => {
+    const lineMap = new Map<string, string>();
+
+    products.filter(matchesSelectedCategory).forEach((product) => {
+      if (!product.line?.trim()) {
+        return;
+      }
+
+      const normalizedLine = normalizeLine(product.line);
+      if (!lineMap.has(normalizedLine)) {
+        lineMap.set(normalizedLine, product.line.trim());
+      }
+    });
+
+    return Array.from(lineMap.values()).sort((a, b) => {
+      const aIndex = LINE_ORDER.indexOf(normalizeLine(a));
+      const bIndex = LINE_ORDER.indexOf(normalizeLine(b));
+      const normalizedAIndex = aIndex === -1 ? LINE_ORDER.length : aIndex;
+      const normalizedBIndex = bIndex === -1 ? LINE_ORDER.length : bIndex;
+
+      return normalizedAIndex - normalizedBIndex || a.localeCompare(b);
+    });
+  }, [matchesSelectedCategory, products]);
+
   const availableDifficultyLevels = useMemo(() => {
     const levels = new Map<string, string>();
 
@@ -473,6 +588,17 @@ export function ProductsPage() {
     }
   }, [availableDifficultyLevels, selectedDifficulty]);
 
+  useEffect(() => {
+    if (
+      selectedLine !== null &&
+      !availableLines.some(
+        (line) => normalizeLine(line) === normalizeLine(selectedLine)
+      )
+    ) {
+      setSelectedLine(null);
+    }
+  }, [availableLines, selectedLine]);
+
   const filteredProducts = products.filter((product) => {
     const matchesColor =
       selectedColorGroupId === null ||
@@ -483,6 +609,10 @@ export function ProductsPage() {
       selectedBrand === null ||
       (product.brand &&
         normalizeBrand(product.brand) === normalizeBrand(selectedBrand));
+    const matchesLine =
+      selectedLine === null ||
+      (product.line &&
+        normalizeLine(product.line) === normalizeLine(selectedLine));
     const matchesDifficulty =
       selectedDifficulty === null ||
       (product.difficultyLevel &&
@@ -493,6 +623,7 @@ export function ProductsPage() {
       matchesSelectedCategory(product) &&
       matchesColor &&
       matchesBrand &&
+      matchesLine &&
       matchesDifficulty
     );
   });
@@ -519,6 +650,7 @@ export function ProductsPage() {
     handleCategoryChange(null);
     setSelectedColorGroupId(null);
     setSelectedBrand(null);
+    setSelectedLine(null);
     setSelectedDifficulty(null);
   };
 
@@ -526,6 +658,7 @@ export function ProductsPage() {
     !!selectedCategory ||
     selectedColorGroupId !== null ||
     selectedBrand !== null ||
+    selectedLine !== null ||
     selectedDifficulty !== null;
 
   if (loading) {
@@ -694,6 +827,11 @@ export function ProductsPage() {
             selectedBrand={selectedBrand}
             onBrandChange={setSelectedBrand}
           />
+          <LineFilter
+            lines={availableLines}
+            selectedLine={selectedLine}
+            onLineChange={setSelectedLine}
+          />
         </div>
 
         {/* Product Grid */}
@@ -812,6 +950,14 @@ export function ProductsPage() {
             selectedBrand={selectedBrand}
             onBrandChange={(brand) => {
               setSelectedBrand(brand);
+              setIsMobileFilterOpen(false);
+            }}
+          />
+          <LineFilter
+            lines={availableLines}
+            selectedLine={selectedLine}
+            onLineChange={(line) => {
+              setSelectedLine(line);
               setIsMobileFilterOpen(false);
             }}
           />
