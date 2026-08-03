@@ -150,7 +150,7 @@ const getShippingErrorMessage = (data: DistanceResponse) => {
 };
 
 const ENABLE_SHIPPING_MAP_PREVIEW = true;
-const ENABLE_DISTANCE_SIMULATION = false;
+const ENABLE_DISTANCE_SIMULATION = true;
 const STORE_ADDRESS = "Santiago de Liniers 670, Godoy Cruz, Mendoza, Argentina";
 const MANUAL_MAP_FALLBACK_POSITION = { lat: -32.9286, lng: -68.8458 };
 
@@ -159,9 +159,9 @@ const hasRequiredGoogleMapsLibraries = (
 ): google is GoogleMapsApi =>
   Boolean(
     google?.maps?.Map &&
-      google.maps.Geocoder &&
-      google.maps.marker?.AdvancedMarkerElement &&
-      google.maps.routes?.RouteMatrix
+    google.maps.Geocoder &&
+    google.maps.marker?.AdvancedMarkerElement &&
+    google.maps.routes?.RouteMatrix
   );
 
 const loadGoogleMaps = (apiKey: string): Promise<GoogleMapsApi> => {
@@ -491,8 +491,8 @@ export const CheckoutAdress = ({
   const hasLoggedMissingGoogleMapsApiKeyRef = useRef(false);
   const mapQuery = encodeURIComponent(
     pendingResolvedAddress ||
-      confirmedAddress ||
-      `${formData.street}${formData.addressWithoutNumber ? "" : ` ${formData.number}`}, ${formData.city}, Mendoza, Argentina`
+    confirmedAddress ||
+    `${formData.street}${formData.addressWithoutNumber ? "" : ` ${formData.number}`}, ${formData.city}, Mendoza, Argentina`
   );
   const mapUrl = `https://www.google.com/maps?q=${mapQuery}&output=embed`;
   const externalMapUrl = `https://www.google.com/maps/search/?api=1&query=${mapQuery}`;
@@ -628,33 +628,33 @@ export const CheckoutAdress = ({
       }
 
       let data: DistanceResponse;
-      
+
       // Simulación en desarrollo
-      if (ENABLE_DISTANCE_SIMULATION) {
-        // Simular respuesta de la API
-        data = {
-          distance: "3.6 km",
-          duration: "11 mins",
-          destinationResolved: "33 Orientales 369, M5501AQG Mendoza, Argentina",
-          originResolved: "Santiago de Liniers 670, M5501 Godoy Cruz, Mendoza, Argentina",
-          raw: {
-            distance: {
-              text: "3.6 km",
-              value: 3640,
+      if (ENABLE_DISTANCE_SIMULATION && import.meta.env.DEV) {
+          // Simular respuesta de la API
+          data = {
+            distance: "11 km",
+            duration: "11 mins",
+            destinationResolved: "33 Orientales 369, M5501AQG Mendoza, Argentina",
+            originResolved: "Santiago de Liniers 670, M5501 Godoy Cruz, Mendoza, Argentina",
+            raw: {
+              distance: {
+                text: "3.6 km",
+                value: 3640,
+              },
+              duration: {
+                text: "11 mins",
+                value: 661,
+              },
+              status: "OK",
             },
-            duration: {
-              text: "11 mins",
-              value: 661,
-            },
-            status: "OK",
-          },
-        };
-        console.log("Respuesta simulada (desarrollo):", data);
+          };
+          console.log("Respuesta simulada (desarrollo):", data);
       } else {
         // Fetch real en producción
         const response = await fetch(`${API_URL}/maps/distance`, {
           method: "POST",
-          headers: { "Authorization": `Bearer ${BEARER_TOKEN}`,"Content-Type": "application/json" },
+          headers: { "Authorization": `Bearer ${BEARER_TOKEN}`, "Content-Type": "application/json" },
           body: JSON.stringify({
             address: formData.addressWithoutNumber
               ? formData.street
@@ -762,11 +762,10 @@ export const CheckoutAdress = ({
             type="button"
             onClick={() => handleDeliveryMethod("pickup")}
             className={`flex-1 flex items-center justify-center px-4 py-3 rounded-lg border-2 transition-all
-      ${
-        deliveryMethod === "pickup"
-          ? "border-yellow-600 bg-yellow-50 text-yellow-700"
-          : "border-gray-300 hover:border-gray-400"
-      }
+      ${deliveryMethod === "pickup"
+                ? "border-yellow-600 bg-yellow-50 text-yellow-700"
+                : "border-gray-300 hover:border-gray-400"
+              }
     `}
           >
             <Store className="h-5 w-5 mr-2" />
@@ -776,11 +775,10 @@ export const CheckoutAdress = ({
             type="button"
             onClick={() => handleDeliveryMethod("shipping")}
             className={`flex-1 flex items-center justify-center px-4 py-3 rounded-lg border-2 transition-all
-      ${
-        deliveryMethod === "shipping"
-          ? "border-yellow-600 bg-yellow-50 text-yellow-700"
-          : "border-gray-300 hover:border-gray-400"
-      }
+      ${deliveryMethod === "shipping"
+                ? "border-yellow-600 bg-yellow-50 text-yellow-700"
+                : "border-gray-300 hover:border-gray-400"
+              }
     `}
           >
             <Truck className="h-5 w-5 mr-2" />
@@ -825,206 +823,206 @@ export const CheckoutAdress = ({
               Solo se muestran las provincias donde se realizan envíos
             </p>
           )}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label
-                  htmlFor="country"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  País
-                </label>
-                <input
-                  type="text"
-                  id="country"
-                  value="Argentina"
-                  disabled
-                  className="mt-1 p-2 block w-full rounded-md border-gray-300 bg-gray-100 cursor-not-allowed shadow-sm"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="province"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Provincia
-                </label>
-                <input
-                  type="text"
-                  id="province"
-                  value="Mendoza"
-                  disabled
-                  className="mt-1 p-2 block w-full rounded-md border-gray-300 bg-gray-100 cursor-not-allowed shadow-sm"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label
-                  htmlFor="street"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Calle
-                </label>
-                <input
-                  ref={streetInputRef}
-                  type="text"
-                  id="street"
-                  name="street"
-                  value={formData.street}
-                  onChange={handleAddressInputChange}
-                  required
-                  className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
-                  placeholder="Ej: Santiago de Liniers"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="number"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Número
-                </label>
-                <input
-                  type="text"
-                  id="number"
-                  name="number"
-                  value={formData.number}
-                  onChange={handleAddressInputChange}
-                  required={!formData.addressWithoutNumber}
-                  disabled={formData.addressWithoutNumber}
-                  className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
-                  placeholder="Ej: 670"
-                />
-                <label className="mt-2 flex items-center gap-2 text-sm text-gray-700">
-                  <input
-                    type="checkbox"
-                    name="addressWithoutNumber"
-                    checked={formData.addressWithoutNumber}
-                    onChange={handleAddressInputChange}
-                    className="h-4 w-4 rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
-                  />
-                  Sin número
-                </label>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label
-                  htmlFor="city"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Ciudad
-                </label>
-                <input
-                  type="text"
-                  id="city"
-                  name="city"
-                  value={formData.city}
-                  onChange={handleAddressInputChange}
-                  required
-                  className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
-                  placeholder="Ej: Godoy Cruz"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="postalCode"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Código Postal
-                </label>
-                <input
-                  type="text"
-                  id="postalCode"
-                  name="postalCode"
-                  value={formData.postalCode}
-                  onChange={handleAddressInputChange}
-                  required
-                  className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                  placeholder="Ej: 5501"
-                />
-              </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label
+                htmlFor="country"
+                className="block text-sm font-medium text-gray-700"
+              >
+                País
+              </label>
+              <input
+                type="text"
+                id="country"
+                value="Argentina"
+                disabled
+                className="mt-1 p-2 block w-full rounded-md border-gray-300 bg-gray-100 cursor-not-allowed shadow-sm"
+              />
             </div>
             <div>
               <label
-                htmlFor="observaciones"
+                htmlFor="province"
                 className="block text-sm font-medium text-gray-700"
               >
-                Observaciones (opcional)
+                Provincia
               </label>
-              <textarea
-                id="observaciones"
-                name="observaciones"
-                value={formData.observaciones}
-                onChange={handleAddressInputChange}
-                rows={3}
-                className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
-                placeholder="Ej: Casa con portón azul, timbre 2B"
+              <input
+                type="text"
+                id="province"
+                value="Mendoza"
+                disabled
+                className="mt-1 p-2 block w-full rounded-md border-gray-300 bg-gray-100 cursor-not-allowed shadow-sm"
               />
             </div>
-            {ENABLE_SHIPPING_MAP_PREVIEW &&
-              deliveryMethod === "shipping" &&
-              isShippingFormComplete &&
-              isManualMapEnabled &&
-              GOOGLE_MAPS_API_KEY &&
-              !confirmedAddress && (
-                <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-                  {renderMap(
-                    "Seleccion manual de ubicacion en Google Maps",
-                    "h-56",
-                    true
-                  )}
-                  <p className="border-t border-gray-200 px-3 py-2 text-xs text-gray-600">
-                    No pudimos ubicar la direccion automaticamente. Arrastra el pin hasta tu domicilio.
-                  </p>
-                  <div className="flex flex-col gap-2 border-t border-gray-200 p-3 sm:flex-row">
-                    <a
-                      href={externalMapUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-yellow-500 bg-white px-4 py-2 text-sm font-semibold text-yellow-800 transition hover:bg-yellow-100"
-                    >
-                      <MapPin className="h-4 w-4" />
-                      Ver mapa ampliado
-                    </a>
-                    <button
-                      type="button"
-                      onClick={editAddressFromMap}
-                      className="inline-flex flex-1 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
-                    >
-                      Modificar ubicacion
-                    </button>
-                  </div>
-                </div>
-              )}
-            {deliveryMethod === "shipping" && (
-              <>
-            <div className="flex items-center space-x-2">
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label
+                htmlFor="street"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Calle
+              </label>
               <input
-                type="checkbox"
-                id="shippingInfoChecked"
-                checked={shippingInfoChecked}
-                onChange={(e) => setShippingInfoChecked(e.target.checked)}
-                className="accent-yellow-600"
+                ref={streetInputRef}
+                type="text"
+                id="street"
+                name="street"
+                value={formData.street}
+                onChange={handleAddressInputChange}
+                required
+                className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+                placeholder="Ej: Santiago de Liniers"
               />
-              <label htmlFor="shippingInfoChecked" className="text-sm">
-                Leí{" "}
+            </div>
+            <div>
+              <label
+                htmlFor="number"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Número
+              </label>
+              <input
+                type="text"
+                id="number"
+                name="number"
+                value={formData.number}
+                onChange={handleAddressInputChange}
+                required={!formData.addressWithoutNumber}
+                disabled={formData.addressWithoutNumber}
+                className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                placeholder="Ej: 670"
+              />
+              <label className="mt-2 flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  name="addressWithoutNumber"
+                  checked={formData.addressWithoutNumber}
+                  onChange={handleAddressInputChange}
+                  className="h-4 w-4 rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
+                />
+                Sin número
+              </label>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label
+                htmlFor="city"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Ciudad
+              </label>
+              <input
+                type="text"
+                id="city"
+                name="city"
+                value={formData.city}
+                onChange={handleAddressInputChange}
+                required
+                className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+                placeholder="Ej: Godoy Cruz"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="postalCode"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Código Postal
+              </label>
+              <input
+                type="text"
+                id="postalCode"
+                name="postalCode"
+                value={formData.postalCode}
+                onChange={handleAddressInputChange}
+                required
+                className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                placeholder="Ej: 5501"
+              />
+            </div>
+          </div>
+          <div>
+            <label
+              htmlFor="observaciones"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Observaciones (opcional)
+            </label>
+            <textarea
+              id="observaciones"
+              name="observaciones"
+              value={formData.observaciones}
+              onChange={handleAddressInputChange}
+              rows={3}
+              className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+              placeholder="Ej: Casa con portón azul, timbre 2B"
+            />
+          </div>
+          {ENABLE_SHIPPING_MAP_PREVIEW &&
+            deliveryMethod === "shipping" &&
+            isShippingFormComplete &&
+            isManualMapEnabled &&
+            GOOGLE_MAPS_API_KEY &&
+            !confirmedAddress && (
+              <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+                {renderMap(
+                  "Seleccion manual de ubicacion en Google Maps",
+                  "h-56",
+                  true
+                )}
+                <p className="border-t border-gray-200 px-3 py-2 text-xs text-gray-600">
+                  No pudimos ubicar la direccion automaticamente. Arrastra el pin hasta tu domicilio.
+                </p>
+                <div className="flex flex-col gap-2 border-t border-gray-200 p-3 sm:flex-row">
+                  <a
+                    href={externalMapUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-yellow-500 bg-white px-4 py-2 text-sm font-semibold text-yellow-800 transition hover:bg-yellow-100"
+                  >
+                    <MapPin className="h-4 w-4" />
+                    Ver mapa ampliado
+                  </a>
+                  <button
+                    type="button"
+                    onClick={editAddressFromMap}
+                    className="inline-flex flex-1 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                  >
+                    Modificar ubicacion
+                  </button>
+                </div>
+              </div>
+            )}
+          {deliveryMethod === "shipping" && (
+            <>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="shippingInfoChecked"
+                  checked={shippingInfoChecked}
+                  onChange={(e) => setShippingInfoChecked(e.target.checked)}
+                  className="accent-yellow-600"
+                />
+                <label htmlFor="shippingInfoChecked" className="text-sm">
+                  Leí{" "}
+                  <button
+                    type="button"
+                    className="text-yellow-700 font-semibold underline hover:text-yellow-900"
+                    onClick={() => setShowShippingInfo(true)}
+                  >
+                    información de envíos
+                  </button>
+                </label>
+              </div>
+              <div className="space-y-2">
                 <button
                   type="button"
-                  className="text-yellow-700 font-semibold underline hover:text-yellow-900"
-                  onClick={() => setShowShippingInfo(true)}
-                >
-                  información de envíos
-                </button>
-              </label>
-            </div>
-            <div className="space-y-2">
-             <button
-  type="button"
-  onClick={fetchDistance}
-  disabled={isCalculateShippingDisabled || calculatingShipping}
-  aria-busy={calculatingShipping}
-  className="
+                  onClick={fetchDistance}
+                  disabled={isCalculateShippingDisabled || calculatingShipping}
+                  aria-busy={calculatingShipping}
+                  className="
     group inline-flex min-h-12 w-full items-center justify-center gap-2
     rounded-lg border-2 border-yellow-500 bg-yellow-300
     px-4 py-3 text-sm font-semibold text-gray-900
@@ -1038,181 +1036,180 @@ export const CheckoutAdress = ({
     motion-reduce:transform-none motion-reduce:transition-none
     sm:min-h-14 sm:px-5 sm:text-base
   "
->
-  {calculatingShipping ? (
-    <>
-      <span
-        className="h-4 w-4 rounded-full border-2 border-gray-700 border-t-transparent animate-spin motion-reduce:animate-none sm:h-5 sm:w-5"
-        aria-hidden="true"
-      />
-      <span>Calculando envío...</span>
-    </>
-  ) : confirmedAddress ? (
-    <>
-      <CheckCircle
-        className="h-5 w-5 flex-shrink-0 text-green-700 transition-transform duration-200 group-hover:scale-105 group-disabled:text-gray-400 motion-reduce:transition-none"
-        aria-hidden="true"
-      />
-      <span>Recalcular envío</span>
-    </>
-  ) : (
-    <>
-      <Truck
-        className="h-5 w-5 flex-shrink-0 transition-transform duration-200 group-hover:translate-x-0.5 group-disabled:text-gray-400 motion-reduce:transform-none motion-reduce:transition-none"
-        aria-hidden="true"
-      />
-      <span>Calcular costo de envío</span>
-    </>
-  )}
-</button>
-              {!confirmedAddress && (
-                <p
-                  className={`text-xs leading-5 sm:text-sm ${
-                    isCalculateShippingDisabled
-                      ? "text-gray-500"
-                      : "text-gray-700"
-                  }`}
                 >
-                  {calculateShippingHelpText}
-                </p>
-              )}
-            </div>
-            {confirmedAddress && (
-              <div className="mt-2 p-3 rounded bg-green-50 border border-green-200 text-green-700 text-sm">
-                <strong>Ubicación confirmada:</strong>
-                <div>{confirmedAddress}</div>
-              </div>
-            )}
-            {ENABLE_SHIPPING_MAP_PREVIEW && pendingResolvedAddress && (
-              <div className="mt-3 rounded-lg border border-yellow-300 bg-yellow-50 p-3 text-sm text-gray-800">
-                <div className="flex items-start gap-2">
-                  <MapPin className="mt-0.5 h-5 w-5 flex-shrink-0 text-yellow-700" />
-                  <div>
-                    <strong>
-                      {isManualMapEnabled
-                        ? "Revisa la ubicacion seleccionada:"
-                        : "Revisa la ubicacion detectada:"}
-                    </strong>
-                    <div>{pendingResolvedAddress}</div>
-                    {pendingDistance !== null && (
-                      <div className="mt-1 text-xs text-gray-600">
-                        Distancia estimada: {pendingDistance.toFixed(1)} km
-                      </div>
-                    )}
-                  </div>
-                </div>
-                {!isManualMapEnabled && (
-                  <div className="mt-3 overflow-hidden rounded-lg border border-yellow-200 bg-white">
-                    {renderMap(
-                      "Ubicacion detectada en Google Maps",
-                      "h-64",
-                      false
-                    )}
-                    <p className="border-t border-yellow-200 px-3 py-2 text-xs text-yellow-900">
-                      El mapa es una referencia visual de la direccion detectada.
-                    </p>
-                  </div>
+                  {calculatingShipping ? (
+                    <>
+                      <span
+                        className="h-4 w-4 rounded-full border-2 border-gray-700 border-t-transparent animate-spin motion-reduce:animate-none sm:h-5 sm:w-5"
+                        aria-hidden="true"
+                      />
+                      <span>Calculando envío...</span>
+                    </>
+                  ) : confirmedAddress ? (
+                    <>
+                      <CheckCircle
+                        className="h-5 w-5 flex-shrink-0 text-green-700 transition-transform duration-200 group-hover:scale-105 group-disabled:text-gray-400 motion-reduce:transition-none"
+                        aria-hidden="true"
+                      />
+                      <span>Recalcular envío</span>
+                    </>
+                  ) : (
+                    <>
+                      <Truck
+                        className="h-5 w-5 flex-shrink-0 transition-transform duration-200 group-hover:translate-x-0.5 group-disabled:text-gray-400 motion-reduce:transform-none motion-reduce:transition-none"
+                        aria-hidden="true"
+                      />
+                      <span>Calcular costo de envío</span>
+                    </>
+                  )}
+                </button>
+                {!confirmedAddress && (
+                  <p
+                    className={`text-xs leading-5 sm:text-sm ${isCalculateShippingDisabled
+                        ? "text-gray-500"
+                        : "text-gray-700"
+                      }`}
+                  >
+                    {calculateShippingHelpText}
+                  </p>
                 )}
-                <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-                  <button
-                    type="button"
-                    onClick={confirmPendingAddress}
-                    disabled={calculatingShipping}
-                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300"
-                  >
-                    <CheckCircle className="h-4 w-4" />
-                    Confirmar ubicacion
-                  </button>
-                  <a
-                    href={externalMapUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-yellow-500 bg-white px-4 py-2 font-semibold text-yellow-800 transition hover:bg-yellow-100"
-                  >
-                    <MapPin className="h-4 w-4" />
-                    Ver mapa ampliado
-                  </a>
-                  <button
-                    type="button"
-                    onClick={editAddressFromMap}
-                    className="inline-flex flex-1 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 font-semibold text-gray-700 transition hover:bg-gray-50"
-                  >
-                    Modificar ubicacion
-                  </button>
-                </div>
               </div>
-            )}
-              </>
-            )}
-            {/* Modal */}
-            {showShippingInfo && (
-              <ShippingInfoModal
-                open={showShippingInfo}
-                onClose={() => setShowShippingInfo(false)}
-              />
-            )}
-
-            {/* Modal de error de envío */}
-            {showShippingErrorModal && shippingError && (
-              <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-                <div 
-                  className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4"
-                  role="dialog"
-                  aria-modal="true"
-                  aria-labelledby="shipping-error-title"
-                >
-                  <div className="relative px-6 pt-6 pb-4">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowShippingErrorModal(false);
-                      }}
-                      className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
-                      aria-label="Cerrar"
-                    >
-                      <X size={20} />
-                    </button>
-                    <div className="flex items-start gap-4">
-                      <div className="flex-shrink-0 w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                        <AlertCircle className="text-red-600" size={24} />
-                      </div>
-                      <div className="flex-1 pt-1">
-                        <h3 
-                          id="shipping-error-title"
-                          className="text-xl font-semibold text-gray-900 mb-1"
-                        >
-                          Error al calcular envío
-                        </h3>
-                        <p className="text-gray-600 leading-relaxed">
-                          {shippingError.message}
-                        </p>
-                      </div>
+              {confirmedAddress && (
+                <div className="mt-2 p-3 rounded bg-green-50 border border-green-200 text-green-700 text-sm">
+                  <strong>Ubicación confirmada:</strong>
+                  <div>{confirmedAddress}</div>
+                </div>
+              )}
+              {ENABLE_SHIPPING_MAP_PREVIEW && pendingResolvedAddress && (
+                <div className="mt-3 rounded-lg border border-yellow-300 bg-yellow-50 p-3 text-sm text-gray-800">
+                  <div className="flex items-start gap-2">
+                    <MapPin className="mt-0.5 h-5 w-5 flex-shrink-0 text-yellow-700" />
+                    <div>
+                      <strong>
+                        {isManualMapEnabled
+                          ? "Revisa la ubicacion seleccionada:"
+                          : "Revisa la ubicacion detectada:"}
+                      </strong>
+                      <div>{pendingResolvedAddress}</div>
+                      {pendingDistance !== null && (
+                        <div className="mt-1 text-xs text-gray-600">
+                          Distancia estimada: {pendingDistance.toFixed(1)} km
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <div className="px-6 pb-6">
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                      <p className="text-sm text-gray-700">
-                        {shippingError.retryable 
-                          ? "💡 Puedes intentar calcular nuevamente." 
-                          : "⏰ Por favor, intenta más tarde o contacta con soporte."}
+                  {!isManualMapEnabled && (
+                    <div className="mt-3 overflow-hidden rounded-lg border border-yellow-200 bg-white">
+                      {renderMap(
+                        "Ubicacion detectada en Google Maps",
+                        "h-64",
+                        false
+                      )}
+                      <p className="border-t border-yellow-200 px-3 py-2 text-xs text-yellow-900">
+                        El mapa es una referencia visual de la direccion detectada.
+                      </p>
+                    </div>
+                  )}
+                  <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                    <button
+                      type="button"
+                      onClick={confirmPendingAddress}
+                      disabled={calculatingShipping}
+                      className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      Confirmar ubicacion
+                    </button>
+                    <a
+                      href={externalMapUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-yellow-500 bg-white px-4 py-2 font-semibold text-yellow-800 transition hover:bg-yellow-100"
+                    >
+                      <MapPin className="h-4 w-4" />
+                      Ver mapa ampliado
+                    </a>
+                    <button
+                      type="button"
+                      onClick={editAddressFromMap}
+                      className="inline-flex flex-1 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 font-semibold text-gray-700 transition hover:bg-gray-50"
+                    >
+                      Modificar ubicacion
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+          {/* Modal */}
+          {showShippingInfo && (
+            <ShippingInfoModal
+              open={showShippingInfo}
+              onClose={() => setShowShippingInfo(false)}
+            />
+          )}
+
+          {/* Modal de error de envío */}
+          {showShippingErrorModal && shippingError && (
+            <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+              <div
+                className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="shipping-error-title"
+              >
+                <div className="relative px-6 pt-6 pb-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowShippingErrorModal(false);
+                    }}
+                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
+                    aria-label="Cerrar"
+                  >
+                    <X size={20} />
+                  </button>
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                      <AlertCircle className="text-red-600" size={24} />
+                    </div>
+                    <div className="flex-1 pt-1">
+                      <h3
+                        id="shipping-error-title"
+                        className="text-xl font-semibold text-gray-900 mb-1"
+                      >
+                        Error al calcular envío
+                      </h3>
+                      <p className="text-gray-600 leading-relaxed">
+                        {shippingError.message}
                       </p>
                     </div>
                   </div>
-                  <div className="px-6 pb-6">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowShippingErrorModal(false);
-                      }}
-                      className="w-full px-4 py-3 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all font-medium shadow-sm hover:shadow-md"
-                    >
-                      Aceptar
-                    </button>
+                </div>
+                <div className="px-6 pb-6">
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <p className="text-sm text-gray-700">
+                      {shippingError.retryable
+                        ? "💡 Puedes intentar calcular nuevamente."
+                        : "⏰ Por favor, intenta más tarde o contacta con soporte."}
+                    </p>
                   </div>
                 </div>
+                <div className="px-6 pb-6">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowShippingErrorModal(false);
+                    }}
+                    className="w-full px-4 py-3 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all font-medium shadow-sm hover:shadow-md"
+                  >
+                    Aceptar
+                  </button>
+                </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

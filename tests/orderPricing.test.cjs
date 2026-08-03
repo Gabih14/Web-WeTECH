@@ -109,6 +109,44 @@ test("caso 2: agrega el envío exactamente una vez", () => {
   );
 });
 
+test("bonifica el producto ENV sin eliminarlo del pedido", () => {
+  const order = buildOrderAmounts({
+    products: [
+      {
+        nombre: "G3-MAXI-2K5-BLAN",
+        cantidad: 8,
+        precioBaseUnitario: 74000,
+        ajustePorcentaje: 15,
+      },
+      {
+        nombre: "G3-NYL6-1KG-BLAN",
+        cantidad: 3,
+        precioBaseUnitario: 45293,
+        ajustePorcentaje: 15,
+      },
+    ],
+    shipping: {
+      nombre: "ENV-04K-GM-DELIVERY",
+      costo: 2799,
+      ajustePorcentaje: 100,
+    },
+  });
+
+  assert.deepEqual(order.productos[2], {
+    nombre: "ENV-04K-GM-DELIVERY",
+    cantidad: 1,
+    precio_unitario: 0,
+    subtotal: 0,
+    ajuste_porcentaje: 100,
+  });
+  assert.equal(order.costoEnvio, 0);
+  assert.equal(
+    order.total,
+    order.productos[0].subtotal + order.productos[1].subtotal
+  );
+  assert.equal(hasValidOrderLineAmounts(order.productos), true);
+});
+
 test("los descuentos automáticos usan la fórmula de línea completa", () => {
   const product = { id: "3N3-PLA", category: "FILAMENTO 3D" };
 

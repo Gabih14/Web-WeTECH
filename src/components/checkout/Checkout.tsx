@@ -442,35 +442,52 @@ export default function Checkout() {
     ).percentage;
   };
 
+  const buildOrderProductsPricing = () =>
+    items.map((item) => {
+      const discountDecision = calculateItemDiscountDecision(
+        item.product,
+        item.weight,
+        item.quantity
+      );
+
+      return {
+        nombre: getVariantItemId(
+          item.product,
+          item.color,
+          item.weight
+        ),
+        cantidad: item.quantity,
+        precioBaseUnitario:
+          getPrice(item.product, item.color, item.weight) ?? 0,
+        ajustePorcentaje: discountDecision.percentage,
+        couponApplied: discountDecision.source === "coupon",
+      };
+    });
+
   const buildCurrentOrderAmounts = () =>
     buildOrderAmounts({
-      products: items.map((item) => {
-        const discountDecision = calculateItemDiscountDecision(
-          item.product,
-          item.weight,
-          item.quantity
-        );
-
-        return {
-          nombre: getVariantItemId(
-            item.product,
-            item.color,
-            item.weight
-          ),
-          cantidad: item.quantity,
-          precioBaseUnitario:
-            getPrice(item.product, item.color, item.weight) ?? 0,
-          ajustePorcentaje: discountDecision.percentage,
-          couponApplied: discountDecision.source === "coupon",
-        };
-      }),
+      products: buildOrderProductsPricing(),
       shipping:
         deliveryMethod === "shipping" &&
-        shippingData &&
-        !isFreeShippingByWeight
+        shippingData
+        ? {
+            nombre: shippingData.itemId,
+            costo: shippingData.costoTotal,
+            ajustePorcentaje: isFreeShippingByWeight ? 100 : 0,
+          }
+        : undefined,
+      facturaTipo,
+    });
+
+  const buildSubmittedOrderAmounts = () =>
+    buildOrderAmounts({
+      products: buildOrderProductsPricing(),
+      shipping:
+        deliveryMethod === "shipping" && shippingData
           ? {
               nombre: shippingData.itemId,
-              costo: shippingTotal,
+              costo: shippingData.costoTotal,
+              ajustePorcentaje: isFreeShippingByWeight ? 100 : 0,
             }
           : undefined,
       facturaTipo,
@@ -546,7 +563,7 @@ export default function Checkout() {
       lastName: formData.lastName,
     });
 
-    const orderAmounts = currentOrderAmounts;
+    const orderAmounts = buildSubmittedOrderAmounts();
     const { productos, total: orderTotal, costoEnvio } = orderAmounts;
 
     if (!hasValidOrderLineAmounts(productos, facturaTipo)) {
