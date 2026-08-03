@@ -26,6 +26,12 @@ interface LineFilterProps {
   onLineChange: (line: string | null) => void;
 }
 
+interface MaterialFilterProps {
+  materials: string[];
+  selectedMaterial: string | null;
+  onMaterialChange: (material: string | null) => void;
+}
+
 interface DifficultyFilterProps {
   levels: string[];
   selectedLevel: string | null;
@@ -39,6 +45,8 @@ const normalizeLine = (line: string) =>
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toUpperCase();
+const normalizeMaterial = (material: string) =>
+  material.trim().toUpperCase();
 const normalizeDifficulty = (level: string) =>
   level
     .trim()
@@ -109,7 +117,7 @@ function DifficultyFilter({
     <div className="mb-6 rounded-lg border border-sky-200 bg-sky-50 p-4 shadow">
       <div className="mb-4">
         <div>
-          <h2 className="text-lg font-bold leading-tight text-sky-950 sm:text-xl">
+          <h2 className="text-base font-bold leading-tight text-sky-950 sm:text-lg">
             ¿Recién empezás?
           </h2>
           <p className="mt-1 text-xs leading-snug text-sky-800 sm:text-sm">
@@ -294,6 +302,72 @@ function LineFilter({
   );
 }
 
+function MaterialFilter({
+  materials,
+  selectedMaterial,
+  onMaterialChange,
+}: MaterialFilterProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  if (materials.length === 0) {
+    return null;
+  }
+
+  const visibleMaterials = isExpanded ? materials : materials.slice(0, 5);
+  const hasMoreMaterials = materials.length > 5;
+
+  return (
+    <div className="bg-white p-4 rounded-lg shadow mb-6">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h2 className="text-xl font-bold">Material</h2>
+        {selectedMaterial !== null && (
+          <button
+            onClick={() => onMaterialChange(null)}
+            className="text-sm font-medium text-yellow-700 hover:text-yellow-900"
+            type="button"
+          >
+            Limpiar
+          </button>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        {visibleMaterials.map((material) => {
+          const isSelected =
+            selectedMaterial !== null &&
+            normalizeMaterial(selectedMaterial) === normalizeMaterial(material);
+
+          return (
+            <button
+              key={material}
+              onClick={() =>
+                onMaterialChange(isSelected ? null : material)
+              }
+              className={`w-full rounded p-2 text-left transition-colors ${
+                isSelected ? "bg-yellow-100 text-black" : "hover:bg-gray-100"
+              }`}
+              type="button"
+            >
+              {material}
+            </button>
+          );
+        })}
+      </div>
+
+      {hasMoreMaterials && (
+        <button
+          onClick={() => setIsExpanded((expanded) => !expanded)}
+          className="mt-4 w-full rounded-md border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-900"
+          type="button"
+          aria-expanded={isExpanded}
+        >
+          {isExpanded ? "Ver menos" : `Ver los ${materials.length} materiales`}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function ColorFilter({
   colorGroups,
   selectedColorGroupId,
@@ -387,6 +461,7 @@ export function ProductsPage() {
   >(null);
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
   const [selectedLine, setSelectedLine] = useState<string | null>(null);
+  const [selectedMaterial, setSelectedMaterial] = useState<string | null>(null);
   const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(
     null
   );
@@ -529,6 +604,23 @@ export function ProductsPage() {
     });
   }, [matchesSelectedCategory, products]);
 
+  const availableMaterials = useMemo(() => {
+    const materialMap = new Map<string, string>();
+
+    products.filter(matchesSelectedCategory).forEach((product) => {
+      if (!product.material?.trim()) {
+        return;
+      }
+
+      const normalizedMaterial = normalizeMaterial(product.material);
+      if (!materialMap.has(normalizedMaterial)) {
+        materialMap.set(normalizedMaterial, product.material.trim());
+      }
+    });
+
+    return Array.from(materialMap.values()).sort((a, b) => a.localeCompare(b));
+  }, [matchesSelectedCategory, products]);
+
   const availableDifficultyLevels = useMemo(() => {
     const levels = new Map<string, string>();
 
@@ -599,6 +691,18 @@ export function ProductsPage() {
     }
   }, [availableLines, selectedLine]);
 
+  useEffect(() => {
+    if (
+      selectedMaterial !== null &&
+      !availableMaterials.some(
+        (material) =>
+          normalizeMaterial(material) === normalizeMaterial(selectedMaterial)
+      )
+    ) {
+      setSelectedMaterial(null);
+    }
+  }, [availableMaterials, selectedMaterial]);
+
   const filteredProducts = products.filter((product) => {
     const matchesColor =
       selectedColorGroupId === null ||
@@ -613,6 +717,11 @@ export function ProductsPage() {
       selectedLine === null ||
       (product.line &&
         normalizeLine(product.line) === normalizeLine(selectedLine));
+    const matchesMaterial =
+      selectedMaterial === null ||
+      (product.material &&
+        normalizeMaterial(product.material) ===
+          normalizeMaterial(selectedMaterial));
     const matchesDifficulty =
       selectedDifficulty === null ||
       (product.difficultyLevel &&
@@ -624,6 +733,7 @@ export function ProductsPage() {
       matchesColor &&
       matchesBrand &&
       matchesLine &&
+      matchesMaterial &&
       matchesDifficulty
     );
   });
@@ -651,6 +761,7 @@ export function ProductsPage() {
     setSelectedColorGroupId(null);
     setSelectedBrand(null);
     setSelectedLine(null);
+    setSelectedMaterial(null);
     setSelectedDifficulty(null);
   };
 
@@ -659,6 +770,7 @@ export function ProductsPage() {
     selectedColorGroupId !== null ||
     selectedBrand !== null ||
     selectedLine !== null ||
+    selectedMaterial !== null ||
     selectedDifficulty !== null;
 
   if (loading) {
@@ -832,6 +944,11 @@ export function ProductsPage() {
             selectedLine={selectedLine}
             onLineChange={setSelectedLine}
           />
+          <MaterialFilter
+            materials={availableMaterials}
+            selectedMaterial={selectedMaterial}
+            onMaterialChange={setSelectedMaterial}
+          />
         </div>
 
         {/* Product Grid */}
@@ -958,6 +1075,14 @@ export function ProductsPage() {
             selectedLine={selectedLine}
             onLineChange={(line) => {
               setSelectedLine(line);
+              setIsMobileFilterOpen(false);
+            }}
+          />
+          <MaterialFilter
+            materials={availableMaterials}
+            selectedMaterial={selectedMaterial}
+            onMaterialChange={(material) => {
+              setSelectedMaterial(material);
               setIsMobileFilterOpen(false);
             }}
           />

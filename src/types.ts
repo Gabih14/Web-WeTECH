@@ -7,6 +7,7 @@ export interface Product {
   images?: string[]; // Array de todas las imágenes
   brand?: string;
   line?: string;
+  material?: string;
   category: string;
   subcategory?: string;
   difficultyLevel?: string;

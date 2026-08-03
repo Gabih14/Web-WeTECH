@@ -227,6 +227,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
         images: images.length ? images : undefined,
         brand: prod.marca ?? undefined,
         line: prod.linea ?? undefined,
+        material: prod.material ?? undefined,
         category,
         subcategory: prod.subgrupo ? String(prod.subgrupo).toUpperCase() : undefined,
         difficultyLevel: difficultyLevelOf(prod.atributos, first.atributos),
