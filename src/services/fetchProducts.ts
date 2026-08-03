@@ -110,6 +110,23 @@ const difficultyLevelOf = (
   return value || undefined;
 };
 
+const foodSafeOf = (
+  productAttributes: CatalogoAtributo[],
+  variantAttributes: CatalogoAtributo[],
+): boolean | undefined => {
+  const values = [...productAttributes, ...variantAttributes]
+    .filter(
+      (attribute) => normalizeAttributeName(attribute.clase) === "APTO ALIMENTOS",
+    )
+    .map((attribute) => normalizeAttributeName(attribute.valor));
+
+  if (values.length === 0) {
+    return undefined;
+  }
+
+  return values.includes("SI");
+};
+
 const fetchColors = async (): Promise<Colors[]> => {
   const colorData = await dashboardReadApiFetch("/colors");
 
@@ -228,6 +245,11 @@ export const fetchProducts = async (): Promise<Product[]> => {
         brand: prod.marca ?? undefined,
         line: prod.linea ?? undefined,
         material: prod.material ?? undefined,
+        foodSafe: foodSafeOf(
+          prod.atributos,
+          variantesValidas.flatMap((variant) => variant.atributos),
+        ),
+        origin: prod.origen ?? undefined,
         category,
         subcategory: prod.subgrupo ? String(prod.subgrupo).toUpperCase() : undefined,
         difficultyLevel: difficultyLevelOf(prod.atributos, first.atributos),

@@ -8,6 +8,8 @@ export interface Product {
   brand?: string;
   line?: string;
   material?: string;
+  foodSafe?: boolean;
+  origin?: string;
   category: string;
   subcategory?: string;
   difficultyLevel?: string;

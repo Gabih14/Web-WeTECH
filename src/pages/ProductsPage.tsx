@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Filter, X } from "lucide-react";
+import { Filter, Minus, Plus, X } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { categories } from "../data/categories";
 import { ProductCard } from "../components/products/ProductCard";
@@ -32,6 +32,18 @@ interface MaterialFilterProps {
   onMaterialChange: (material: string | null) => void;
 }
 
+interface MoreFiltersProps {
+  weights: number[];
+  selectedWeight: number | null;
+  onWeightChange: (weight: number | null) => void;
+  origins: string[];
+  selectedOrigin: string | null;
+  onOriginChange: (origin: string | null) => void;
+  showFoodSafeFilter: boolean;
+  foodSafeOnly: boolean;
+  onFoodSafeChange: (enabled: boolean) => void;
+}
+
 interface DifficultyFilterProps {
   levels: string[];
   selectedLevel: string | null;
@@ -47,6 +59,15 @@ const normalizeLine = (line: string) =>
     .toUpperCase();
 const normalizeMaterial = (material: string) =>
   material.trim().toUpperCase();
+const normalizeOrigin = (origin: string) => origin.trim().toUpperCase();
+const PLA_MATERIAL_LABEL = "PLA / PLA+";
+const materialFilterValue = (material: string) => {
+  const normalizedMaterial = normalizeMaterial(material);
+
+  return normalizedMaterial === "PLA" || normalizedMaterial === "PLA+"
+    ? PLA_MATERIAL_LABEL
+    : material.trim();
+};
 const normalizeDifficulty = (level: string) =>
   level
     .trim()
@@ -335,7 +356,8 @@ function MaterialFilter({
         {visibleMaterials.map((material) => {
           const isSelected =
             selectedMaterial !== null &&
-            normalizeMaterial(selectedMaterial) === normalizeMaterial(material);
+            normalizeMaterial(materialFilterValue(selectedMaterial)) ===
+              normalizeMaterial(materialFilterValue(material));
 
           return (
             <button
@@ -363,6 +385,156 @@ function MaterialFilter({
         >
           {isExpanded ? "Ver menos" : `Ver los ${materials.length} materiales`}
         </button>
+      )}
+    </div>
+  );
+}
+
+function MoreFilters({
+  weights,
+  selectedWeight,
+  onWeightChange,
+  origins,
+  selectedOrigin,
+  onOriginChange,
+  showFoodSafeFilter,
+  foodSafeOnly,
+  onFoodSafeChange,
+}: MoreFiltersProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  if (weights.length === 0 && origins.length === 0 && !showFoodSafeFilter) {
+    return null;
+  }
+
+  return (
+    <div className="bg-white p-4 rounded-lg shadow mb-6">
+      <button
+        type="button"
+        onClick={() => setIsExpanded((expanded) => !expanded)}
+        className="flex w-full items-center justify-between gap-3 text-left"
+        aria-expanded={isExpanded}
+      >
+        <span className="text-xl font-bold">Más filtros</span>
+        <span className="rounded-full p-1 transition-colors hover:bg-gray-100">
+          {isExpanded ? (
+            <Minus className="h-5 w-5" />
+          ) : (
+            <Plus className="h-5 w-5" />
+          )}
+        </span>
+      </button>
+
+      {isExpanded && (
+        <div className="mt-4 border-t pt-4">
+          {weights.length > 0 && (
+            <>
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <h3 className="text-base font-bold">Peso</h3>
+                {selectedWeight !== null && (
+                  <button
+                    type="button"
+                    onClick={() => onWeightChange(null)}
+                    className="text-sm font-medium text-yellow-700 hover:text-yellow-900"
+                  >
+                    Limpiar
+                  </button>
+                )}
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {weights.map((weight) => {
+                  const isSelected = selectedWeight === weight;
+
+                  return (
+                    <button
+                      key={weight}
+                      type="button"
+                      onClick={() => onWeightChange(isSelected ? null : weight)}
+                      className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
+                        isSelected
+                          ? "border-yellow-500 bg-yellow-100 text-black"
+                          : "border-gray-300 bg-white text-gray-700 hover:border-yellow-400 hover:bg-yellow-50"
+                      }`}
+                    >
+                      {weight.toLocaleString("es-AR")} kg
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {origins.length > 0 && (
+            <div className={weights.length > 0 ? "mt-4 border-t pt-4" : ""}>
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <h3 className="text-base font-bold">Origen</h3>
+                {selectedOrigin !== null && (
+                  <button
+                    type="button"
+                    onClick={() => onOriginChange(null)}
+                    className="text-sm font-medium text-yellow-700 hover:text-yellow-900"
+                  >
+                    Limpiar
+                  </button>
+                )}
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {origins.map((origin) => {
+                  const isSelected =
+                    selectedOrigin !== null &&
+                    normalizeOrigin(selectedOrigin) === normalizeOrigin(origin);
+
+                  return (
+                    <button
+                      key={origin}
+                      type="button"
+                      onClick={() =>
+                        onOriginChange(isSelected ? null : origin)
+                      }
+                      className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
+                        isSelected
+                          ? "border-yellow-500 bg-yellow-100 text-black"
+                          : "border-gray-300 bg-white text-gray-700 hover:border-yellow-400 hover:bg-yellow-50"
+                      }`}
+                    >
+                      {origin}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {showFoodSafeFilter && (
+            <div
+              className={`flex items-center justify-between gap-3 ${
+                weights.length > 0 || origins.length > 0
+                  ? "mt-4 border-t pt-4"
+                  : ""
+              }`}
+            >
+              <span className="text-sm font-semibold">Apto alimentos</span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={foodSafeOnly}
+                aria-label="Filtrar productos aptos para alimentos"
+                onClick={() => onFoodSafeChange(!foodSafeOnly)}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors ${
+                  foodSafeOnly ? "bg-yellow-400" : "bg-gray-300"
+                }`}
+              >
+                <span
+                  className={`mt-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                    foodSafeOnly ? "translate-x-5" : "translate-x-0.5"
+                  }`}
+                />
+              </button>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
@@ -462,6 +634,9 @@ export function ProductsPage() {
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
   const [selectedLine, setSelectedLine] = useState<string | null>(null);
   const [selectedMaterial, setSelectedMaterial] = useState<string | null>(null);
+  const [selectedWeight, setSelectedWeight] = useState<number | null>(null);
+  const [selectedOrigin, setSelectedOrigin] = useState<string | null>(null);
+  const [foodSafeOnly, setFoodSafeOnly] = useState(false);
   const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(
     null
   );
@@ -612,14 +787,63 @@ export function ProductsPage() {
         return;
       }
 
-      const normalizedMaterial = normalizeMaterial(product.material);
+      const filterValue = materialFilterValue(product.material);
+      const normalizedMaterial = normalizeMaterial(filterValue);
       if (!materialMap.has(normalizedMaterial)) {
-        materialMap.set(normalizedMaterial, product.material.trim());
+        materialMap.set(normalizedMaterial, filterValue);
       }
     });
 
-    return Array.from(materialMap.values()).sort((a, b) => a.localeCompare(b));
+    return Array.from(materialMap.values()).sort((a, b) => {
+      const aIsPla = normalizeMaterial(a) === normalizeMaterial(PLA_MATERIAL_LABEL);
+      const bIsPla = normalizeMaterial(b) === normalizeMaterial(PLA_MATERIAL_LABEL);
+
+      if (aIsPla !== bIsPla) {
+        return aIsPla ? -1 : 1;
+      }
+
+      return a.localeCompare(b);
+    });
   }, [matchesSelectedCategory, products]);
+
+  const availableWeights = useMemo(() => {
+    const weights = new Set<number>();
+
+    products.filter(matchesSelectedCategory).forEach((product) => {
+      product.weights?.forEach(({ weight }) => {
+        if (Number.isFinite(weight) && weight > 0) {
+          weights.add(weight);
+        }
+      });
+    });
+
+    return Array.from(weights).sort((a, b) => a - b);
+  }, [matchesSelectedCategory, products]);
+
+  const availableOrigins = useMemo(() => {
+    const originMap = new Map<string, string>();
+
+    products.filter(matchesSelectedCategory).forEach((product) => {
+      if (!product.origin?.trim()) {
+        return;
+      }
+
+      const normalizedOrigin = normalizeOrigin(product.origin);
+      if (!originMap.has(normalizedOrigin)) {
+        originMap.set(normalizedOrigin, product.origin.trim());
+      }
+    });
+
+    return Array.from(originMap.values()).sort((a, b) => a.localeCompare(b));
+  }, [matchesSelectedCategory, products]);
+
+  const showFoodSafeFilter = useMemo(
+    () =>
+      products
+        .filter(matchesSelectedCategory)
+        .some((product) => product.foodSafe !== undefined),
+    [matchesSelectedCategory, products]
+  );
 
   const availableDifficultyLevels = useMemo(() => {
     const levels = new Map<string, string>();
@@ -703,6 +927,33 @@ export function ProductsPage() {
     }
   }, [availableMaterials, selectedMaterial]);
 
+  useEffect(() => {
+    if (
+      selectedWeight !== null &&
+      !availableWeights.includes(selectedWeight)
+    ) {
+      setSelectedWeight(null);
+    }
+  }, [availableWeights, selectedWeight]);
+
+  useEffect(() => {
+    if (
+      selectedOrigin !== null &&
+      !availableOrigins.some(
+        (origin) =>
+          normalizeOrigin(origin) === normalizeOrigin(selectedOrigin)
+      )
+    ) {
+      setSelectedOrigin(null);
+    }
+  }, [availableOrigins, selectedOrigin]);
+
+  useEffect(() => {
+    if (foodSafeOnly && !showFoodSafeFilter) {
+      setFoodSafeOnly(false);
+    }
+  }, [foodSafeOnly, showFoodSafeFilter]);
+
   const filteredProducts = products.filter((product) => {
     const matchesColor =
       selectedColorGroupId === null ||
@@ -720,8 +971,16 @@ export function ProductsPage() {
     const matchesMaterial =
       selectedMaterial === null ||
       (product.material &&
-        normalizeMaterial(product.material) ===
-          normalizeMaterial(selectedMaterial));
+        normalizeMaterial(materialFilterValue(product.material)) ===
+          normalizeMaterial(materialFilterValue(selectedMaterial)));
+    const matchesWeight =
+      selectedWeight === null ||
+      product.weights?.some(({ weight }) => weight === selectedWeight);
+    const matchesOrigin =
+      selectedOrigin === null ||
+      (product.origin &&
+        normalizeOrigin(product.origin) === normalizeOrigin(selectedOrigin));
+    const matchesFoodSafe = !foodSafeOnly || product.foodSafe === true;
     const matchesDifficulty =
       selectedDifficulty === null ||
       (product.difficultyLevel &&
@@ -734,6 +993,9 @@ export function ProductsPage() {
       matchesBrand &&
       matchesLine &&
       matchesMaterial &&
+      matchesWeight &&
+      matchesOrigin &&
+      matchesFoodSafe &&
       matchesDifficulty
     );
   });
@@ -762,6 +1024,9 @@ export function ProductsPage() {
     setSelectedBrand(null);
     setSelectedLine(null);
     setSelectedMaterial(null);
+    setSelectedWeight(null);
+    setSelectedOrigin(null);
+    setFoodSafeOnly(false);
     setSelectedDifficulty(null);
   };
 
@@ -771,6 +1036,9 @@ export function ProductsPage() {
     selectedBrand !== null ||
     selectedLine !== null ||
     selectedMaterial !== null ||
+    selectedWeight !== null ||
+    selectedOrigin !== null ||
+    foodSafeOnly ||
     selectedDifficulty !== null;
 
   if (loading) {
@@ -949,6 +1217,17 @@ export function ProductsPage() {
             selectedMaterial={selectedMaterial}
             onMaterialChange={setSelectedMaterial}
           />
+          <MoreFilters
+            weights={availableWeights}
+            selectedWeight={selectedWeight}
+            onWeightChange={setSelectedWeight}
+            origins={availableOrigins}
+            selectedOrigin={selectedOrigin}
+            onOriginChange={setSelectedOrigin}
+            showFoodSafeFilter={showFoodSafeFilter}
+            foodSafeOnly={foodSafeOnly}
+            onFoodSafeChange={setFoodSafeOnly}
+          />
         </div>
 
         {/* Product Grid */}
@@ -1083,6 +1362,26 @@ export function ProductsPage() {
             selectedMaterial={selectedMaterial}
             onMaterialChange={(material) => {
               setSelectedMaterial(material);
+              setIsMobileFilterOpen(false);
+            }}
+          />
+          <MoreFilters
+            weights={availableWeights}
+            selectedWeight={selectedWeight}
+            onWeightChange={(weight) => {
+              setSelectedWeight(weight);
+              setIsMobileFilterOpen(false);
+            }}
+            origins={availableOrigins}
+            selectedOrigin={selectedOrigin}
+            onOriginChange={(origin) => {
+              setSelectedOrigin(origin);
+              setIsMobileFilterOpen(false);
+            }}
+            showFoodSafeFilter={showFoodSafeFilter}
+            foodSafeOnly={foodSafeOnly}
+            onFoodSafeChange={(enabled) => {
+              setFoodSafeOnly(enabled);
               setIsMobileFilterOpen(false);
             }}
           />
