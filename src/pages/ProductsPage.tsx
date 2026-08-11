@@ -1316,74 +1316,44 @@ export function ProductsPage() {
             categories={categoriesWithFilamentSubcategories}
             selectedCategory={selectedCategory}
             selectedSubcategory={selectedSubcategory}
-            onCategoryChange={(category) => {
-              handleCategoryChange(category);
-              setIsMobileFilterOpen(false);
-            }}
-            onSubcategoryChange={(subcategory) => {
-              handleSubcategoryChange(subcategory);
-              setIsMobileFilterOpen(false);
-            }}
+            onCategoryChange={handleCategoryChange}
+            onSubcategoryChange={handleSubcategoryChange}
           />
           <DifficultyFilter
             levels={availableDifficultyLevels}
             selectedLevel={selectedDifficulty}
-            onLevelChange={(level) => {
-              setSelectedDifficulty(level);
-              setIsMobileFilterOpen(false);
-            }}
+            onLevelChange={setSelectedDifficulty}
           />
           <ColorFilter
             colorGroups={availableColorGroups}
             selectedColorGroupId={selectedColorGroupId}
-            onColorGroupChange={(colorGroupId) => {
-              setSelectedColorGroupId(colorGroupId);
-              setIsMobileFilterOpen(false);
-            }}
+            onColorGroupChange={setSelectedColorGroupId}
           />
           <BrandFilter
             brands={availableBrands}
             selectedBrand={selectedBrand}
-            onBrandChange={(brand) => {
-              setSelectedBrand(brand);
-              setIsMobileFilterOpen(false);
-            }}
+            onBrandChange={setSelectedBrand}
           />
           <LineFilter
             lines={availableLines}
             selectedLine={selectedLine}
-            onLineChange={(line) => {
-              setSelectedLine(line);
-              setIsMobileFilterOpen(false);
-            }}
+            onLineChange={setSelectedLine}
           />
           <MaterialFilter
             materials={availableMaterials}
             selectedMaterial={selectedMaterial}
-            onMaterialChange={(material) => {
-              setSelectedMaterial(material);
-              setIsMobileFilterOpen(false);
-            }}
+            onMaterialChange={setSelectedMaterial}
           />
           <MoreFilters
             weights={availableWeights}
             selectedWeight={selectedWeight}
-            onWeightChange={(weight) => {
-              setSelectedWeight(weight);
-              setIsMobileFilterOpen(false);
-            }}
+            onWeightChange={setSelectedWeight}
             origins={availableOrigins}
             selectedOrigin={selectedOrigin}
-            onOriginChange={(origin) => {
-              setSelectedOrigin(origin);
-              setIsMobileFilterOpen(false);
-            }}
+            onOriginChange={setSelectedOrigin}
             showFoodSafeFilter={showFoodSafeFilter}
             foodSafeOnly={foodSafeOnly}
-            onFoodSafeChange={(enabled) => {
-              setFoodSafeOnly(enabled);
-              setIsMobileFilterOpen(false);
-            }}
+            onFoodSafeChange={setFoodSafeOnly}
           />
         </div>
       </div>

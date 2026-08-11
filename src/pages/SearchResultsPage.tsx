@@ -162,14 +162,8 @@ export default function SearchResultsPage() {
             categories={categories}
             selectedCategory={selectedCategory}
             selectedSubcategory={selectedSubcategory}
-            onCategoryChange={(category) => {
-              handleCategoryChange(category);
-              setIsMobileFilterOpen(false);
-            }}
-            onSubcategoryChange={(subcategory) => {
-              setSelectedSubcategory(subcategory);
-              setIsMobileFilterOpen(false);
-            }}
+            onCategoryChange={handleCategoryChange}
+            onSubcategoryChange={setSelectedSubcategory}
           />
         </div>
       </div>
