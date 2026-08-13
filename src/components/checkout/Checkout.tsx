@@ -133,7 +133,10 @@ export default function Checkout() {
   const [showDevelopmentModal, setShowDevelopmentModal] = useState(false);
   const [checkoutPassword, setCheckoutPassword] = useState("");
   const [checkoutPasswordError, setCheckoutPasswordError] = useState("");
+  const [isClienteLookupLoading, setIsClienteLookupLoading] = useState(false);
+  const [clienteLookupCuit, setClienteLookupCuit] = useState("");
   const checkoutInFlightRef = useRef(false);
+  const clienteLookupRequestRef = useRef(0);
 
   // Estados para el wizard de pasos
   const [currentStep, setCurrentStep] = useState(1);
@@ -152,6 +155,11 @@ export default function Checkout() {
   const isCuitValid = isValidCuitCuil(formData.cuit);
   const documentType = getDocumentType(formData.cuit);
   const showCuitHelp = formData.cuit.trim().length > 0 && !isCuitValid;
+  const normalizedFormCuit = normalizeCuitCuil(formData.cuit);
+  const isClienteLookupPending =
+    isCuitValid && clienteLookupCuit !== normalizedFormCuit;
+  const areCheckoutFieldsDisabled =
+    !isCuitValid || isClienteLookupLoading || isClienteLookupPending;
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
@@ -791,16 +799,15 @@ export default function Checkout() {
     });
   };
 
-  const handleCuitBlur = async () => {
-    const cuit = normalizeCuitCuil(formData.cuit);
-    if (!cuit) return;
-
-    // Validar que el CUIT tenga exactamente 11 dígitos
-    if (!isValidCuitCuil(cuit)) {
-      return;
-    }
+  const lookupClienteByCuit = useCallback(async (cuit: string) => {
+    const requestId = clienteLookupRequestRef.current + 1;
+    clienteLookupRequestRef.current = requestId;
+    setIsClienteLookupLoading(true);
 
     const clienteData = await fetchClienteByCuit(cuit);
+    if (clienteLookupRequestRef.current !== requestId) return;
+
+    setClienteLookupCuit(cuit);
     //console.log("Datos del cliente obtenidos por CUIT:", clienteData);
     if (clienteData) {
       const fetchedDocumentType = getDocumentType(cuit);
@@ -850,6 +857,47 @@ export default function Checkout() {
           : prev.billingPostalCode,
       }));
     }
+    setIsClienteLookupLoading(false);
+  }, []);
+
+  useEffect(() => {
+    const cuit = normalizeCuitCuil(formData.cuit);
+
+    if (!isValidCuitCuil(cuit)) {
+      clienteLookupRequestRef.current += 1;
+      setClienteLookupCuit("");
+      setIsClienteLookupLoading(false);
+      return;
+    }
+
+    if (clienteLookupCuit === cuit) {
+      setIsClienteLookupLoading(false);
+      return;
+    }
+
+    clienteLookupRequestRef.current += 1;
+    setIsClienteLookupLoading(true);
+    const lookupTimer = window.setTimeout(() => {
+      void lookupClienteByCuit(cuit);
+    }, 250);
+
+    return () => {
+      window.clearTimeout(lookupTimer);
+    };
+  }, [clienteLookupCuit, formData.cuit, lookupClienteByCuit]);
+
+  const handleCuitBlur = () => {
+    const cuit = normalizeCuitCuil(formData.cuit);
+
+    if (
+      !isValidCuitCuil(cuit) ||
+      clienteLookupCuit === cuit ||
+      isClienteLookupLoading
+    ) {
+      return;
+    }
+
+    void lookupClienteByCuit(cuit);
   };
 
   const calculateOriginalTotal = () => {
@@ -927,6 +975,7 @@ export default function Checkout() {
       case 1: // Información Personal
         return !!(
           isCuitValid &&
+          !areCheckoutFieldsDisabled &&
           (documentType === "cuil"
             ? formData.firstName.trim() && formData.lastName.trim()
             : hasAtLeastTwoWords(formData.name)) &&
@@ -986,6 +1035,8 @@ export default function Checkout() {
             isCuitValid={isCuitValid}
             documentType={documentType}
             showCuitHelp={showCuitHelp}
+            arePersonalFieldsDisabled={areCheckoutFieldsDisabled}
+            isClienteLookupLoading={isClienteLookupLoading}
           />
         );
       case 2:

@@ -4,6 +4,7 @@ import {
   hasAtLeastTwoWords,
 } from "../../utils/validation";
 import type { DocumentType } from "../../utils/validation";
+import { Loader2 } from "lucide-react";
 
 const CUIT_HELP_URL =
   "https://serviciosweb.afip.gob.ar/publico/cuitonline/infopersonal.aspx";
@@ -22,6 +23,8 @@ type Props = {
   isCuitValid: boolean;
   documentType: DocumentType | null;
   showCuitHelp: boolean;
+  arePersonalFieldsDisabled: boolean;
+  isClienteLookupLoading: boolean;
 };
 
 export const CheckoutPersonal = ({
@@ -31,6 +34,8 @@ export const CheckoutPersonal = ({
   isCuitValid,
   documentType,
   showCuitHelp,
+  arePersonalFieldsDisabled,
+  isClienteLookupLoading,
 }: Props) => {
   const completeCuilName = `${formData.firstName} ${formData.lastName}`;
   const isNameIncomplete =
@@ -39,7 +44,6 @@ export const CheckoutPersonal = ({
           formData.lastName.trim().length > 0) &&
         !hasAtLeastTwoWords(completeCuilName)
       : formData.name.trim().length > 0 && !hasAtLeastTwoWords(formData.name);
-  const arePersonalFieldsDisabled = !isCuitValid;
   const singleNameLabel =
     documentType === "cuit" ? "Razon social" : "Nombre completo";
   const singleNamePlaceholder =
@@ -58,27 +62,36 @@ export const CheckoutPersonal = ({
           >
             CUIT / CUIL
           </label>
-          <input
-            type="text"
-            id="cuit"
-            name="cuit"
-            value={formData.cuit}
-            onChange={handleInputChange}
-            onBlur={handleCuitBlur}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                e.currentTarget.blur();
-              }
-            }}
-            required
-            aria-invalid={showCuitHelp}
-            aria-describedby={showCuitHelp ? "cuit-help" : undefined}
-            className={`mt-1 p-2 block w-full rounded-md border-2 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 ${
-              showCuitHelp ? "border-red-400" : "border-gray-300"
-            }`}
-            placeholder="Ej: 20-12345678-9"
-          />
+          <div className="relative mt-1">
+            <input
+              type="text"
+              id="cuit"
+              name="cuit"
+              value={formData.cuit}
+              onChange={handleInputChange}
+              onBlur={handleCuitBlur}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  e.currentTarget.blur();
+                }
+              }}
+              required
+              aria-invalid={showCuitHelp}
+              aria-describedby={showCuitHelp ? "cuit-help" : undefined}
+              aria-busy={isClienteLookupLoading}
+              className={`p-2 block w-full rounded-md border-2 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 ${
+                isClienteLookupLoading ? "pr-10" : ""
+              } ${showCuitHelp ? "border-red-400" : "border-gray-300"}`}
+              placeholder="Ej: 20-12345678-9"
+            />
+            {isClienteLookupLoading && (
+              <Loader2
+                className="absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 animate-spin text-yellow-600"
+                aria-hidden="true"
+              />
+            )}
+          </div>
           {showCuitHelp && (
             <p id="cuit-help" className="mt-1 text-sm text-red-600">
               Ingresa un CUIT/CUIL valido.{" "}
