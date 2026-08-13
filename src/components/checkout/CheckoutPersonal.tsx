@@ -86,10 +86,12 @@ export const CheckoutPersonal = ({
               placeholder="Ej: 20-12345678-9"
             />
             {isClienteLookupLoading && (
-              <Loader2
-                className="absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 animate-spin text-yellow-600"
-                aria-hidden="true"
-              />
+              <span className="absolute right-3 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center">
+                <Loader2
+                  className="h-5 w-5 animate-spin text-yellow-600"
+                  aria-hidden="true"
+                />
+              </span>
             )}
           </div>
           {showCuitHelp && (
