@@ -4,7 +4,7 @@ import {
   hasAtLeastTwoWords,
 } from "../../utils/validation";
 import type { DocumentType } from "../../utils/validation";
-import { Loader2 } from "lucide-react";
+import { Loader2, Pencil } from "lucide-react";
 
 const CUIT_HELP_URL =
   "https://serviciosweb.afip.gob.ar/publico/cuitonline/infopersonal.aspx";
@@ -25,6 +25,8 @@ type Props = {
   showCuitHelp: boolean;
   arePersonalFieldsDisabled: boolean;
   isClienteLookupLoading: boolean;
+  isPrefilledClienteLocked: boolean;
+  onEditPrefilledCliente: () => void;
 };
 
 export const CheckoutPersonal = ({
@@ -36,6 +38,8 @@ export const CheckoutPersonal = ({
   showCuitHelp,
   arePersonalFieldsDisabled,
   isClienteLookupLoading,
+  isPrefilledClienteLocked,
+  onEditPrefilledCliente,
 }: Props) => {
   const completeCuilName = `${formData.firstName} ${formData.lastName}`;
   const isNameIncomplete =
@@ -51,9 +55,28 @@ export const CheckoutPersonal = ({
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
-      <h2 className="text-lg font-medium text-gray-900 mb-4">
-        Informacion Personal
-      </h2>
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-lg font-medium text-gray-900">
+            Informacion Personal
+          </h2>
+          {isPrefilledClienteLocked && (
+            <p className="mt-1 text-sm text-gray-600">
+              Usamos los datos ya registrados para acelerar la compra.
+            </p>
+          )}
+        </div>
+        {isPrefilledClienteLocked && (
+          <button
+            type="button"
+            onClick={onEditPrefilledCliente}
+            className="inline-flex items-center justify-center gap-2 rounded-md border border-yellow-500 bg-white px-3 py-2 text-sm font-medium text-yellow-800 transition hover:bg-yellow-50"
+          >
+            <Pencil className="h-4 w-4" />
+            Editar datos
+          </button>
+        )}
+      </div>
       <div className="grid grid-cols-1 gap-4">
         <div>
           <label
