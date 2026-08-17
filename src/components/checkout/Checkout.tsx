@@ -1,6 +1,6 @@
 ﻿import React, { useCallback, useRef, useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft, Tag, AlertCircle, X, ChevronRight, ChevronLeft, Lock } from "lucide-react";
+import { ArrowLeft, Tag, AlertCircle, X, ChevronRight, ChevronLeft, Lock, CheckCircle } from "lucide-react";
 import { useCart } from "../../context/CartContext";
 import { Product, Coupon } from "../../types";
 import { CheckoutPersonal } from "./CheckoutPersonal";
@@ -137,6 +137,7 @@ export default function Checkout() {
   const [clienteLookupCuit, setClienteLookupCuit] = useState("");
   const [hasPrefilledClienteData, setHasPrefilledClienteData] = useState(false);
   const [isPrefilledClienteEditing, setIsPrefilledClienteEditing] = useState(false);
+  const [prefilledClienteNotice, setPrefilledClienteNotice] = useState("");
   const checkoutInFlightRef = useRef(false);
   const clienteLookupRequestRef = useRef(0);
 
@@ -789,6 +790,7 @@ export default function Checkout() {
     if (name === "cuit") {
       setHasPrefilledClienteData(false);
       setIsPrefilledClienteEditing(false);
+      setPrefilledClienteNotice("");
     }
 
     setFormData((prev) => {
@@ -825,6 +827,12 @@ export default function Checkout() {
       const fetchedPersonalName = splitPersonalNameFromRazonSocial(
         clienteData.nombre
       );
+      const prefilledClienteName =
+        fetchedDocumentType === "cuil"
+          ? `${fetchedPersonalName.firstName} ${fetchedPersonalName.lastName}`.trim()
+          : clienteData.nombre.trim();
+      const prefilledClienteLabel =
+        prefilledClienteName || "este cliente";
 
       setFormData((prev) => ({
         ...prev,
@@ -869,9 +877,14 @@ export default function Checkout() {
       }));
       setHasPrefilledClienteData(true);
       setIsPrefilledClienteEditing(false);
+      setPrefilledClienteNotice(
+        `Información precargada para ${prefilledClienteLabel}. Seguimos al método de pago para que termines más rápido.`
+      );
+      setCurrentStep((step) => (step === 1 ? 2 : step));
     } else {
       setHasPrefilledClienteData(false);
       setIsPrefilledClienteEditing(false);
+      setPrefilledClienteNotice("");
     }
     setIsClienteLookupLoading(false);
   }, []);
@@ -885,6 +898,7 @@ export default function Checkout() {
       setIsClienteLookupLoading(false);
       setHasPrefilledClienteData(false);
       setIsPrefilledClienteEditing(false);
+      setPrefilledClienteNotice("");
       return;
     }
 
@@ -1407,6 +1421,21 @@ export default function Checkout() {
 
       {/* Step Indicator */}
       <StepIndicator currentStep={currentStep} steps={steps} />
+
+      {prefilledClienteNotice && (
+        <div className="mb-6 flex items-start gap-3 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800">
+          <CheckCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-700" />
+          <p className="flex-1 leading-6">{prefilledClienteNotice}</p>
+          <button
+            type="button"
+            onClick={() => setPrefilledClienteNotice("")}
+            className="rounded-full p-1 text-green-700 transition hover:bg-green-100 hover:text-green-900"
+            aria-label="Cerrar aviso"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid lg:grid-cols-2 lg:gap-x-12 xl:gap-x-16">
         <div>
