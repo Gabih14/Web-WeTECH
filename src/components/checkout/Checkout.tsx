@@ -1,6 +1,6 @@
 ﻿import React, { useCallback, useRef, useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft, Tag, AlertCircle, X, ChevronRight, ChevronLeft, Lock } from "lucide-react";
+import { ArrowLeft, Tag, AlertCircle, X, ChevronRight, ChevronLeft, Lock, CheckCircle } from "lucide-react";
 import { useCart } from "../../context/CartContext";
 import { Product, Coupon } from "../../types";
 import { CheckoutPersonal } from "./CheckoutPersonal";
@@ -135,6 +135,9 @@ export default function Checkout() {
   const [checkoutPasswordError, setCheckoutPasswordError] = useState("");
   const [isClienteLookupLoading, setIsClienteLookupLoading] = useState(false);
   const [clienteLookupCuit, setClienteLookupCuit] = useState("");
+  const [hasPrefilledClienteData, setHasPrefilledClienteData] = useState(false);
+  const [isPrefilledClienteEditing, setIsPrefilledClienteEditing] = useState(false);
+  const [prefilledClienteNotice, setPrefilledClienteNotice] = useState("");
   const checkoutInFlightRef = useRef(false);
   const clienteLookupRequestRef = useRef(0);
 
@@ -160,6 +163,10 @@ export default function Checkout() {
     isCuitValid && clienteLookupCuit !== normalizedFormCuit;
   const areCheckoutFieldsDisabled =
     !isCuitValid || isClienteLookupLoading || isClienteLookupPending;
+  const arePrefilledClienteFieldsLocked =
+    hasPrefilledClienteData && !isPrefilledClienteEditing;
+  const areEditableCheckoutFieldsDisabled =
+    areCheckoutFieldsDisabled || arePrefilledClienteFieldsLocked;
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
@@ -780,6 +787,12 @@ export default function Checkout() {
         ? stripArgentinaMobilePrefix(value) || normalizePhoneDigits(value)
         : value;
 
+    if (name === "cuit") {
+      setHasPrefilledClienteData(false);
+      setIsPrefilledClienteEditing(false);
+      setPrefilledClienteNotice("");
+    }
+
     setFormData((prev) => {
       if (name === "cuit") {
         const nextDocumentType = getDocumentType(nextValue);
@@ -814,6 +827,12 @@ export default function Checkout() {
       const fetchedPersonalName = splitPersonalNameFromRazonSocial(
         clienteData.nombre
       );
+      const prefilledClienteName =
+        fetchedDocumentType === "cuil"
+          ? `${fetchedPersonalName.firstName} ${fetchedPersonalName.lastName}`.trim()
+          : clienteData.nombre.trim();
+      const prefilledClienteLabel =
+        prefilledClienteName || "este cliente";
 
       setFormData((prev) => ({
         ...prev,
@@ -856,6 +875,16 @@ export default function Checkout() {
           ? clienteData.codigo_postal
           : prev.billingPostalCode,
       }));
+      setHasPrefilledClienteData(true);
+      setIsPrefilledClienteEditing(false);
+      setPrefilledClienteNotice(
+        `Información precargada para ${prefilledClienteLabel}. Seguimos al método de pago para que termines más rápido.`
+      );
+      setCurrentStep((step) => (step === 1 ? 2 : step));
+    } else {
+      setHasPrefilledClienteData(false);
+      setIsPrefilledClienteEditing(false);
+      setPrefilledClienteNotice("");
     }
     setIsClienteLookupLoading(false);
   }, []);
@@ -867,6 +896,9 @@ export default function Checkout() {
       clienteLookupRequestRef.current += 1;
       setClienteLookupCuit("");
       setIsClienteLookupLoading(false);
+      setHasPrefilledClienteData(false);
+      setIsPrefilledClienteEditing(false);
+      setPrefilledClienteNotice("");
       return;
     }
 
@@ -1035,8 +1067,10 @@ export default function Checkout() {
             isCuitValid={isCuitValid}
             documentType={documentType}
             showCuitHelp={showCuitHelp}
-            arePersonalFieldsDisabled={areCheckoutFieldsDisabled}
+            arePersonalFieldsDisabled={areEditableCheckoutFieldsDisabled}
             isClienteLookupLoading={isClienteLookupLoading}
+            isPrefilledClienteLocked={arePrefilledClienteFieldsLocked}
+            onEditPrefilledCliente={() => setIsPrefilledClienteEditing(true)}
           />
         );
       case 2:
@@ -1139,6 +1173,9 @@ export default function Checkout() {
             setDeliveryMethod={setDeliveryMethod}
             confirmedAddress={confirmedAddress}
             setConfirmedAddress={setConfirmedAddress}
+            areAddressFieldsDisabled={areEditableCheckoutFieldsDisabled}
+            isPrefilledAddressLocked={arePrefilledClienteFieldsLocked}
+            onEditPrefilledAddress={() => setIsPrefilledClienteEditing(true)}
           />
         );
       case 4:
@@ -1319,6 +1356,58 @@ export default function Checkout() {
     }
   };
 
+  const renderCouponBlock = () => (
+    <div className="mt-6">
+      <div className="flex items-center space-x-2">
+        <div className="flex-1">
+          <input
+            type="text"
+            value={couponCode}
+            onChange={(e) => setCouponCode(e.target.value)}
+            placeholder="Código de cupón"
+            className="w-full px-3 py-2 border rounded-md"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={() => void applyCoupon()}
+          disabled={couponLoading}
+          className="bg-gray-100 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-200 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {couponLoading ? (
+            <>
+              <div className="w-4 h-4 border-2 border-gray-700 border-t-transparent rounded-full animate-spin mr-2"></div>
+              Verificando...
+            </>
+          ) : (
+            <>
+              <Tag className="h-4 w-4 mr-2" />
+              Aplicar
+            </>
+          )}
+        </button>
+      </div>
+      {couponError && (
+        <p className="text-red-500 text-sm mt-1">{couponError}</p>
+      )}
+      {appliedCoupon && (
+        <div className="mt-2 flex items-center justify-between bg-green-50 p-2 rounded-md">
+          <span className="text-green-700 text-sm">
+            Cupón aplicado: {appliedCoupon.code} (
+            {effectiveCouponPercentage}%)
+          </span>
+          <button
+            type="button"
+            onClick={removeCoupon}
+            className="text-green-700 hover:text-green-800 text-sm"
+          >
+            Eliminar
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-x-hidden">
       <button
@@ -1332,6 +1421,21 @@ export default function Checkout() {
 
       {/* Step Indicator */}
       <StepIndicator currentStep={currentStep} steps={steps} />
+
+      {prefilledClienteNotice && (
+        <div className="mb-6 flex items-start gap-3 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800">
+          <CheckCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-700" />
+          <p className="flex-1 leading-6">{prefilledClienteNotice}</p>
+          <button
+            type="button"
+            onClick={() => setPrefilledClienteNotice("")}
+            className="rounded-full p-1 text-green-700 transition hover:bg-green-100 hover:text-green-900"
+            aria-label="Cerrar aviso"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid lg:grid-cols-2 lg:gap-x-12 xl:gap-x-16">
         <div>
@@ -1422,6 +1526,7 @@ export default function Checkout() {
             </h2>
             {items.length > 0 ? (
               <div className="flow-root">
+                {isMobile && renderCouponBlock()}
                 <ul className="divide-y divide-gray-200">
                   {items.map((item, index) => {
                     const price = getPrice(item.product, item.color, item.weight);
@@ -1535,55 +1640,7 @@ export default function Checkout() {
                     );
                   })}
                 </ul>
-                <div className="mt-6">
-                  <div className="flex items-center space-x-2">
-                    <div className="flex-1">
-                      <input
-                        type="text"
-                        value={couponCode}
-                        onChange={(e) => setCouponCode(e.target.value)}
-                        placeholder="Código de cupón"
-                        className="w-full px-3 py-2 border rounded-md"
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => void applyCoupon()}
-                      disabled={couponLoading}
-                      className="bg-gray-100 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-200 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {couponLoading ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-gray-700 border-t-transparent rounded-full animate-spin mr-2"></div>
-                          Verificando...
-                        </>
-                      ) : (
-                        <>
-                          <Tag className="h-4 w-4 mr-2" />
-                          Aplicar
-                        </>
-                      )}
-                    </button>
-                  </div>
-                  {couponError && (
-                    <p className="text-red-500 text-sm mt-1">{couponError}</p>
-                  )}
-                  {appliedCoupon && (
-                    <div className="mt-2 flex items-center justify-between bg-green-50 p-2 rounded-md">
-                      <span className="text-green-700 text-sm">
-                        Cupón aplicado: {appliedCoupon.code} (
-                        {effectiveCouponPercentage}%)
-                      </span>
-                      <button
-                        type="button"
-                        onClick={removeCoupon}
-                        className="text-green-700 hover:text-green-800 text-sm"
-                      >
-                        Eliminar
-                      </button>
-                    </div>
-                  )}
-                </div>
+                {!isMobile && renderCouponBlock()}
                 <dl className="border-t border-gray-200 py-4 space-y-2">
                   <div className="flex items-center justify-between">
                     <dt className="text-sm text-gray-600">Subtotal</dt>

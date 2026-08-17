@@ -1,4 +1,4 @@
-import { MapPin, Store, Truck, AlertCircle, X, CheckCircle } from "lucide-react"; //MapPin,
+import { MapPin, Store, Truck, AlertCircle, X, CheckCircle, Pencil } from "lucide-react"; //MapPin,
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ShippingInfoModal } from "./ShippingInfoModal";
 import { apiFetch } from "../../services/api";
@@ -19,6 +19,9 @@ type Props = {
   setDeliveryMethod: (method: "pickup" | "shipping") => void;
   confirmedAddress: string | null;
   setConfirmedAddress: (address: string | null) => void;
+  areAddressFieldsDisabled: boolean;
+  isPrefilledAddressLocked: boolean;
+  onEditPrefilledAddress: () => void;
 };
 
 type DistanceResponse = {
@@ -452,6 +455,9 @@ export const CheckoutAdress = ({
   setDeliveryMethod,
   confirmedAddress,
   setConfirmedAddress,
+  areAddressFieldsDisabled,
+  isPrefilledAddressLocked,
+  onEditPrefilledAddress,
 }: Props) => {
   // const GOOGLE_API_KEY = "AIzaSyCDesHGPMQEk72w8X9sFRu1O1rzno9UopQ";
 
@@ -506,6 +512,8 @@ export const CheckoutAdress = ({
   };
 
   const editAddressFromMap = () => {
+    if (areAddressFieldsDisabled) return;
+
     resetConfirmedShipping();
     window.requestAnimationFrame(() => {
       streetInputRef.current?.focus();
@@ -563,6 +571,8 @@ export const CheckoutAdress = ({
   const handleAddressInputChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
+    if (areAddressFieldsDisabled) return;
+
     handleInputChange(event as React.ChangeEvent<HTMLInputElement>);
 
     if (
@@ -753,9 +763,28 @@ export const CheckoutAdress = ({
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
-      <h2 className="text-lg font-medium text-gray-900 mb-4">
-        Método de Entrega
-      </h2>
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-lg font-medium text-gray-900">
+            Método de Entrega
+          </h2>
+          {isPrefilledAddressLocked && (
+            <p className="mt-1 text-sm text-gray-600">
+              La direccion precargada queda protegida hasta que elijas editarla.
+            </p>
+          )}
+        </div>
+        {isPrefilledAddressLocked && (
+          <button
+            type="button"
+            onClick={onEditPrefilledAddress}
+            className="inline-flex items-center justify-center gap-2 rounded-md border border-yellow-500 bg-white px-3 py-2 text-sm font-medium text-yellow-800 transition hover:bg-yellow-50"
+          >
+            <Pencil className="h-4 w-4" />
+            Editar direccion
+          </button>
+        )}
+      </div>
       <div className="space-y-4">
         <div className="flex flex-col md:flex-row w-full gap-2">
           <button
@@ -871,7 +900,8 @@ export const CheckoutAdress = ({
                 value={formData.street}
                 onChange={handleAddressInputChange}
                 required
-                className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+                disabled={areAddressFieldsDisabled}
+                className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
                 placeholder="Ej: Santiago de Liniers"
               />
             </div>
@@ -889,7 +919,7 @@ export const CheckoutAdress = ({
                 value={formData.number}
                 onChange={handleAddressInputChange}
                 required={!formData.addressWithoutNumber}
-                disabled={formData.addressWithoutNumber}
+                disabled={areAddressFieldsDisabled || formData.addressWithoutNumber}
                 className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
                 placeholder="Ej: 670"
               />
@@ -899,7 +929,8 @@ export const CheckoutAdress = ({
                   name="addressWithoutNumber"
                   checked={formData.addressWithoutNumber}
                   onChange={handleAddressInputChange}
-                  className="h-4 w-4 rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
+                  disabled={areAddressFieldsDisabled}
+                  className="h-4 w-4 rounded border-gray-300 text-yellow-600 focus:ring-yellow-500 disabled:cursor-not-allowed"
                 />
                 Sin número
               </label>
@@ -920,7 +951,8 @@ export const CheckoutAdress = ({
                 value={formData.city}
                 onChange={handleAddressInputChange}
                 required
-                className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+                disabled={areAddressFieldsDisabled}
+                className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
                 placeholder="Ej: Godoy Cruz"
               />
             </div>
@@ -938,7 +970,8 @@ export const CheckoutAdress = ({
                 value={formData.postalCode}
                 onChange={handleAddressInputChange}
                 required
-                className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                disabled={areAddressFieldsDisabled}
+                className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
                 placeholder="Ej: 5501"
               />
             </div>
@@ -956,7 +989,8 @@ export const CheckoutAdress = ({
               value={formData.observaciones}
               onChange={handleAddressInputChange}
               rows={3}
-              className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500"
+              disabled={areAddressFieldsDisabled}
+              className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
               placeholder="Ej: Casa con portón azul, timbre 2B"
             />
           </div>
