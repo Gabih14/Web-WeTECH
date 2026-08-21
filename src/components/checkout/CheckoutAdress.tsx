@@ -45,6 +45,15 @@ type DistanceResponse = {
   needsMoreSpecificAddress?: boolean;
 };
 
+type ShippingError = {
+  message: string;
+  retryable: boolean;
+  title?: string;
+  variant?: "error" | "warning";
+  helperText?: string;
+  actionText?: string;
+};
+
 type MapSelection = {
   address: string;
   distanceKm: number;
@@ -464,11 +473,12 @@ export const CheckoutAdress = ({
   const [showShippingInfo, setShowShippingInfo] = useState(false);
   const [shippingInfoChecked, setShippingInfoChecked] = useState(false);
   const [showShippingErrorModal, setShowShippingErrorModal] = useState(false);
-  const [shippingError, setShippingError] = useState<{ message: string; retryable: boolean } | null>(null);
+  const [shippingError, setShippingError] = useState<ShippingError | null>(null);
   const [pendingResolvedAddress, setPendingResolvedAddress] = useState<string | null>(null);
   const [pendingDistance, setPendingDistance] = useState<number | null>(null);
   const [isManualMapEnabled, setIsManualMapEnabled] = useState(false);
   const streetInputRef = useRef<HTMLInputElement>(null);
+  const manualMapSectionRef = useRef<HTMLDivElement>(null);
   const isShippingFormComplete = Boolean(
     formData.street &&
     (formData.number || formData.addressWithoutNumber) &&
@@ -502,6 +512,22 @@ export const CheckoutAdress = ({
   );
   const mapUrl = `https://www.google.com/maps?q=${mapQuery}&output=embed`;
   const externalMapUrl = `https://www.google.com/maps/search/?api=1&query=${mapQuery}`;
+  const shouldFocusManualMap =
+    deliveryMethod === "shipping" &&
+    isManualMapEnabled &&
+    Boolean(GOOGLE_MAPS_API_KEY) &&
+    !confirmedAddress;
+  const areAddressInputsDisabled =
+    areAddressFieldsDisabled || shouldFocusManualMap;
+
+  const scrollManualMapIntoView = () => {
+    window.requestAnimationFrame(() => {
+      manualMapSectionRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    });
+  };
 
   const resetConfirmedShipping = () => {
     setPendingResolvedAddress(null);
@@ -679,14 +705,28 @@ export const CheckoutAdress = ({
         console.log("Respuesta del backend:", data);
 
         if (!response.ok || data.error || data.detail) {
-          setIsManualMapEnabled(data.needsMoreSpecificAddress ?? true);
+          const needsManualMap = data.needsMoreSpecificAddress ?? true;
+          setIsManualMapEnabled(needsManualMap);
           setShippingError({
-            message: getShippingErrorMessage(data),
-            retryable: data.needsMoreSpecificAddress ?? true,
+            message: needsManualMap
+              ? "No se pudo calcular automáticamente el envío. Arrastrá el pin en el mapa hasta la ubicación exacta donde querés recibirlo."
+              : getShippingErrorMessage(data),
+            retryable: needsManualMap,
+            title: needsManualMap
+              ? "Indicá tu ubicación precisa en el mapa"
+              : "Error al calcular envío",
+            variant: needsManualMap ? "warning" : "error",
+            helperText: needsManualMap
+              ? "Los campos de dirección quedan bloqueados para que puedas ajustar el pin sin cambiar los datos cargados."
+              : undefined,
+            actionText: needsManualMap ? "Ir al mapa" : undefined,
           });
           setShowShippingErrorModal(true);
           setConfirmedAddress(null);
           setShippingData(null);
+          if (needsManualMap) {
+            scrollManualMapIntoView();
+          }
           return;
         }
       }
@@ -900,7 +940,7 @@ export const CheckoutAdress = ({
                 value={formData.street}
                 onChange={handleAddressInputChange}
                 required
-                disabled={areAddressFieldsDisabled}
+                disabled={areAddressInputsDisabled}
                 className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
                 placeholder="Ej: Santiago de Liniers"
               />
@@ -919,7 +959,7 @@ export const CheckoutAdress = ({
                 value={formData.number}
                 onChange={handleAddressInputChange}
                 required={!formData.addressWithoutNumber}
-                disabled={areAddressFieldsDisabled || formData.addressWithoutNumber}
+                disabled={areAddressInputsDisabled || formData.addressWithoutNumber}
                 className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
                 placeholder="Ej: 670"
               />
@@ -929,7 +969,7 @@ export const CheckoutAdress = ({
                   name="addressWithoutNumber"
                   checked={formData.addressWithoutNumber}
                   onChange={handleAddressInputChange}
-                  disabled={areAddressFieldsDisabled}
+                  disabled={areAddressInputsDisabled}
                   className="h-4 w-4 rounded border-gray-300 text-yellow-600 focus:ring-yellow-500 disabled:cursor-not-allowed"
                 />
                 Sin número
@@ -951,7 +991,7 @@ export const CheckoutAdress = ({
                 value={formData.city}
                 onChange={handleAddressInputChange}
                 required
-                disabled={areAddressFieldsDisabled}
+                disabled={areAddressInputsDisabled}
                 className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
                 placeholder="Ej: Godoy Cruz"
               />
@@ -970,7 +1010,7 @@ export const CheckoutAdress = ({
                 value={formData.postalCode}
                 onChange={handleAddressInputChange}
                 required
-                disabled={areAddressFieldsDisabled}
+                disabled={areAddressInputsDisabled}
                 className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
                 placeholder="Ej: 5501"
               />
@@ -989,7 +1029,7 @@ export const CheckoutAdress = ({
               value={formData.observaciones}
               onChange={handleAddressInputChange}
               rows={3}
-              disabled={areAddressFieldsDisabled}
+              disabled={areAddressInputsDisabled}
               className="mt-1 p-2 block w-full rounded-md border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
               placeholder="Ej: Casa con portón azul, timbre 2B"
             />
@@ -1000,14 +1040,18 @@ export const CheckoutAdress = ({
             isManualMapEnabled &&
             GOOGLE_MAPS_API_KEY &&
             !confirmedAddress && (
-              <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+              <div
+                ref={manualMapSectionRef}
+                className="overflow-hidden rounded-lg border-2 border-yellow-400 bg-white shadow-lg shadow-yellow-200/60 ring-4 ring-yellow-100"
+              >
                 {renderMap(
                   "Seleccion manual de ubicacion en Google Maps",
-                  "h-56",
+                  "h-72",
                   true
                 )}
-                <p className="border-t border-gray-200 px-3 py-2 text-xs text-gray-600">
-                  No pudimos ubicar la direccion automaticamente. Arrastra el pin hasta tu domicilio.
+                <p className="border-t border-yellow-200 bg-yellow-50 px-3 py-2 text-sm text-yellow-900">
+                  No pudimos ubicar la dirección automáticamente.
+                  <strong> Arrastrá el pin hasta tu domicilio.</strong>
                 </p>
                 <div className="flex flex-col gap-2 border-t border-gray-200 p-3 sm:flex-row">
                   <a
@@ -1204,15 +1248,28 @@ export const CheckoutAdress = ({
                     <X size={20} />
                   </button>
                   <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                      <AlertCircle className="text-red-600" size={24} />
+                    <div
+                      className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center ${
+                        shippingError.variant === "warning"
+                          ? "bg-yellow-100"
+                          : "bg-red-100"
+                      }`}
+                    >
+                      <AlertCircle
+                        className={
+                          shippingError.variant === "warning"
+                            ? "text-yellow-700"
+                            : "text-red-600"
+                        }
+                        size={24}
+                      />
                     </div>
                     <div className="flex-1 pt-1">
                       <h3
                         id="shipping-error-title"
                         className="text-xl font-semibold text-gray-900 mb-1"
                       >
-                        Error al calcular envío
+                        {shippingError.title || "Error al calcular envío"}
                       </h3>
                       <p className="text-gray-600 leading-relaxed">
                         {shippingError.message}
@@ -1221,11 +1278,18 @@ export const CheckoutAdress = ({
                   </div>
                 </div>
                 <div className="px-6 pb-6">
-                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <div
+                    className={`rounded-lg p-4 border ${
+                      shippingError.variant === "warning"
+                        ? "border-yellow-200 bg-yellow-50"
+                        : "border-gray-200 bg-gray-50"
+                    }`}
+                  >
                     <p className="text-sm text-gray-700">
-                      {shippingError.retryable
-                        ? "💡 Puedes intentar calcular nuevamente."
-                        : "⏰ Por favor, intenta más tarde o contacta con soporte."}
+                      {shippingError.helperText ||
+                        (shippingError.retryable
+                          ? "Podés intentar calcular nuevamente."
+                          : "Por favor, intenta más tarde o contacta con soporte.")}
                     </p>
                   </div>
                 </div>
@@ -1234,10 +1298,17 @@ export const CheckoutAdress = ({
                     type="button"
                     onClick={() => {
                       setShowShippingErrorModal(false);
+                      if (shippingError.variant === "warning") {
+                        scrollManualMapIntoView();
+                      }
                     }}
-                    className="w-full px-4 py-3 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all font-medium shadow-sm hover:shadow-md"
+                    className={`w-full px-4 py-3 rounded-lg transition-all font-medium shadow-sm hover:shadow-md ${
+                      shippingError.variant === "warning"
+                        ? "bg-yellow-500 text-gray-900 hover:bg-yellow-600"
+                        : "bg-blue-600 text-white hover:bg-blue-700"
+                    }`}
                   >
-                    Aceptar
+                    {shippingError.actionText || "Aceptar"}
                   </button>
                 </div>
               </div>
