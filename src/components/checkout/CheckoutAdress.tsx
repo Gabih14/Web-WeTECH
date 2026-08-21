@@ -1094,13 +1094,14 @@ export const CheckoutAdress = ({
                   </button>
                 </label>
               </div>
-              <div className="space-y-2">
-                <button
-                  type="button"
-                  onClick={fetchDistance}
-                  disabled={isCalculateShippingDisabled || calculatingShipping}
-                  aria-busy={calculatingShipping}
-                  className="
+              {!shouldFocusManualMap && (
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={fetchDistance}
+                    disabled={isCalculateShippingDisabled || calculatingShipping}
+                    aria-busy={calculatingShipping}
+                    className="
     group inline-flex min-h-12 w-full items-center justify-center gap-2
     rounded-lg border-2 border-yellow-500 bg-yellow-300
     px-4 py-3 text-sm font-semibold text-gray-900
@@ -1114,44 +1115,45 @@ export const CheckoutAdress = ({
     motion-reduce:transform-none motion-reduce:transition-none
     sm:min-h-14 sm:px-5 sm:text-base
   "
-                >
-                  {calculatingShipping ? (
-                    <>
-                      <span
-                        className="h-4 w-4 rounded-full border-2 border-gray-700 border-t-transparent animate-spin motion-reduce:animate-none sm:h-5 sm:w-5"
-                        aria-hidden="true"
-                      />
-                      <span>Calculando envío...</span>
-                    </>
-                  ) : confirmedAddress ? (
-                    <>
-                      <CheckCircle
-                        className="h-5 w-5 flex-shrink-0 text-green-700 transition-transform duration-200 group-hover:scale-105 group-disabled:text-gray-400 motion-reduce:transition-none"
-                        aria-hidden="true"
-                      />
-                      <span>Recalcular envío</span>
-                    </>
-                  ) : (
-                    <>
-                      <Truck
-                        className="h-5 w-5 flex-shrink-0 transition-transform duration-200 group-hover:translate-x-0.5 group-disabled:text-gray-400 motion-reduce:transform-none motion-reduce:transition-none"
-                        aria-hidden="true"
-                      />
-                      <span>Calcular costo de envío</span>
-                    </>
-                  )}
-                </button>
-                {!confirmedAddress && (
-                  <p
-                    className={`text-xs leading-5 sm:text-sm ${isCalculateShippingDisabled
-                        ? "text-gray-500"
-                        : "text-gray-700"
-                      }`}
                   >
-                    {calculateShippingHelpText}
-                  </p>
-                )}
-              </div>
+                    {calculatingShipping ? (
+                      <>
+                        <span
+                          className="h-4 w-4 rounded-full border-2 border-gray-700 border-t-transparent animate-spin motion-reduce:animate-none sm:h-5 sm:w-5"
+                          aria-hidden="true"
+                        />
+                        <span>Calculando envío...</span>
+                      </>
+                    ) : confirmedAddress ? (
+                      <>
+                        <CheckCircle
+                          className="h-5 w-5 flex-shrink-0 text-green-700 transition-transform duration-200 group-hover:scale-105 group-disabled:text-gray-400 motion-reduce:transition-none"
+                          aria-hidden="true"
+                        />
+                        <span>Recalcular envío</span>
+                      </>
+                    ) : (
+                      <>
+                        <Truck
+                          className="h-5 w-5 flex-shrink-0 transition-transform duration-200 group-hover:translate-x-0.5 group-disabled:text-gray-400 motion-reduce:transform-none motion-reduce:transition-none"
+                          aria-hidden="true"
+                        />
+                        <span>Calcular costo de envío</span>
+                      </>
+                    )}
+                  </button>
+                  {!confirmedAddress && (
+                    <p
+                      className={`text-xs leading-5 sm:text-sm ${isCalculateShippingDisabled
+                          ? "text-gray-500"
+                          : "text-gray-700"
+                        }`}
+                    >
+                      {calculateShippingHelpText}
+                    </p>
+                  )}
+                </div>
+              )}
               {confirmedAddress && (
                 <div className="mt-2 p-3 rounded bg-green-50 border border-green-200 text-green-700 text-sm">
                   <strong>Ubicación confirmada:</strong>
