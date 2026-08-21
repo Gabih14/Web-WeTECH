@@ -1053,24 +1053,6 @@ export const CheckoutAdress = ({
                   No pudimos ubicar la dirección automáticamente.
                   <strong> Arrastrá el pin hasta tu domicilio.</strong>
                 </p>
-                <div className="flex flex-col gap-2 border-t border-gray-200 p-3 sm:flex-row">
-                  <a
-                    href={externalMapUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-yellow-500 bg-white px-4 py-2 text-sm font-semibold text-yellow-800 transition hover:bg-yellow-100"
-                  >
-                    <MapPin className="h-4 w-4" />
-                    Ver mapa ampliado
-                  </a>
-                  <button
-                    type="button"
-                    onClick={editAddressFromMap}
-                    className="inline-flex flex-1 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
-                  >
-                    Modificar ubicacion
-                  </button>
-                </div>
               </div>
             )}
           {deliveryMethod === "shipping" && (
