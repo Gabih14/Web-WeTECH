@@ -110,6 +110,7 @@ test("caso 2: agrega el envío exactamente una vez", () => {
 });
 
 test("bonifica el producto ENV sin eliminarlo del pedido", () => {
+  const shippingListPrice = 2799;
   const order = buildOrderAmounts({
     products: [
       {
@@ -127,7 +128,7 @@ test("bonifica el producto ENV sin eliminarlo del pedido", () => {
     ],
     shipping: {
       nombre: "ENV-04K-GM-DELIVERY",
-      costo: 2799,
+      costo: shippingListPrice,
       ajustePorcentaje: 100,
     },
   });
@@ -135,7 +136,7 @@ test("bonifica el producto ENV sin eliminarlo del pedido", () => {
   assert.deepEqual(order.productos[2], {
     nombre: "ENV-04K-GM-DELIVERY",
     cantidad: 1,
-    precio_unitario: 0,
+    precio_unitario: shippingListPrice,
     subtotal: 0,
     ajuste_porcentaje: 100,
   });
