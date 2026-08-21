@@ -115,7 +115,9 @@ export const calculateShippingLineAmounts = ({
   ajustePorcentaje === 100
     ? {
         cantidad: 1,
-        precio_unitario: 0,
+        precio_unitario: requiresInvoice(facturaTipo)
+          ? round2(shippingCost)
+          : Math.round(shippingCost),
         subtotal: 0,
         ajuste_porcentaje: 100,
       }
@@ -224,7 +226,9 @@ export const buildOrderAmounts = ({
       ? {
           line: {
             cantidad: 1,
-            precio_unitario: 0,
+            precio_unitario: requiresInvoice(facturaTipo)
+              ? round2(shipping.costo)
+              : Math.round(shipping.costo),
             subtotal: 0,
             ajuste_porcentaje: 100,
           },
