@@ -85,17 +85,23 @@ const buildProductId = (prod: CatalogoProducto): string => {
   return prod.variantes[0]?.id ?? prod.key;
 };
 
-const colorNameOf = (variante: CatalogoVariante): string =>
-  variante.opciones?.["Colores"] ??
-  variante.atributos.find((a) => a.clase === "Colores")?.valor ??
-  "Sin color";
-
 const normalizeAttributeName = (value: string): string =>
   value
     .trim()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toUpperCase();
+
+const colorNameOf = (variante: CatalogoVariante): string | undefined => {
+  const optionColor = variante.opciones?.["Colores"]?.trim();
+  if (optionColor) return optionColor;
+
+  const attributeColor = variante.atributos
+    .find((a) => normalizeAttributeName(a.clase) === "COLORES")
+    ?.valor?.trim();
+
+  return attributeColor || undefined;
+};
 
 const difficultyLevelOf = (
   productAttributes: CatalogoAtributo[],
@@ -223,16 +229,20 @@ export const fetchProducts = async (): Promise<Product[]> => {
         return true;
       });
 
-      if (variantesValidas.length === 0) continue;
+      const variantesPublicables = isFilament
+        ? variantesValidas.filter((v) => colorNameOf(v))
+        : variantesValidas;
+
+      if (variantesPublicables.length === 0) continue;
 
       const id = buildProductId(prod);
-      const first = variantesValidas[0];
+      const first = variantesPublicables[0];
       const firstPrice = toNumber(first.precioVtaCotizadoMin) ?? 0;
-      const observaciones = variantesValidas
+      const observaciones = variantesPublicables
         .map((v) => v.observaciones)
         .find((o): o is string => typeof o === "string" && o.trim().length > 0);
       const images = uniqueImages(
-        variantesValidas.map((v) => imageFor(v.fotoUrl, isSparePart)),
+        variantesPublicables.map((v) => imageFor(v.fotoUrl, isSparePart)),
       );
 
       const product: Product = {
@@ -247,7 +257,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
         material: prod.material ?? undefined,
         foodSafe: foodSafeOf(
           prod.atributos,
-          variantesValidas.flatMap((variant) => variant.atributos),
+          variantesPublicables.flatMap((variant) => variant.atributos),
         ),
         origin: prod.origen ?? undefined,
         category,
@@ -263,7 +273,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
         const weights: NonNullable<Product["weights"]> = [];
         const colorMap = new Map<string, ColorVariant>();
 
-        for (const v of variantesValidas) {
+        for (const v of variantesPublicables) {
           const weight = v.pesoKg as number;
           const weightKey = weight.toString();
           const price = toNumber(v.precioVtaCotizadoMin) ?? 0;
@@ -271,6 +281,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
           const promotionalPrice =
             toNumber(v.promotionalPrice) ?? price * (1 - BASE_FILAMENT_DISCOUNT);
           const colorName = colorNameOf(v);
+          if (!colorName) continue;
           const colorData = colorByName.get(colorName.toLowerCase());
           const stock = Math.max(0, v.stock ?? 0);
           const img = imageFor(v.fotoUrl, isSparePart);
@@ -326,7 +337,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
         product.image = colorWithImage?.images?.[0] ?? images[0] ?? "";
       } else {
         // Otras categorías: stock agregado (cantidad − comprometido sumado)
-        product.stock = variantesValidas.reduce(
+        product.stock = variantesPublicables.reduce(
           (total, v) => total + Math.max(0, v.stock ?? 0),
           0,
         );

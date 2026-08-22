@@ -92,6 +92,7 @@ function useMediaQuery(query: string): boolean {
 
 export default function Checkout() {
   const [confirmedAddress, setConfirmedAddress] = useState<string | null>(null);
+  const [confirmedAddressLink, setConfirmedAddressLink] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useMediaQuery("(max-width: 768px)"); // Detecta si es móvil
@@ -597,6 +598,8 @@ export default function Checkout() {
         addressWithoutNumber: formData.addressWithoutNumber,
       },
       googleFormattedAddress: confirmedAddress,
+      googleMapsUrl:
+        deliveryMethod === "shipping" ? confirmedAddressLink : null,
     });
 
     const cleanCuit = normalizeCuitCuil(formData.cuit); // Remover guiones y caracteres no numéricos
@@ -656,6 +659,7 @@ export default function Checkout() {
         setShowErrorModal(true);
         return;
       }
+
       // Manejo de la respuesta exitosa
       if (data?.naveUrl) {
         // Si el cupón fue el descuento ganador, usarlo después de crear la orden
@@ -1173,6 +1177,7 @@ export default function Checkout() {
             setDeliveryMethod={setDeliveryMethod}
             confirmedAddress={confirmedAddress}
             setConfirmedAddress={setConfirmedAddress}
+            setConfirmedAddressLink={setConfirmedAddressLink}
             areAddressFieldsDisabled={areEditableCheckoutFieldsDisabled}
             isPrefilledAddressLocked={arePrefilledClienteFieldsLocked}
             onEditPrefilledAddress={() => setIsPrefilledClienteEditing(true)}

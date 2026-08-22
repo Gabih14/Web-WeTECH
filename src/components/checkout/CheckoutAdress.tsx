@@ -19,6 +19,7 @@ type Props = {
   setDeliveryMethod: (method: "pickup" | "shipping") => void;
   confirmedAddress: string | null;
   setConfirmedAddress: (address: string | null) => void;
+  setConfirmedAddressLink: (link: string | null) => void;
   areAddressFieldsDisabled: boolean;
   isPrefilledAddressLocked: boolean;
   onEditPrefilledAddress: () => void;
@@ -165,6 +166,11 @@ const ENABLE_SHIPPING_MAP_PREVIEW = true;
 const ENABLE_DISTANCE_SIMULATION = true;
 const STORE_ADDRESS = "Santiago de Liniers 670, Godoy Cruz, Mendoza, Argentina";
 const MANUAL_MAP_FALLBACK_POSITION = { lat: -32.9286, lng: -68.8458 };
+
+const buildGoogleMapsSearchUrl = (address: string) =>
+  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+    address
+  )}`;
 
 const hasRequiredGoogleMapsLibraries = (
   google: GoogleMapsApi | undefined
@@ -464,6 +470,7 @@ export const CheckoutAdress = ({
   setDeliveryMethod,
   confirmedAddress,
   setConfirmedAddress,
+  setConfirmedAddressLink,
   areAddressFieldsDisabled,
   isPrefilledAddressLocked,
   onEditPrefilledAddress,
@@ -511,7 +518,11 @@ export const CheckoutAdress = ({
     `${formData.street}${formData.addressWithoutNumber ? "" : ` ${formData.number}`}, ${formData.city}, Mendoza, Argentina`
   );
   const mapUrl = `https://www.google.com/maps?q=${mapQuery}&output=embed`;
-  const externalMapUrl = `https://www.google.com/maps/search/?api=1&query=${mapQuery}`;
+  const externalMapUrl = buildGoogleMapsSearchUrl(
+    pendingResolvedAddress ||
+      confirmedAddress ||
+      `${formData.street}${formData.addressWithoutNumber ? "" : ` ${formData.number}`}, ${formData.city}, Mendoza, Argentina`
+  );
   const shouldFocusManualMap =
     deliveryMethod === "shipping" &&
     isManualMapEnabled &&
@@ -519,6 +530,8 @@ export const CheckoutAdress = ({
     !confirmedAddress;
   const areAddressInputsDisabled =
     areAddressFieldsDisabled || shouldFocusManualMap;
+  const shouldHideCalculateShippingButton =
+    shouldFocusManualMap || Boolean(pendingResolvedAddress);
 
   const scrollManualMapIntoView = () => {
     window.requestAnimationFrame(() => {
@@ -534,6 +547,7 @@ export const CheckoutAdress = ({
     setPendingDistance(null);
     setIsManualMapEnabled(false);
     setConfirmedAddress(null);
+    setConfirmedAddressLink(null);
     setShippingData(null);
   };
 
@@ -550,12 +564,13 @@ export const CheckoutAdress = ({
   const handleMapSelection = useCallback(
     (selection: MapSelection) => {
       setConfirmedAddress(null);
+      setConfirmedAddressLink(null);
       setShippingData(null);
       setIsManualMapEnabled(true);
       setPendingResolvedAddress(selection.address);
       setPendingDistance(selection.distanceKm);
     },
-    [setConfirmedAddress, setShippingData]
+    [setConfirmedAddress, setConfirmedAddressLink, setShippingData]
   );
 
   const renderMap = (
@@ -628,6 +643,7 @@ export const CheckoutAdress = ({
       const shippingInfo = await calculateShippingCost(pendingDistance);
       if (shippingInfo) {
         setConfirmedAddress(pendingResolvedAddress);
+        setConfirmedAddressLink(buildGoogleMapsSearchUrl(pendingResolvedAddress));
         setShippingData(shippingInfo);
         setPendingResolvedAddress(null);
         setPendingDistance(null);
@@ -723,6 +739,7 @@ export const CheckoutAdress = ({
           });
           setShowShippingErrorModal(true);
           setConfirmedAddress(null);
+          setConfirmedAddressLink(null);
           setShippingData(null);
           if (needsManualMap) {
             scrollManualMapIntoView();
@@ -754,10 +771,12 @@ export const CheckoutAdress = ({
         if (!isConfirmed) {
           setCalculatingShipping(false);
           setConfirmedAddress(null);
+          setConfirmedAddressLink(null);
           return;
         }
 
         setConfirmedAddress(data.destinationResolved);
+        setConfirmedAddressLink(buildGoogleMapsSearchUrl(data.destinationResolved));
         setIsManualMapEnabled(false);
 
         if (previewDistanceValue > 20) {
@@ -797,6 +816,7 @@ export const CheckoutAdress = ({
       setPendingResolvedAddress(null);
       setPendingDistance(null);
       setIsManualMapEnabled(false);
+      setConfirmedAddressLink(null);
     }
     // Si es shipping, el costo se calcula con fetchDistance
   };
@@ -1076,7 +1096,7 @@ export const CheckoutAdress = ({
                   </button>
                 </label>
               </div>
-              {!shouldFocusManualMap && (
+              {!shouldHideCalculateShippingButton && (
                 <div className="space-y-2">
                   <button
                     type="button"
