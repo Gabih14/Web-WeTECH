@@ -40,6 +40,32 @@ test("envía los campos originales y la dirección normalizada de Google por sep
   });
 });
 
+test("incluye direccion_link cuando se confirma una URL de Google Maps", () => {
+  const payload = buildOrderAddressPayload({
+    originalAddress,
+    googleFormattedAddress:
+      "Dorrego 229, M5539 Las Heras, Mendoza, Argentina",
+    googleMapsUrl:
+      "https://www.google.com/maps/search/?api=1&query=Dorrego%20229%2C%20Mendoza",
+  });
+
+  assert.equal(
+    payload.direccion_link,
+    "https://www.google.com/maps/search/?api=1&query=Dorrego%20229%2C%20Mendoza"
+  );
+});
+
+test("omite direccion_link cuando la URL es invalida", () => {
+  const payload = buildOrderAddressPayload({
+    originalAddress,
+    googleFormattedAddress:
+      "Dorrego 229, M5539 Las Heras, Mendoza, Argentina",
+    googleMapsUrl: "javascript:alert(1)",
+  });
+
+  assert.equal(payload.direccion_link, undefined);
+});
+
 test("mover el pin cambia solamente direccion y no modifica los datos originales", () => {
   const firstSelection = buildOrderAddressPayload({
     originalAddress,
