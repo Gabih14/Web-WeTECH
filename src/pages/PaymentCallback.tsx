@@ -182,6 +182,13 @@ const PaymentCallback = () => {
         text-transform: uppercase; color: #9ca3af; margin: 0 0 14px;
       }
 
+      .pending-notice {
+        background: #fff7ed; border: 1.5px solid #fdba74;
+        border-radius: 14px; padding: 16px 18px; margin-bottom: 16px;
+        color: #9a3412; font-size: 0.9rem; line-height: 1.5;
+      }
+      .pending-notice strong { color: #7c2d12; }
+
       .order-row {
         display: flex; justify-content: space-between; align-items: baseline;
         padding: 6px 0; border-bottom: 1px solid #f3f4f6; font-size: 0.9rem;
@@ -484,7 +491,7 @@ const PaymentCallback = () => {
           <h1 className="page-title">Verificando tu pago</h1>
           <p className="page-sub">
             {pedidoData
-              ? "Tu pedido está pendiente de confirmación."
+              ? "Estamos esperando la confirmación de tu pago."
               : "Estamos buscando tu pedido…"}
           </p>
 
@@ -503,6 +510,14 @@ const PaymentCallback = () => {
                 <span>Total</span>
                 <span>{fmt(pedidoData.total)}</span>
               </div>
+            </div>
+          )}
+
+          {pedidoData?.estado === "PENDIENTE" && (
+            <div className="pending-notice" role="status">
+              <strong>Tenés 4 horas para completar el pago.</strong>{" "}
+              Tu pedido quedará reservado durante ese plazo desde el momento en que lo realizaste.
+              Si el pago no se acredita a tiempo, el pedido se cancelará automáticamente.
             </div>
           )}
 

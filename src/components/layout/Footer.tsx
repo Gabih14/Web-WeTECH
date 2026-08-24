@@ -72,7 +72,7 @@ export const Footer = () => {
               {/* Facebook */}
               <li>
                 <a
-                  href="#"
+                  href="https://www.facebook.com/WeTECH.ar/"
                   title=""
                   className="flex items-center justify-center text-white transition-all duration-200 bg-gray-800 rounded-full w-7 h-7 hover:bg-blue-600 focus:bg-blue-600"
                 >
@@ -89,7 +89,7 @@ export const Footer = () => {
               {/* Instagram */}
               <li>
                 <a
-                  href="#"
+                  href="https://www.instagram.com/wetech.mendoza/?hl=en"
                   title=""
                   className="flex items-center justify-center text-white transition-all duration-200 bg-gray-800 rounded-full w-7 h-7 hover:bg-blue-600 focus:bg-blue-600"
                 >
@@ -230,12 +230,12 @@ export const Footer = () => {
             </p>
 
             <div className="mt-6">
-              <a 
-                href="http://qr.afip.gob.ar/?qr=S3w9beiuIs0Nl9wh2oZ7Pg,," 
+              <a
+                href="http://qr.afip.gob.ar/?qr=S3w9beiuIs0Nl9wh2oZ7Pg,,"
                 target="_F960AFIPInfo"
               >
-                <img 
-                  src="https://www.afip.gob.ar/images/f960/DATAWEB.jpg" 
+                <img
+                  src="https://www.afip.gob.ar/images/f960/DATAWEB.jpg"
                   alt="Data Fiscal"
                   className="w-auto h-auto"
                 />
@@ -247,7 +247,7 @@ export const Footer = () => {
         <hr className="mt-16 mb-10 border-gray-200" />
 
         <p className="text-sm text-center text-gray-600">
-          © 2025 Hello S.R.L., Todos los derechos reservados
+          © {new Date().getFullYear()} Hello S.R.L. — WeTECH. Todos los derechos reservados.
         </p>
         {/* postcraft */}
       </div>
