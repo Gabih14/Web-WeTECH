@@ -123,6 +123,7 @@ export const getProductDescriptionKind = (
   }
 
   if (
+    category === "COMPLEMENTOS PARA IMPRESION 3D" ||
     category.includes("ACCESORIO") ||
     category.includes("REPUESTO") ||
     subcategory.includes("ACCESORIO") ||
