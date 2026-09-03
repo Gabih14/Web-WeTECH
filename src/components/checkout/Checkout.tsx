@@ -56,6 +56,7 @@ import {
   getCouponCodeFromSearch,
   readStoredCoupon,
 } from "../../utils/couponPrefill";
+import { useSEO } from "../../hooks/useSEO";
 
 function useMediaQuery(query: string): boolean {
   const getMatches = () => {
@@ -91,6 +92,12 @@ function useMediaQuery(query: string): boolean {
 }
 
 export default function Checkout() {
+  useSEO({
+    title: "Checkout | WeTECH",
+    description:
+      "Finaliza tu compra en WeTECH de forma simple y segura. Confirma tus datos, envio y metodo de pago.",
+  });
+
   const [confirmedAddress, setConfirmedAddress] = useState<string | null>(null);
   const [confirmedAddressLink, setConfirmedAddressLink] = useState<string | null>(null);
   const navigate = useNavigate();

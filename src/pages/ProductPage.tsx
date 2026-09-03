@@ -28,6 +28,7 @@ import { formatPrice } from "../utils/money";
 import { ColorSwatch } from "../components/products/ColorSwatch";
 import { ProductDescription } from "../components/products/ProductDescription";
 import { StockWaitRequestModal } from "../components/products/StockWaitRequestModal";
+import { useSEO } from "../hooks/useSEO";
 
 const QUANTITY_OPTIONS = [1, 5, 10, 50];
 
@@ -86,6 +87,17 @@ export function ProductPage() {
 
   const product = products.find((item) => item.id === id);
   const isFilament = !!product && isFilamentProduct(product);
+
+  useSEO({
+    title: product
+      ? `${product.name} | WeTECH`
+      : loading
+        ? "Cargando producto | WeTECH"
+        : "Producto no encontrado | WeTECH",
+    description: product
+      ? `${product.description} Compra online en WeTECH, tienda de impresion 3D en Argentina.`
+      : "Explora filamentos, repuestos, accesorios e impresoras 3D en WeTECH.",
+  });
 
   useEffect(() => {
     if (!product) {

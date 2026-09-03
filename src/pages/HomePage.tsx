@@ -8,6 +8,7 @@ import impresoraCategoria from "../assets/CR6 S.png";
 import repuestoCategoria from "../assets/racor 6mm plastico web2_Impresora 3D Creality CR-10 SMART Mendoza v2.jpg";
 import { useState } from "react";
 import { Reviews } from "../components/home/ReviewSection";
+import { useSEO } from "../hooks/useSEO";
 
 const categories = [
   {
@@ -41,6 +42,12 @@ const categories = [
 
 export function HomePage() {
   const [showModal, setShowModal] = useState(true);
+
+  useSEO({
+    title: "WeTECH | Impresion 3D, filamentos y repuestos en Argentina",
+    description:
+      "Compra filamentos 3D, repuestos, accesorios e impresoras 3D en WeTECH. Atencion especializada para makers, emprendedores y empresas.",
+  });
 
   const openWhatsApp = () => {
     const phoneNumber = "5492615987988";

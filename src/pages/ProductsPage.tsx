@@ -7,6 +7,7 @@ import { CategoryFilter } from "../components/products/CategoryFilter";
 import { ColorSwatch } from "../components/products/ColorSwatch";
 import { ColorGroup, Product } from "../types";
 import { fetchProducts } from "../services/fetchProducts";
+import { useSEO } from "../hooks/useSEO";
 
 interface ColorFilterProps {
   colorGroups: ColorGroup[];
@@ -642,6 +643,18 @@ export function ProductsPage() {
   );
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const selectedCategoryName = selectedCategory
+    ? categories.find((category) => category.id === selectedCategory)?.name
+    : null;
+
+  useSEO({
+    title: selectedCategoryName
+      ? `${selectedCategoryName} | WeTECH`
+      : "Productos de impresion 3D | WeTECH",
+    description: selectedCategoryName
+      ? `Compra ${selectedCategoryName.toLowerCase()} en WeTECH. Productos para impresion 3D con atencion especializada en Argentina.`
+      : "Explora filamentos 3D, repuestos, accesorios e impresoras 3D en la tienda online de WeTECH.",
+  });
 
   /* const openWhatsApp = () => {
     const phoneNumber = "5492615987988";
