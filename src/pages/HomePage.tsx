@@ -47,6 +47,7 @@ export function HomePage() {
     title: "WeTECH | Impresion 3D, filamentos y repuestos en Argentina",
     description:
       "Compra filamentos 3D, repuestos, accesorios e impresoras 3D en WeTECH. Atencion especializada para makers, emprendedores y empresas.",
+    canonicalPath: "/",
   });
 
   const openWhatsApp = () => {

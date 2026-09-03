@@ -654,6 +654,7 @@ export function ProductsPage() {
     description: selectedCategoryName
       ? `Compra ${selectedCategoryName.toLowerCase()} en WeTECH. Productos para impresion 3D con atencion especializada en Argentina.`
       : "Explora filamentos 3D, repuestos, accesorios e impresoras 3D en la tienda online de WeTECH.",
+    canonicalPath: "/products",
   });
 
   /* const openWhatsApp = () => {

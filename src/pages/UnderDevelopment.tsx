@@ -8,6 +8,7 @@ export function UnderDevelopment() {
     title: "Seccion en desarrollo | WeTECH",
     description:
       "Esta seccion de WeTECH esta en desarrollo. Vuelve al inicio para ver productos de impresion 3D disponibles.",
+    canonicalPath: "/under-development",
   });
 
   return (

@@ -97,6 +97,9 @@ export function ProductPage() {
     description: product
       ? `${product.description} Compra online en WeTECH, tienda de impresion 3D en Argentina.`
       : "Explora filamentos, repuestos, accesorios e impresoras 3D en WeTECH.",
+    canonicalPath: id ? `/product/${encodeURIComponent(id)}` : "/products",
+    image: product?.image,
+    type: "product",
   });
 
   useEffect(() => {
