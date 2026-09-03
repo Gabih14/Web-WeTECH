@@ -23,7 +23,11 @@ import {
   getPurchaseState,
   getVariantStock,
 } from "../utils/cartPurchase";
-import { getVariantItemId, getVariantPrice } from "../utils/pricing";
+import {
+  getVariantItemId,
+  getVariantPrice,
+  getVariantPromotionalPrice,
+} from "../utils/pricing";
 import { formatPrice } from "../utils/money";
 import { ColorSwatch } from "../components/products/ColorSwatch";
 import { ProductDescription } from "../components/products/ProductDescription";
@@ -87,6 +91,52 @@ export function ProductPage() {
 
   const product = products.find((item) => item.id === id);
   const isFilament = !!product && isFilamentProduct(product);
+  const seoSelectedWeight = product
+    ? selectedWeight ?? getDefaultProductWeight(product)
+    : null;
+  const seoSelectedColor = product
+    ? selectedColor ?? getFirstColorWithStock(product)
+    : null;
+  const seoPrice =
+    product
+      ? getVariantPromotionalPrice(product, seoSelectedColor, seoSelectedWeight) ??
+        getVariantPrice(product, seoSelectedColor, seoSelectedWeight)
+      : undefined;
+  const seoStock = product
+    ? getVariantStock(product, seoSelectedColor, seoSelectedWeight)
+    : 0;
+  const productUrl = id ? `/product/${encodeURIComponent(id)}` : "/products";
+  const productStructuredData =
+    product && seoPrice !== undefined
+      ? {
+          "@context": "https://schema.org",
+          "@type": "Product",
+          name: product.name,
+          description: product.description,
+          image: product.image,
+          sku: getVariantItemId(product, seoSelectedColor, seoSelectedWeight),
+          brand: {
+            "@type": "Brand",
+            name: product.brand || "WeTECH",
+          },
+          category: product.category,
+          offers: {
+            "@type": "Offer",
+            url: new URL(productUrl, window.location.origin).href,
+            priceCurrency: "ARS",
+            price: Number(seoPrice.toFixed(2)),
+            availability:
+              seoStock > 0
+                ? "https://schema.org/InStock"
+                : "https://schema.org/OutOfStock",
+            itemCondition: "https://schema.org/NewCondition",
+            seller: {
+              "@type": "Organization",
+              name: "WeTECH",
+            },
+          },
+        }
+      : null;
 
   useSEO({
     title: product
@@ -100,6 +150,7 @@ export function ProductPage() {
     canonicalPath: id ? `/product/${encodeURIComponent(id)}` : "/products",
     image: product?.image,
     type: "product",
+    structuredData: productStructuredData,
   });
 
   useEffect(() => {

@@ -54,12 +54,35 @@ const ensureCanonical = () => {
   return canonical;
 };
 
+const STRUCTURED_DATA_ID = "wetech-structured-data";
+
+const updateStructuredData = (structuredData?: Record<string, unknown> | null) => {
+  const existingScript = document.getElementById(STRUCTURED_DATA_ID);
+
+  if (!structuredData) {
+    existingScript?.remove();
+    return;
+  }
+
+  const script =
+    existingScript ?? document.createElement("script");
+
+  script.id = STRUCTURED_DATA_ID;
+  script.type = "application/ld+json";
+  script.textContent = JSON.stringify(structuredData);
+
+  if (!existingScript) {
+    document.head.appendChild(script);
+  }
+};
+
 interface SEOOptions {
   title?: string;
   description?: string;
   canonicalPath?: string;
   image?: string;
   type?: "website" | "product";
+  structuredData?: Record<string, unknown> | null;
 }
 
 export function useSEO({
@@ -68,6 +91,7 @@ export function useSEO({
   canonicalPath,
   image,
   type = "website",
+  structuredData,
 }: SEOOptions) {
   useEffect(() => {
     const resolvedTitle = title || DEFAULT_TITLE;
@@ -93,5 +117,7 @@ export function useSEO({
     ensureMetaByName("twitter:title").content = resolvedTitle;
     ensureMetaByName("twitter:description").content = resolvedDescription;
     ensureMetaByName("twitter:image").content = resolvedImage;
-  }, [canonicalPath, description, image, title, type]);
+
+    updateStructuredData(structuredData);
+  }, [canonicalPath, description, image, structuredData, title, type]);
 }
