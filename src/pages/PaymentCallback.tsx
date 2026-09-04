@@ -7,6 +7,7 @@ import { formatCurrency } from "../utils/money";
 import { useCart } from "../context/CartContext";
 import { isShippingProductName } from "../utils/orderPricing";
 import { clearStoredCoupon } from "../utils/couponPrefill";
+import { useSEO } from "../hooks/useSEO";
 
 const PaymentStatus = {
   LOADING: "loading",
@@ -58,6 +59,13 @@ const PaymentCallback = () => {
   const [splashVisible, setSplashVisible] = useState(true);
   const [splashExiting, setSplashExiting] = useState(false);
   const [isSurveyOpen, setIsSurveyOpen] = useState(false);
+
+  useSEO({
+    title: "Estado de pago | WeTECH",
+    description:
+      "Consulta el estado de tu pago y pedido en WeTECH.",
+    canonicalPath: "/checkout/callback",
+  });
 
   const paymentMethod = pedidoData?.payment_method ?? pedidoData?.metodo_pago;
   const hasShippingProduct =

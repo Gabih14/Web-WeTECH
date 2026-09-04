@@ -1,8 +1,16 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft, Wrench } from "lucide-react";
 import Logo from "../assets/Logo WeTECH Negro PNG.png";
+import { useSEO } from "../hooks/useSEO";
 
 export function UnderDevelopment() {
+  useSEO({
+    title: "Seccion en desarrollo | WeTECH",
+    description:
+      "Esta seccion de WeTECH esta en desarrollo. Vuelve al inicio para ver productos de impresion 3D disponibles.",
+    canonicalPath: "/under-development",
+  });
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">

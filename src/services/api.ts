@@ -119,7 +119,23 @@ export async function dashboardReadApiFetch(endpoint: string, options: RequestIn
   return response.json();
 }
 
-async function publicApiFetch(endpoint: string, options: RequestInit = {}) {
+export interface SeoProduct {
+  id: string;
+  slug: string;
+  nombre: string;
+  descripcion: string;
+  fotoUrl: string;
+  precio: number;
+  precioPromocional?: number | null;
+  stock: number;
+  marca?: string | null;
+  categoria?: string | null;
+  subcategoria?: string | null;
+  moneda?: string | null;
+  updatedAt?: string | null;
+}
+
+export async function publicApiFetch(endpoint: string, options: RequestInit = {}) {
   const headers = {
     ...options.headers,
     "Content-Type": "application/json",
@@ -146,6 +162,17 @@ export async function createStockWaitRequest(payload: StockWaitRequestPayload) {
     method: "POST",
     body: JSON.stringify(payload),
   });
+}
+
+export async function fetchSeoProducts(): Promise<SeoProduct[]> {
+  try {
+    const data = await publicApiFetch("/seo/products");
+
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error("No se pudieron obtener los productos SEO:", error);
+    return [];
+  }
 }
 
 export async function fetchClienteByCuit(cuit: string) {

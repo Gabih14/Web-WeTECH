@@ -204,7 +204,7 @@ export function ProductCard({
     : undefined;
   const displayImage = selectedColorImage || product.image;
   const selectedItemId = getVariantItemId(product, selectedColor, selectedWeight);
-  const productPath = `/product/${encodeURIComponent(product.id)}`;
+  const productPath = `/product/${encodeURIComponent(product.slug || product.id)}`;
   const canRequestStockNotice =
     availableStock === 0 &&
     (!product.colors || !!selectedColor) &&

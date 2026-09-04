@@ -6,8 +6,17 @@ import {
   FULL_NAME_PATTERN,
   hasAtLeastTwoWords,
 } from "../utils/validation";
+import { useSEO } from "../hooks/useSEO";
 
 export const Franquicias = () => {
+  useSEO({
+    title: "Franquicias WeTECH | Negocio de impresion 3D en Argentina",
+    description:
+      "Conoce las franquicias WeTECH y suma un negocio de impresion 3D a tu provincia con acompanamiento, proveedores y capacitacion.",
+    canonicalPath: "/franquicias/mendoza",
+    image: "/assets/franquicias/wetech-franquicias-logo.webp",
+  });
+
   // Scroll suave al formulario
   const handleScrollToForm = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();

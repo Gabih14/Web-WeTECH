@@ -6,6 +6,7 @@ import { CategoryFilter } from "../components/products/CategoryFilter";
 import { fetchProducts } from "../services/fetchProducts";
 import { categories } from "../data/categories";
 import type { Product } from "../types";
+import { useSEO } from "../hooks/useSEO";
 
 const normalizeSearchText = (value: string) =>
   value
@@ -23,6 +24,16 @@ export default function SearchResultsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+
+  useSEO({
+    title: query
+      ? `Busqueda: ${query} | WeTECH`
+      : "Buscar productos | WeTECH",
+    description: query
+      ? `Resultados de busqueda para ${query} en WeTECH. Encuentra filamentos, repuestos, accesorios e impresoras 3D.`
+      : "Busca productos de impresion 3D en WeTECH: filamentos, repuestos, accesorios e impresoras 3D.",
+    canonicalPath: "/search",
+  });
 
   const loadProducts = async () => {
     try {
