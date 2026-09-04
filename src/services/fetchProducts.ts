@@ -1,4 +1,4 @@
-import { apiFetch, dashboardReadApiFetch } from "../services/api";
+import { apiFetch, dashboardReadApiFetch, fetchSeoProducts } from "../services/api";
 import { Colors, Product } from "../types";
 import { shouldExcludeFamily } from "../data/excludedFamilies";
 import sparePartsFallbackImage from "../assets/pngtree-no-image-vector-illustration-isolated-png-image_1694547.jpg";
@@ -92,6 +92,13 @@ const normalizeAttributeName = (value: string): string =>
     .replace(/[\u0300-\u036f]/g, "")
     .toUpperCase();
 
+const normalizeLookupValue = (value: string): string =>
+  value
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase();
+
 const colorNameOf = (variante: CatalogoVariante): string | undefined => {
   const optionColor = variante.opciones?.["Colores"]?.trim();
   if (optionColor) return optionColor;
@@ -173,9 +180,10 @@ export const fetchProducts = async (): Promise<Product[]> => {
   try {
     // El backend ya arma los productos (agrupa variantes por atributos). Solo
     // aplicamos los filtros de publicación y mapeamos a la forma `Product`.
-    const [catalogo, colors] = await Promise.all([
+    const [catalogo, colors, seoProducts] = await Promise.all([
       apiFetch("/stk-item/catalogo"),
       fetchColors(),
+      fetchSeoProducts(),
     ]);
 
     if (import.meta.env.DEV) {
@@ -184,6 +192,15 @@ export const fetchProducts = async (): Promise<Product[]> => {
 
     const colorByName = new Map<string, Colors>();
     colors.forEach((color) => colorByName.set(color.name.toLowerCase(), color));
+    const seoById = new Map(
+      seoProducts.map((seoProduct) => [String(seoProduct.id), seoProduct])
+    );
+    const seoByName = new Map(
+      seoProducts.map((seoProduct) => [
+        normalizeLookupValue(seoProduct.nombre),
+        seoProduct,
+      ])
+    );
 
     const products: Product[] = [];
 
@@ -236,6 +253,8 @@ export const fetchProducts = async (): Promise<Product[]> => {
       if (variantesPublicables.length === 0) continue;
 
       const id = buildProductId(prod);
+      const seoProduct =
+        seoById.get(id) ?? seoByName.get(normalizeLookupValue(prod.nombre));
       const first = variantesPublicables[0];
       const firstPrice = toNumber(first.precioVtaCotizadoMin) ?? 0;
       const observaciones = variantesPublicables
@@ -247,6 +266,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
 
       const product: Product = {
         id,
+        slug: seoProduct?.slug,
         name: prod.nombre,
         description: first.descripcion ?? prod.nombre,
         observaciones: observaciones ?? undefined,

@@ -44,6 +44,18 @@ const safeDecodeURIComponent = (value: string) => {
   }
 };
 
+const buildProductMetaDescription = (product: Product) => {
+  const description = `${product.description} Compra online en WeTECH, tienda de impresion 3D en Argentina.`
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (description.length <= 170) {
+    return description;
+  }
+
+  return `${description.slice(0, 169).trim()}...`;
+};
+
 export function ProductPage() {
   const params = useParams();
   const id = params["*"] ? safeDecodeURIComponent(params["*"]) : undefined;
@@ -89,7 +101,7 @@ export function ProductPage() {
     return () => document.removeEventListener("mousedown", handleOutside);
   }, []);
 
-  const product = products.find((item) => item.id === id);
+  const product = products.find((item) => item.id === id || item.slug === id);
   const isFilament = !!product && isFilamentProduct(product);
   const seoSelectedWeight = product
     ? selectedWeight ?? getDefaultProductWeight(product)
@@ -105,7 +117,10 @@ export function ProductPage() {
   const seoStock = product
     ? getVariantStock(product, seoSelectedColor, seoSelectedWeight)
     : 0;
-  const productUrl = id ? `/product/${encodeURIComponent(id)}` : "/products";
+  const productRouteId = product?.slug || id;
+  const productUrl = productRouteId
+    ? `/product/${encodeURIComponent(productRouteId)}`
+    : "/products";
   const productStructuredData =
     product && seoPrice !== undefined
       ? {
@@ -145,9 +160,9 @@ export function ProductPage() {
         ? "Cargando producto | WeTECH"
         : "Producto no encontrado | WeTECH",
     description: product
-      ? `${product.description} Compra online en WeTECH, tienda de impresion 3D en Argentina.`
+      ? buildProductMetaDescription(product)
       : "Explora filamentos, repuestos, accesorios e impresoras 3D en WeTECH.",
-    canonicalPath: id ? `/product/${encodeURIComponent(id)}` : "/products",
+    canonicalPath: productUrl,
     image: product?.image,
     type: "product",
     structuredData: productStructuredData,
