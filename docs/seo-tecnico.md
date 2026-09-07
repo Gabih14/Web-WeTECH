@@ -27,6 +27,12 @@ Se cargan las variables de Vite para producción (`.env`, `.env.local`,
 proceso. En Docker, las variables de la tabla son argumentos de build.
 `VITE_SITE_URL` debe configurarse durante el build, no sólo al arrancar el contenedor.
 
+El Dockerfile también conserva los argumentos de la configuración del servidor:
+`VITE_API_BEARER_TOKEN`, `VITE_READ_API_TOKEN`, `VITE_GOOGLE_MAPS_API_KEY`,
+`VITE_CHECKOUT_PASSWORD_ENABLED`, `VITE_CHECKOUT_ACCESS_PASSWORD` y
+`VITE_FEATURABLE_WIDGET_ID`. El script de despliegue o Compose debe proporcionar
+sus valores como argumentos de build; declararlos no les asigna un valor.
+
 El build falla ante una API inaccesible, timeout, catálogo vacío o por debajo
 del mínimo, identificadores duplicados, slugs inseguros o fichas sin precio,
 stock o imagen válidos. No se publican páginas genéricas mediante
