@@ -26,13 +26,13 @@ import {
 import {
   getVariantItemId,
   getVariantPrice,
-  getVariantPromotionalPrice,
 } from "../utils/pricing";
 import { formatPrice } from "../utils/money";
 import { ColorSwatch } from "../components/products/ColorSwatch";
 import { ProductDescription } from "../components/products/ProductDescription";
 import { StockWaitRequestModal } from "../components/products/StockWaitRequestModal";
 import { useSEO } from "../hooks/useSEO";
+import { buildProductSchema, DEFAULT_SITE_URL } from "../seo/productSchema.mjs";
 
 const QUANTITY_OPTIONS = [1, 5, 10, 50];
 
@@ -45,7 +45,7 @@ const safeDecodeURIComponent = (value: string) => {
 };
 
 const buildProductMetaDescription = (product: Product) => {
-  const description = `${product.description} Compra online en WeTECH, tienda de impresion 3D en Argentina.`
+  const description = `${product.observaciones || product.description} Compra online en WeTECH, tienda de impresion 3D en Argentina.`
     .replace(/\s+/g, " ")
     .trim();
 
@@ -66,6 +66,7 @@ export function ProductPage() {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [isColorMenuOpen, setIsColorMenuOpen] = useState(false);
   const [isStockWaitOpen, setIsStockWaitOpen] = useState(false);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
@@ -83,6 +84,7 @@ export function ProductPage() {
   useEffect(() => {
     fetchProducts()
       .then((data) => setProducts(data))
+      .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
   }, []);
 
@@ -111,8 +113,7 @@ export function ProductPage() {
     : null;
   const seoPrice =
     product
-      ? getVariantPromotionalPrice(product, seoSelectedColor, seoSelectedWeight) ??
-        getVariantPrice(product, seoSelectedColor, seoSelectedWeight)
+      ? getVariantPrice(product, seoSelectedColor, seoSelectedWeight)
       : undefined;
   const seoStock = product
     ? getVariantStock(product, seoSelectedColor, seoSelectedWeight)
@@ -122,47 +123,34 @@ export function ProductPage() {
     ? `/product/${encodeURIComponent(productRouteId)}`
     : "/products";
   const productStructuredData =
-    product && seoPrice !== undefined
-      ? {
-          "@context": "https://schema.org",
-          "@type": "Product",
+    product
+      ? buildProductSchema({
           name: product.name,
-          description: product.description,
+          description: product.observaciones || product.description,
           image: product.image,
           sku: getVariantItemId(product, seoSelectedColor, seoSelectedWeight),
-          brand: {
-            "@type": "Brand",
-            name: product.brand || "WeTECH",
-          },
+          brand: product.brand,
           category: product.category,
-          offers: {
-            "@type": "Offer",
-            url: new URL(productUrl, window.location.origin).href,
-            priceCurrency: "ARS",
-            price: Number(seoPrice.toFixed(2)),
-            availability:
-              seoStock > 0
-                ? "https://schema.org/InStock"
-                : "https://schema.org/OutOfStock",
-            itemCondition: "https://schema.org/NewCondition",
-            seller: {
-              "@type": "Organization",
-              name: "WeTECH",
-            },
-          },
-        }
+          url: productUrl,
+          price: seoPrice,
+          stock: seoStock,
+        }, import.meta.env.VITE_SITE_URL || DEFAULT_SITE_URL)
       : null;
 
   useSEO({
     title: product
       ? `${product.name} | WeTECH`
+      : loadError
+        ? "No pudimos cargar el producto | WeTECH"
       : loading
         ? "Cargando producto | WeTECH"
         : "Producto no encontrado | WeTECH",
     description: product
       ? buildProductMetaDescription(product)
       : "Explora filamentos, repuestos, accesorios e impresoras 3D en WeTECH.",
-    canonicalPath: productUrl,
+    canonicalPath: !loading && !loadError && !product ? null : productUrl,
+    noindex: !loading && !loadError && !product,
+    pending: loading || loadError,
     image: product?.image,
     type: "product",
     structuredData: productStructuredData,
@@ -247,6 +235,18 @@ export function ProductPage() {
         <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-yellow-600" />
         <p className="text-sm text-gray-500">Cargando producto...</p>
       </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <section className="mx-auto max-w-3xl px-6 py-16 text-center">
+        <h1 className="text-2xl font-bold">No pudimos cargar el producto</h1>
+        <p className="mt-4">Ocurrió un problema de conexión. Intentá nuevamente en unos minutos.</p>
+        <button onClick={() => window.location.reload()} className="mt-6 rounded bg-yellow-400 px-6 py-3 font-semibold">
+          Reintentar
+        </button>
+      </section>
     );
   }
 
