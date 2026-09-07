@@ -97,6 +97,7 @@ export default function Checkout() {
     description:
       "Finaliza tu compra en WeTECH de forma simple y segura. Confirma tus datos, envio y metodo de pago.",
     canonicalPath: "/checkout",
+    noindex: true,
   });
 
   const [confirmedAddress, setConfirmedAddress] = useState<string | null>(null);

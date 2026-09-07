@@ -12,6 +12,7 @@ import Checkout from "./components/checkout/Checkout";
 import PaymentCallback from "./pages/PaymentCallback";
 import { Franquicias } from "./pages/Franquicias";
 import { UnderDevelopment } from "./pages/UnderDevelopment";
+import { NotFoundPage } from "./pages/NotFoundPage";
 import { useMetaPixel } from "./hooks/useMetaPixel";
 import { captureCouponFromSearch } from "./utils/couponPrefill";
 
@@ -51,6 +52,7 @@ function App() {
               {/* http://localhost:5173/checkout/callback?payment_id=12345 */}
               <Route path="/franquicias/:provincia" element={<Franquicias />} />
               <Route path="/under-development" element={<UnderDevelopment />} />
+              <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </main>
           <Footer />

@@ -65,6 +65,7 @@ const PaymentCallback = () => {
     description:
       "Consulta el estado de tu pago y pedido en WeTECH.",
     canonicalPath: "/checkout/callback",
+    noindex: true,
   });
 
   const paymentMethod = pedidoData?.payment_method ?? pedidoData?.metodo_pago;

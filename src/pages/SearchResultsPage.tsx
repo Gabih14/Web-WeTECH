@@ -33,6 +33,7 @@ export default function SearchResultsPage() {
       ? `Resultados de busqueda para ${query} en WeTECH. Encuentra filamentos, repuestos, accesorios e impresoras 3D.`
       : "Busca productos de impresion 3D en WeTECH: filamentos, repuestos, accesorios e impresoras 3D.",
     canonicalPath: "/search",
+    noindex: true,
   });
 
   const loadProducts = async () => {
