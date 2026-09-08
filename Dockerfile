@@ -3,6 +3,9 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
+# Activar pnpm usando Corepack
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
 # Recibimos la variable como argumento de build
 ARG VITE_API_URL
 ARG VITE_FEATURABLE_WIDGET_ID
@@ -27,11 +30,12 @@ ENV VITE_SITE_URL=$VITE_SITE_URL
 ENV SEO_API_URL=$SEO_API_URL
 ENV SEO_MIN_PRODUCTS=$SEO_MIN_PRODUCTS
 
-COPY package*.json ./
-RUN npm ci
+# Instalación de dependencias con pnpm
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
 COPY . .
-RUN npm run build
+RUN pnpm build
 
 # Etapa 2: servidor liviano para servir los archivos
 FROM node:22-alpine
