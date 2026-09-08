@@ -4,6 +4,7 @@ import { Bell, Check, ChevronDown, ShoppingCart, Sparkles } from "lucide-react";
 import Isologo from "../assets/Isologo Fondo Negro SVG.svg";
 import { useCart } from "../context/CartContext";
 import { fetchProducts } from "../services/fetchProducts";
+import { fetchSeoProductBySlug, type SeoProduct } from "../services/api";
 import { Product } from "../types";
 import {
   calculateDiscountedPriceForProduct,
@@ -56,6 +57,16 @@ const buildProductMetaDescription = (product: Product) => {
   return `${description.slice(0, 169).trim()}...`;
 };
 
+const normalizeLookupValue = (value: string): string =>
+  value
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase();
+
+const looksLikeSeoSlug = (value: string) =>
+  /^[a-z0-9]+(?:[-_][a-z0-9]+)*$/.test(value) && /[a-z]/.test(value);
+
 export function ProductPage() {
   const params = useParams();
   const id = params["*"] ? safeDecodeURIComponent(params["*"]) : undefined;
@@ -65,7 +76,9 @@ export function ProductPage() {
   const { justAdded, triggerAddedFeedback } = useAddToCartFeedback();
 
   const [products, setProducts] = useState<Product[]>([]);
+  const [seoProduct, setSeoProduct] = useState<SeoProduct | null>(null);
   const [loading, setLoading] = useState(true);
+  const [seoLookupPending, setSeoLookupPending] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [isColorMenuOpen, setIsColorMenuOpen] = useState(false);
   const [isStockWaitOpen, setIsStockWaitOpen] = useState(false);
@@ -82,11 +95,57 @@ export function ProductPage() {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    let ignore = false;
+
     fetchProducts()
-      .then((data) => setProducts(data))
-      .catch(() => setLoadError(true))
-      .finally(() => setLoading(false));
+      .then((data) => {
+        if (ignore) {
+          return;
+        }
+
+        setProducts(data);
+      })
+      .catch(() => {
+        if (!ignore) {
+          setLoadError(true);
+        }
+      })
+      .finally(() => {
+        if (!ignore) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
   }, []);
+
+  useEffect(() => {
+    if (!id || !looksLikeSeoSlug(id)) {
+      setSeoProduct(null);
+      return;
+    }
+
+    let ignore = false;
+    setSeoLookupPending(true);
+
+    fetchSeoProductBySlug(id)
+      .then((seoData) => {
+        if (!ignore) {
+          setSeoProduct(seoData);
+        }
+      })
+      .finally(() => {
+        if (!ignore) {
+          setSeoLookupPending(false);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [id]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
@@ -103,7 +162,15 @@ export function ProductPage() {
     return () => document.removeEventListener("mousedown", handleOutside);
   }, []);
 
-  const product = products.find((item) => item.id === id || item.slug === id);
+  const product = products.find(
+    (item) =>
+      item.id === id ||
+      item.slug === id ||
+      (!!seoProduct &&
+        (item.id === seoProduct.id ||
+          normalizeLookupValue(item.name) === normalizeLookupValue(seoProduct.nombre)))
+  );
+  const isResolvingSlug = !loading && !product && seoLookupPending;
   const isFilament = !!product && isFilamentProduct(product);
   const seoSelectedWeight = product
     ? selectedWeight ?? getDefaultProductWeight(product)
@@ -142,15 +209,15 @@ export function ProductPage() {
       ? `${product.name} | WeTECH`
       : loadError
         ? "No pudimos cargar el producto | WeTECH"
-      : loading
+      : loading || isResolvingSlug
         ? "Cargando producto | WeTECH"
         : "Producto no encontrado | WeTECH",
     description: product
       ? buildProductMetaDescription(product)
       : "Explora filamentos, repuestos, accesorios e impresoras 3D en WeTECH.",
-    canonicalPath: !loading && !loadError && !product ? null : productUrl,
-    noindex: !loading && !loadError && !product,
-    pending: loading || loadError,
+    canonicalPath: !loading && !isResolvingSlug && !loadError && !product ? null : productUrl,
+    noindex: !loading && !isResolvingSlug && !loadError && !product,
+    pending: loading || isResolvingSlug || loadError,
     image: product?.image,
     type: "product",
     structuredData: productStructuredData,
@@ -229,7 +296,7 @@ export function ProductPage() {
     setCurrentPromotionalPrice(undefined);
   }, [product, quantity, selectedColor, selectedWeight, items]);
 
-  if (loading) {
+  if (loading || isResolvingSlug) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4">
         <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-yellow-600" />
