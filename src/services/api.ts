@@ -175,6 +175,27 @@ export async function fetchSeoProducts(): Promise<SeoProduct[]> {
   }
 }
 
+export async function fetchSeoProductBySlug(
+  slug: string
+): Promise<SeoProduct | null> {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 5000);
+
+  try {
+    const data = await publicApiFetch(
+      `/seo/products/${encodeURIComponent(slug)}`,
+      { signal: controller.signal }
+    );
+
+    return data && typeof data === "object" ? data as SeoProduct : null;
+  } catch (error) {
+    console.error(`No se pudo obtener el producto SEO ${slug}:`, error);
+    return null;
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
+
 export async function fetchClienteByCuit(cuit: string) {
   try {
     const data = await apiFetch(`/vta-cliente/${cuit}`);

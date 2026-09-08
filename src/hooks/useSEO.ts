@@ -55,7 +55,9 @@ const ensureCanonical = () => {
   return canonical;
 };
 
-const updateStructuredData = (structuredData?: Record<string, unknown> | null) => {
+type StructuredData = Record<string, unknown> | Record<string, unknown>[];
+
+const updateStructuredData = (structuredData?: StructuredData | null) => {
   const existingScript = document.querySelector<HTMLScriptElement>(`script#${STRUCTURED_DATA_ID}`);
 
   if (!structuredData) {
@@ -81,7 +83,7 @@ interface SEOOptions {
   canonicalPath?: string | null;
   image?: string;
   type?: "website" | "product";
-  structuredData?: Record<string, unknown> | null;
+  structuredData?: StructuredData | null;
   noindex?: boolean;
   pending?: boolean;
 }
