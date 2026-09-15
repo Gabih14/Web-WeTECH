@@ -71,6 +71,10 @@ export const deriveCouponCategory = (
     return "impresora";
   }
 
+  if (normalized === "COMPLEMENTOS PARA IMPRESION 3D") {
+    return "repuesto";
+  }
+
   return "repuesto";
 };
 

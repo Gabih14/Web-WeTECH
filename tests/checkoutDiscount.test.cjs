@@ -99,5 +99,9 @@ test("deriva categorías con la misma regla del backend", () => {
   assert.equal(deriveCouponCategory("FILAMENTOS"), "filamento");
   assert.equal(deriveCouponCategory("FILAMENTO 3D"), "filamento");
   assert.equal(deriveCouponCategory("IMPRESORAS"), "impresora");
+  assert.equal(
+    deriveCouponCategory("COMPLEMENTOS PARA IMPRESION 3D"),
+    "repuesto"
+  );
   assert.equal(deriveCouponCategory("REPUESTOS"), "repuesto");
 });

@@ -7,6 +7,7 @@ const MINIMUM_PRODUCT_PRICE = 100;
 const MINIMUM_FILAMENT_PRICE = 10000;
 const FILAMENT_GROUP = "FILAMENTO 3D";
 const SPARE_PARTS_GROUP = "REPUESTOS & ACCESORIOS";
+const PRINTING_COMPLEMENTS_GROUP = "COMPLEMENTOS PARA IMPRESION 3D";
 const BASE_FILAMENT_DISCOUNT = 0.15;
 
 // ---- Tipos de la respuesta de /stk-item/catalogo (backend) ----
@@ -59,9 +60,9 @@ const toNumber = (value: string | null | undefined): number | undefined => {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
 };
 
-const imageFor = (fotoUrl: string | null, isSparePart: boolean): string | null => {
+const imageFor = (fotoUrl: string | null, isAccessory: boolean): string | null => {
   const raw = typeof fotoUrl === "string" && fotoUrl.trim() ? fotoUrl.trim() : null;
-  return raw ?? (isSparePart ? sparePartsFallbackImage : null);
+  return raw ?? (isAccessory ? sparePartsFallbackImage : null);
 };
 
 const uniqueImages = (images: (string | null)[]): string[] =>
@@ -177,9 +178,28 @@ export const fetchProducts = async (): Promise<Product[]> => {
       apiFetch("/stk-item/catalogo"),
       fetchColors(),
     ]);
+    const catalogProducts = Array.isArray(catalogo)
+      ? (catalogo as CatalogoProducto[])
+      : [];
 
     if (import.meta.env.DEV) {
       console.log("Catálogo recibido:", catalogo);
+      console.log(
+        "Repuestos recibidos:",
+        catalogProducts.filter(
+          (product) =>
+            String(product.grupo ?? "").trim().toUpperCase() ===
+            SPARE_PARTS_GROUP,
+        ),
+      );
+      console.log(
+        "Complementos recibidos:",
+        catalogProducts.filter(
+          (product) =>
+            String(product.grupo ?? "").trim().toUpperCase() ===
+            PRINTING_COMPLEMENTS_GROUP,
+        ),
+      );
     }
 
     const colorByName = new Map<string, Colors>();
@@ -187,11 +207,13 @@ export const fetchProducts = async (): Promise<Product[]> => {
 
     const products: Product[] = [];
 
-    for (const prod of (catalogo as CatalogoProducto[]) ?? []) {
+    for (const prod of catalogProducts) {
       const isFilament = isFilamentGroup(prod.grupo);
       const category = isFilament ? FILAMENT_GROUP : prod.grupo ?? "";
       const upperGroup = String(prod.grupo ?? "").toUpperCase();
-      const isSparePart = upperGroup === SPARE_PARTS_GROUP;
+      const isAccessory =
+        upperGroup === SPARE_PARTS_GROUP ||
+        upperGroup === PRINTING_COMPLEMENTS_GROUP;
 
       // Ignorar impresoras (paridad con el flujo actual)
       if (upperGroup === "IMPRESORAS 3D") continue;
@@ -220,8 +242,8 @@ export const fetchProducts = async (): Promise<Product[]> => {
         if (price < MINIMUM_PRODUCT_PRICE) return false;
         if (isFilament && price < MINIMUM_FILAMENT_PRICE) return false;
 
-        // Debe tener imagen (o fallback para repuestos)
-        if (!imageFor(v.fotoUrl, isSparePart)) return false;
+        // Debe tener imagen (o fallback para grupos tratados como accesorios)
+        if (!imageFor(v.fotoUrl, isAccessory)) return false;
 
         // Filamentos: debe tener peso numérico (descarta "Kit 20 Colores", etc.)
         if (isFilament && v.pesoKg == null) return false;
@@ -242,7 +264,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
         .map((v) => v.observaciones)
         .find((o): o is string => typeof o === "string" && o.trim().length > 0);
       const images = uniqueImages(
-        variantesPublicables.map((v) => imageFor(v.fotoUrl, isSparePart)),
+        variantesPublicables.map((v) => imageFor(v.fotoUrl, isAccessory)),
       );
 
       const product: Product = {
@@ -284,7 +306,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
           if (!colorName) continue;
           const colorData = colorByName.get(colorName.toLowerCase());
           const stock = Math.max(0, v.stock ?? 0);
-          const img = imageFor(v.fotoUrl, isSparePart);
+          const img = imageFor(v.fotoUrl, isAccessory);
 
           if (!weights.some((w) => w.weight === weight)) {
             weights.push({ weight, price, invoicePrice, promotionalPrice });
@@ -348,6 +370,19 @@ export const fetchProducts = async (): Promise<Product[]> => {
 
     if (import.meta.env.DEV) {
       console.log("Productos transformados:", products);
+      console.log(
+        "Repuestos transformados:",
+        products.filter(
+          (product) => product.category.trim().toUpperCase() === SPARE_PARTS_GROUP,
+        ),
+      );
+      console.log(
+        "Complementos transformados:",
+        products.filter(
+          (product) =>
+            product.category.trim().toUpperCase() === PRINTING_COMPLEMENTS_GROUP,
+        ),
+      );
     }
 
     return products;
