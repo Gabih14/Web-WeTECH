@@ -15,6 +15,7 @@ type Props = {
   };
   handleInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   setShippingData: (data: { itemId: string; costoTotal: number } | null) => void;
+  setShippingDistance: (distance: number) => void;
   deliveryMethod: "pickup" | "shipping";
   setDeliveryMethod: (method: "pickup" | "shipping") => void;
   confirmedAddress: string | null;
@@ -466,6 +467,7 @@ export const CheckoutAdress = ({
   formData,
   handleInputChange,
   setShippingData,
+  setShippingDistance,
   deliveryMethod,
   setDeliveryMethod,
   confirmedAddress,
@@ -549,6 +551,7 @@ export const CheckoutAdress = ({
     setConfirmedAddress(null);
     setConfirmedAddressLink(null);
     setShippingData(null);
+    setShippingDistance(0);
   };
 
   const editAddressFromMap = () => {
@@ -633,15 +636,9 @@ export const CheckoutAdress = ({
     setShippingError(null);
 
     try {
-      if (pendingDistance > 20) {
-        setShippingError({ message: "La distancia supera los 20 km. El envÃ­o no estÃ¡ permitido.", retryable: false });
-        setShowShippingErrorModal(true);
-        setShippingData(null);
-        return;
-      }
-
       const shippingInfo = await calculateShippingCost(pendingDistance);
       if (shippingInfo) {
+        setShippingDistance(pendingDistance);
         setConfirmedAddress(pendingResolvedAddress);
         setConfirmedAddressLink(buildGoogleMapsSearchUrl(pendingResolvedAddress));
         setShippingData(shippingInfo);
@@ -779,19 +776,14 @@ export const CheckoutAdress = ({
         setConfirmedAddressLink(buildGoogleMapsSearchUrl(data.destinationResolved));
         setIsManualMapEnabled(false);
 
-        if (previewDistanceValue > 20) {
-          setShippingError({ message: "La distancia supera los 20 km. El envío no está permitido.", retryable: false });
+        const shippingInfo = await calculateShippingCost(previewDistanceValue);
+        if (shippingInfo) {
+          setShippingDistance(previewDistanceValue);
+          setShippingData(shippingInfo);
+        } else {
+          setShippingError({ message: "No se pudo calcular el costo de envío.", retryable: true });
           setShowShippingErrorModal(true);
           setShippingData(null);
-        } else {
-          const shippingInfo = await calculateShippingCost(previewDistanceValue);
-          if (shippingInfo) {
-            setShippingData(shippingInfo);
-          } else {
-            setShippingError({ message: "No se pudo calcular el costo de envío.", retryable: true });
-            setShowShippingErrorModal(true);
-            setShippingData(null);
-          }
         }
       } else {
         setShippingError({ message: getShippingErrorMessage(data), retryable: true });
@@ -813,6 +805,7 @@ export const CheckoutAdress = ({
     setDeliveryMethod(method);
     if (method === "pickup") {
       setShippingData(null);
+      setShippingDistance(0);
       setPendingResolvedAddress(null);
       setPendingDistance(null);
       setIsManualMapEnabled(false);
