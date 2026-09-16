@@ -19,7 +19,7 @@ import {
   getPurchaseState,
   getVariantStock,
 } from "../../utils/cartPurchase";
-import { getVariantItemId, getVariantPrice } from "../../utils/pricing";
+import { getVariantImage, getVariantItemId, getVariantPrice } from "../../utils/pricing";
 import { formatPrice } from "../../utils/money";
 import { ColorSwatch } from "./ColorSwatch";
 import { StockWaitRequestModal } from "./StockWaitRequestModal";
@@ -199,10 +199,7 @@ export function ProductCard({
   const selectedColorData = selectedColor
     ? product.colors?.find((color) => color.name === selectedColor)
     : undefined;
-  const selectedColorImage = selectedColor
-    ? selectedColorData?.images?.[0]
-    : undefined;
-  const displayImage = selectedColorImage || product.image;
+  const displayImage = getVariantImage(product, selectedColor, selectedWeight);
   const selectedItemId = getVariantItemId(product, selectedColor, selectedWeight);
   const productPath = `/product/${encodeURIComponent(product.slug || product.id)}`;
   const canRequestStockNotice =

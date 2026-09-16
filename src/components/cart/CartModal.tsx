@@ -9,7 +9,7 @@ import {
   getEligibleQuantityDiscountCartQuantity,
   shouldApplyDiscount
 } from "../../utils/discounts";
-import { getVariantPrice } from "../../utils/pricing";
+import { getVariantImage, getVariantPrice } from "../../utils/pricing";
 import { formatPrice, roundPrice } from "../../utils/money";
 import { calculateCheckoutLinePricing } from "../../utils/checkoutPricing";
 
@@ -186,11 +186,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                     item.weight,
                     eligibleQuantityDiscountCartQuantity
                   );
-                  const colorImage = item.color
-                    ? item.product.colors?.find(
-                        (c) => c.name.toLowerCase() === item.color.toLowerCase()
-                      )?.images?.[0] || item.product.image
-                    : item.product.image;
+                  const colorImage = getVariantImage(item.product, item.color, item.weight);
                   return (
                     <div
                       key={`${item.product.id}-${item.color}-${item.weight}`}

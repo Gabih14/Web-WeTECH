@@ -14,6 +14,7 @@ import {
   shouldApplyDiscount,
 } from "../../utils/discounts";
 import {
+  getVariantImage,
   getVariantInvoicePrice,
   getVariantItemId,
   getVariantPrice,
@@ -1586,11 +1587,11 @@ export default function Checkout() {
                       )?.hex
                       : undefined;
 
-                    const itemImage = item.color
-                      ? item.product.colors?.find(
-                        (c) => c.name.toLowerCase() === item.color.toLowerCase()
-                      )?.images?.[0] || item.product.image
-                      : item.product.image;
+                    const itemImage = getVariantImage(
+                      item.product,
+                      item.color,
+                      item.weight
+                    );
 
                     const uniqueKey = `${item.product.id}-${item.color || 'default'}-${item.weight}-${index}`;
 
