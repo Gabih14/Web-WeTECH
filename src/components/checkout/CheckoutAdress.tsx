@@ -9,13 +9,11 @@ type Props = {
     number: string;
     city: string;
     postalCode: string;
-    distance: number;
     observaciones: string;
     addressWithoutNumber: boolean;
   };
   handleInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   setShippingData: (data: { itemId: string; costoTotal: number } | null) => void;
-  setShippingDistance: (distance: number) => void;
   deliveryMethod: "pickup" | "shipping";
   setDeliveryMethod: (method: "pickup" | "shipping") => void;
   confirmedAddress: string | null;
@@ -467,7 +465,6 @@ export const CheckoutAdress = ({
   formData,
   handleInputChange,
   setShippingData,
-  setShippingDistance,
   deliveryMethod,
   setDeliveryMethod,
   confirmedAddress,
@@ -551,7 +548,6 @@ export const CheckoutAdress = ({
     setConfirmedAddress(null);
     setConfirmedAddressLink(null);
     setShippingData(null);
-    setShippingDistance(0);
   };
 
   const editAddressFromMap = () => {
@@ -638,7 +634,6 @@ export const CheckoutAdress = ({
     try {
       const shippingInfo = await calculateShippingCost(pendingDistance);
       if (shippingInfo) {
-        setShippingDistance(pendingDistance);
         setConfirmedAddress(pendingResolvedAddress);
         setConfirmedAddressLink(buildGoogleMapsSearchUrl(pendingResolvedAddress));
         setShippingData(shippingInfo);
@@ -778,7 +773,6 @@ export const CheckoutAdress = ({
 
         const shippingInfo = await calculateShippingCost(previewDistanceValue);
         if (shippingInfo) {
-          setShippingDistance(previewDistanceValue);
           setShippingData(shippingInfo);
         } else {
           setShippingError({ message: "No se pudo calcular el costo de envío.", retryable: true });
@@ -805,7 +799,6 @@ export const CheckoutAdress = ({
     setDeliveryMethod(method);
     if (method === "pickup") {
       setShippingData(null);
-      setShippingDistance(0);
       setPendingResolvedAddress(null);
       setPendingDistance(null);
       setIsManualMapEnabled(false);

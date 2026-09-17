@@ -127,7 +127,6 @@ export default function Checkout() {
     phone: "",
     street: "",
     number: "",
-    distance: 0,
     city: "",
     postalCode: "",
     observaciones: "",
@@ -717,16 +716,6 @@ export default function Checkout() {
   }; */
 
   const completeCheckout = async () => {
-    if (deliveryMethod === "shipping" && formData.distance > 20) {
-      setError({
-        code: "DISTANCIA_ENVIO_EXCEDIDA",
-        message: "La distancia supera los 20 km. No se puede generar el pedido.",
-        retryable: false,
-      });
-      setShowErrorModal(true);
-      return;
-    }
-
     if (checkoutInFlightRef.current) {
       return;
     }
@@ -1193,9 +1182,6 @@ export default function Checkout() {
             formData={formData}
             handleInputChange={handleInputChange}
             setShippingData={setShippingData}
-            setShippingDistance={(distance) =>
-              setFormData((previous) => ({ ...previous, distance }))
-            }
             deliveryMethod={deliveryMethod}
             setDeliveryMethod={setDeliveryMethod}
             confirmedAddress={confirmedAddress}
