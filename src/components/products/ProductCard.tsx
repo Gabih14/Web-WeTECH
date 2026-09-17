@@ -13,13 +13,14 @@ import {
 } from "../../utils/discounts";
 import { useAddToCartFeedback } from "../../hooks/useAddToCartFeedback";
 import {
+  getColorForWeight,
   getFirstColorWithStock,
   getDefaultProductWeight,
   hasPurchasableStockInOtherColor,
   getPurchaseState,
   getVariantStock,
 } from "../../utils/cartPurchase";
-import { getVariantItemId, getVariantPrice } from "../../utils/pricing";
+import { getVariantImage, getVariantItemId, getVariantPrice } from "../../utils/pricing";
 import { formatPrice } from "../../utils/money";
 import { ColorSwatch } from "./ColorSwatch";
 import { StockWaitRequestModal } from "./StockWaitRequestModal";
@@ -48,27 +49,9 @@ export function ProductCard({
   );
 
   const getFirstColorForGroup = useCallback(
-    (colorGroupId: number | null, weight: number | null) => {
-      if (colorGroupId === null || !product.colors) {
-        return getFirstColorWithStock(product);
-      }
-
-      const groupColors = product.colors.filter(
-        (color) => color.colorGroup?.id === colorGroupId
-      );
-
-      if (groupColors.length === 0) {
-        return getFirstColorWithStock(product);
-      }
-
-      const selectedWeight = weight ?? getDefaultProductWeight(product) ?? 0;
-      const firstInStock = groupColors.find(
-        (color) => selectedStock(color.name, selectedWeight) > 0
-      );
-
-      return firstInStock?.name ?? groupColors[0]?.name ?? null;
-    },
-    [product, selectedStock]
+    (colorGroupId: number | null, weight: number | null, preferredColor: string | null = null) =>
+      getColorForWeight(product, weight, preferredColor, colorGroupId),
+    [product]
   );
 
   // ── State ─────────────────────────────────────────────────────────────────
@@ -167,7 +150,9 @@ export function ProductCard({
   }, [selectedWeight, selectedColor, quantity, product, effectiveDiscountQuantity]);
 
   useEffect(() => {
-    setSelectedColor(getFirstColorForGroup(selectedColorGroupId, selectedWeight));
+    setSelectedColor((currentColor) =>
+      getFirstColorForGroup(selectedColorGroupId, selectedWeight, currentColor)
+    );
   }, [getFirstColorForGroup, selectedColorGroupId, selectedWeight]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
@@ -199,10 +184,7 @@ export function ProductCard({
   const selectedColorData = selectedColor
     ? product.colors?.find((color) => color.name === selectedColor)
     : undefined;
-  const selectedColorImage = selectedColor
-    ? selectedColorData?.images?.[0]
-    : undefined;
-  const displayImage = selectedColorImage || product.image;
+  const displayImage = getVariantImage(product, selectedColor, selectedWeight);
   const selectedItemId = getVariantItemId(product, selectedColor, selectedWeight);
   const productPath = `/product/${encodeURIComponent(product.slug || product.id)}`;
   const canRequestStockNotice =

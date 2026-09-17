@@ -17,6 +17,7 @@ import {
 } from "../utils/discounts";
 import { useAddToCartFeedback } from "../hooks/useAddToCartFeedback";
 import {
+  getColorForWeight,
   getFirstColorWithStock,
   getDefaultProductWeight,
   hasPurchasableStockInOtherColor,
@@ -25,6 +26,7 @@ import {
   getVariantStock,
 } from "../utils/cartPurchase";
 import {
+  getVariantImage,
   getVariantItemId,
   getVariantPrice,
 } from "../utils/pricing";
@@ -243,19 +245,31 @@ export function ProductPage() {
   }, [product, isFilament]);
 
   useEffect(() => {
+    if (!product) {
+      return;
+    }
+
+    setSelectedColor((currentColor) =>
+      getColorForWeight(product, selectedWeight, currentColor)
+    );
+  }, [product, selectedWeight]);
+
+  useEffect(() => {
     if (!product || !selectedColor) {
       return;
     }
 
     const colorData = product.colors?.find((color) => color.name === selectedColor);
     if (colorData?.images?.length) {
-      setCurrentImages(isFilament ? [colorData.images[0]] : colorData.images);
+      setCurrentImages(isFilament
+        ? [getVariantImage(product, selectedColor, selectedWeight)]
+        : colorData.images);
     } else {
       setCurrentImages(product.images || [product.image]);
     }
 
     setCurrentImageIndex(0);
-  }, [product, selectedColor, isFilament]);
+  }, [product, selectedColor, selectedWeight, isFilament]);
 
   useEffect(() => {
     if (!product) {

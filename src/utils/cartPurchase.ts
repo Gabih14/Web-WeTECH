@@ -36,6 +36,30 @@ export function getFirstColorWithStock(product: Product): string | null {
   return firstInStock?.name ?? product.colors[0]?.name ?? null;
 }
 
+export function getColorForWeight(
+  product: Product,
+  weight: number | null,
+  preferredColor: string | null,
+  colorGroupId: number | null = null
+): string | null {
+  if (!product.colors || weight === null) {
+    return preferredColor ?? product.colors?.[0]?.name ?? null;
+  }
+
+  const colorsInGroup = colorGroupId === null
+    ? product.colors
+    : product.colors.filter((color) => color.colorGroup?.id === colorGroupId);
+  const candidates = colorsInGroup.length > 0 ? colorsInGroup : product.colors;
+  const hasWeight = (color: NonNullable<Product["colors"]>[number]) =>
+    Object.prototype.hasOwnProperty.call(color.stock, weight.toString());
+
+  return candidates.find((color) => color.name === preferredColor && hasWeight(color))?.name
+    ?? candidates.find((color) => hasWeight(color) && color.stock[weight.toString()] > 0)?.name
+    ?? candidates.find(hasWeight)?.name
+    ?? candidates[0]?.name
+    ?? null;
+}
+
 export function getVariantStock(
   product: Product,
   color: string | null,

@@ -4,9 +4,24 @@ const test = require("node:test");
 require("sucrase/register/ts");
 
 const {
+  getVariantImage,
   getVariantInvoicePrice,
   getVariantPrice,
 } = require("../src/utils/pricing.ts");
+
+test("elige la imagen correspondiente al color y peso", () => {
+  const product = {
+    image: "/fallback.webp",
+    colors: [{
+      name: "Negro",
+      images: ["/negro-500.webp"],
+      imagesByWeight: { "0.5": "/negro-500.webp", "1": "/negro-1000.webp" },
+    }],
+  };
+
+  assert.equal(getVariantImage(product, "Negro", 1), "/negro-1000.webp");
+  assert.equal(getVariantImage(product, "Negro", 2), "/negro-500.webp");
+});
 
 test("lee el precio de factura por color y peso cuando existe", () => {
   const product = {

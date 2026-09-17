@@ -84,6 +84,18 @@ export function getVariantItemId(
   return colorVariant?.itemIds?.[key] ?? colorVariant?.itemId ?? product.itemId ?? product.id;
 }
 
+export function getVariantImage(
+  product: Product,
+  color: string | null | undefined,
+  weight: number | null | undefined
+): string {
+  const colorVariant = getColorVariant(product, color);
+
+  return colorVariant?.imagesByWeight?.[weightKey(weight)]
+    ?? colorVariant?.images?.[0]
+    ?? product.image;
+}
+
 export function getCartItemPrice(item: CartItem): number | undefined {
   return getVariantPrice(item.product, item.color, item.weight);
 }

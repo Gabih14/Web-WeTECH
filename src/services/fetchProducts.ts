@@ -325,6 +325,12 @@ export const fetchProducts = async (): Promise<Product[]> => {
               [weightKey]: promotionalPrice,
             };
             existing.itemIds = { ...(existing.itemIds || {}), [weightKey]: v.id };
+            if (img) {
+              existing.imagesByWeight = {
+                ...(existing.imagesByWeight || {}),
+                [weightKey]: img,
+              };
+            }
             if (!existing.itemId) existing.itemId = v.id;
             if (!existing.colorGroup) existing.colorGroup = colorData?.colorGroup;
             if (img && !(existing.images || []).includes(img)) {
@@ -340,6 +346,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
               invoicePrices: { [weightKey]: invoicePrice },
               promotionalPrices: { [weightKey]: promotionalPrice },
               itemIds: { [weightKey]: v.id },
+              imagesByWeight: img ? { [weightKey]: img } : {},
               images: img ? [img] : [],
               itemId: v.id,
             });
