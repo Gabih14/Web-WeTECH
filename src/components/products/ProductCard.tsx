@@ -13,6 +13,7 @@ import {
 } from "../../utils/discounts";
 import { useAddToCartFeedback } from "../../hooks/useAddToCartFeedback";
 import {
+  getColorForWeight,
   getFirstColorWithStock,
   getDefaultProductWeight,
   hasPurchasableStockInOtherColor,
@@ -48,27 +49,9 @@ export function ProductCard({
   );
 
   const getFirstColorForGroup = useCallback(
-    (colorGroupId: number | null, weight: number | null) => {
-      if (colorGroupId === null || !product.colors) {
-        return getFirstColorWithStock(product);
-      }
-
-      const groupColors = product.colors.filter(
-        (color) => color.colorGroup?.id === colorGroupId
-      );
-
-      if (groupColors.length === 0) {
-        return getFirstColorWithStock(product);
-      }
-
-      const selectedWeight = weight ?? getDefaultProductWeight(product) ?? 0;
-      const firstInStock = groupColors.find(
-        (color) => selectedStock(color.name, selectedWeight) > 0
-      );
-
-      return firstInStock?.name ?? groupColors[0]?.name ?? null;
-    },
-    [product, selectedStock]
+    (colorGroupId: number | null, weight: number | null, preferredColor: string | null = null) =>
+      getColorForWeight(product, weight, preferredColor, colorGroupId),
+    [product]
   );
 
   // ── State ─────────────────────────────────────────────────────────────────
@@ -167,7 +150,9 @@ export function ProductCard({
   }, [selectedWeight, selectedColor, quantity, product, effectiveDiscountQuantity]);
 
   useEffect(() => {
-    setSelectedColor(getFirstColorForGroup(selectedColorGroupId, selectedWeight));
+    setSelectedColor((currentColor) =>
+      getFirstColorForGroup(selectedColorGroupId, selectedWeight, currentColor)
+    );
   }, [getFirstColorForGroup, selectedColorGroupId, selectedWeight]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────

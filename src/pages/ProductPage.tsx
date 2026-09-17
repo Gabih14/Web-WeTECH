@@ -17,6 +17,7 @@ import {
 } from "../utils/discounts";
 import { useAddToCartFeedback } from "../hooks/useAddToCartFeedback";
 import {
+  getColorForWeight,
   getFirstColorWithStock,
   getDefaultProductWeight,
   hasPurchasableStockInOtherColor,
@@ -242,6 +243,16 @@ export function ProductPage() {
 
     setCurrentImageIndex(0);
   }, [product, isFilament]);
+
+  useEffect(() => {
+    if (!product) {
+      return;
+    }
+
+    setSelectedColor((currentColor) =>
+      getColorForWeight(product, selectedWeight, currentColor)
+    );
+  }, [product, selectedWeight]);
 
   useEffect(() => {
     if (!product || !selectedColor) {
