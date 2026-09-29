@@ -8,7 +8,7 @@ const {
   calculateOrderLineAmounts,
   calculateOrderTotal,
   hasValidOrderLineAmounts,
-  isShippingProductName,
+  hasValidShippingOrder,
 } = require("../src/utils/orderPricing.ts");
 const {
   calculateCheckoutLinePricing,
@@ -103,10 +103,43 @@ test("caso 2: agrega el envío exactamente una vez", () => {
     calculateOrderTotal([order.productos[0].subtotal], order.costoEnvio),
     40589
   );
-  assert.equal(
-    isShippingProductName("ENV-07K-GM-DELIVERY"),
-    true
-  );
+  assert.equal(hasValidShippingOrder({
+    shippingItemId: "ENVIO",
+    distanciaEnvio: 7,
+    productos: order.productos,
+    total: order.total,
+    visualTotal: order.total,
+  }), true);
+});
+
+test("acepta un item de envío configurable y lo contabiliza una sola vez", () => {
+  const order = buildOrderAmounts({
+    products: [{
+      nombre: "3N-EPET-1KG-VELI",
+      cantidad: 1,
+      precioBaseUnitario: 21999,
+      ajustePorcentaje: 15,
+    }],
+    shipping: { nombre: "ENV-ZE-ZECARGAS", costo: 9999 },
+  });
+
+  assert.equal(order.productos[0].subtotal, 18699);
+  assert.equal(order.productos[1].nombre, "ENV-ZE-ZECARGAS");
+  assert.equal(order.total, 28698);
+  assert.equal(hasValidShippingOrder({
+    shippingItemId: "ENV-ZE-ZECARGAS",
+    distanciaEnvio: 18,
+    productos: order.productos,
+    total: 28698,
+    visualTotal: 28698,
+  }), true);
+  assert.equal(hasValidShippingOrder({
+    shippingItemId: "ENV-ZE-ZECARGAS",
+    distanciaEnvio: 18,
+    productos: [...order.productos, order.productos[1]],
+    total: 28698,
+    visualTotal: 28698,
+  }), false);
 });
 
 test("bonifica el producto ENV sin eliminarlo del pedido", () => {

@@ -5,7 +5,6 @@ import { dashboardReadApiFetch } from "../services/api";
 import SurveyModal from "../components/SurveyModal";
 import { formatCurrency } from "../utils/money";
 import { useCart } from "../context/CartContext";
-import { isShippingProductName } from "../utils/orderPricing";
 import { clearStoredCoupon } from "../utils/couponPrefill";
 import { useSEO } from "../hooks/useSEO";
 
@@ -69,10 +68,6 @@ const PaymentCallback = () => {
   });
 
   const paymentMethod = pedidoData?.payment_method ?? pedidoData?.metodo_pago;
-  const hasShippingProduct =
-    pedidoData?.productos?.some((product) =>
-      isShippingProductName(product.nombre)
-    ) ?? false;
   const isTransferPending =
     paymentMethod === "transfer" && pedidoData?.estado === "PENDIENTE";
 
@@ -586,14 +581,6 @@ const PaymentCallback = () => {
               </div>
             ))}
 
-            {pedidoData?.costo_envio &&
-              parseFloat(pedidoData.costo_envio) > 0 &&
-              !hasShippingProduct && (
-              <div className="order-row" style={{ marginTop: 10 }}>
-                <span className="order-row-label">Envío</span>
-                <span className="order-row-value">{fmt(pedidoData.costo_envio)}</span>
-              </div>
-            )}
             {pedidoData?.codigo_cupon && (
               <div className="order-row">
                 <span className="order-row-label">Cupón {pedidoData.codigo_cupon}</span>

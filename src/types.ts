@@ -83,6 +83,15 @@ export interface ShippingCost {
   cost: number;
 }
 
+export interface ShippingQuote {
+  distanciaEnvio: number;
+  provinciaEnvio: string;
+  departamentoEnvio: string;
+  addressFingerprint: string;
+  itemId: string;
+  costoTotal: number;
+}
+
 export type CouponApplicableCategory =
   | "filamento"
   | "impresora"
