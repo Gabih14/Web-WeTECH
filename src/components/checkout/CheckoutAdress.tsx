@@ -496,7 +496,13 @@ export const CheckoutAdress = ({
     try {
       // Redondear la distancia al entero más cercano para el endpoint
       const roundedDistance = Math.round(distance);
-      const response = await apiFetch(`/stk-item/costo/${roundedDistance}`);
+      const query = new URLSearchParams({
+        provincia: "Mendoza",
+        departamento: formData.city.trim(),
+      });
+      const response = await apiFetch(
+        `/stk-item/costo/${roundedDistance}?${query.toString()}`
+      );
       console.log("Costo de envío recibido:", response);
       return { itemId: response.itemId, costoTotal: response.costoTotal };
     } catch (error) {
