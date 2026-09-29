@@ -1,5 +1,12 @@
 // src/services/api.ts
 import { Coupon } from "../types";
+import {
+  createClerkAuthorizationHeaders,
+  type SessionTokenGetter,
+} from "../utils/clerkRequest";
+
+export { MissingAuthenticationError } from "../utils/clerkRequest";
+export type { SessionTokenGetter } from "../utils/clerkRequest";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const BEARER_TOKEN = import.meta.env.VITE_API_BEARER_TOKEN; 
@@ -13,6 +20,36 @@ export class ApiError extends Error {
     this.name = "ApiError";
     this.status = status;
   }
+}
+
+export async function authenticatedApiFetch<T>(
+  endpoint: string,
+  getToken: SessionTokenGetter,
+  options: RequestInit = {}
+): Promise<T> {
+  const headers = await createClerkAuthorizationHeaders(
+    getToken,
+    options.headers
+  );
+
+  if (options.body && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new ApiError(response.status, response.statusText);
+  }
+
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  return response.json() as Promise<T>;
 }
 
 export type StockWaitRequestPayload = {

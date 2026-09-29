@@ -1,21 +1,24 @@
 import { useEffect, useRef, useState } from "react";
 import { ShoppingCart } from "lucide-react"; // UserCircle
+import {
+  Show,
+  SignInButton,
+  SignUpButton,
+  UserButton,
+} from "@clerk/react";
 import { FaWhatsapp } from "react-icons/fa"; // FaMapMarkerAlt
 import { useCart } from "../../context/CartContext";
-//import { useAuth } from "../context/AuthContext";
 import CartModal from "../cart/CartModal";
-import LoginModal from "../../components/LoginModal";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import Isologo from "../../assets/Isologo Fondo Negro SVG.svg";
+import { WholesaleStatusIndicator } from "./WholesaleStatusIndicator";
 
 export default function Navbar() {
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isBadgeBumping, setIsBadgeBumping] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   //const [selectedProvince, setSelectedProvince] = useState("Mendoza");
   const { items } = useCart();
-  //const { isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -122,6 +125,24 @@ export default function Navbar() {
             </form>
 
             <div className="flex items-center space-x-2 pl-2 sm:space-x-4">
+              {import.meta.env.DEV && (
+                <Show when="signed-out">
+                  <SignInButton mode="modal">
+                    <button className="rounded-md px-3 py-2 text-sm font-medium text-black transition-colors hover:bg-white">
+                      Iniciar sesión
+                    </button>
+                  </SignInButton>
+                  <SignUpButton mode="modal">
+                    <button className="hidden rounded-md bg-black px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 sm:block">
+                      Crear cuenta
+                    </button>
+                  </SignUpButton>
+                </Show>
+              )}
+              <Show when="signed-in">
+                <WholesaleStatusIndicator />
+                <UserButton />
+              </Show>
               {/* {isAuthenticated ? (
                 <button
                   onClick={logout}
@@ -200,7 +221,6 @@ export default function Navbar() {
       </header>
 
       <CartModal isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
-      <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
 
       {/* WhatsApp Floating Button - Solo mostrar si NO estamos en franquicias */}
       {!isInFranquiciasPage && (
