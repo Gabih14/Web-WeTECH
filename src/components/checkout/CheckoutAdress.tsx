@@ -2,6 +2,8 @@ import { MapPin, Store, Truck, AlertCircle, X, CheckCircle, Pencil } from "lucid
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ShippingInfoModal } from "./ShippingInfoModal";
 import { apiFetch } from "../../services/api";
+import type { ShippingQuote } from "../../types";
+import { buildShippingAddressFingerprint } from "../../utils/shippingQuote";
 
 type Props = {
   formData: {
@@ -13,7 +15,7 @@ type Props = {
     addressWithoutNumber: boolean;
   };
   handleInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  setShippingData: (data: { itemId: string; costoTotal: number } | null) => void;
+  setShippingData: (data: ShippingQuote | null) => void;
   deliveryMethod: "pickup" | "shipping";
   setDeliveryMethod: (method: "pickup" | "shipping") => void;
   confirmedAddress: string | null;
@@ -492,7 +494,7 @@ export const CheckoutAdress = ({
     formData.postalCode
   );
   // Función para calcular el costo de envío
-  const calculateShippingCost = async (distance: number): Promise<{ itemId: string; costoTotal: number } | null> => {
+  const calculateShippingCost = async (distance: number): Promise<ShippingQuote | null> => {
     try {
       // Redondear la distancia al entero más cercano para el endpoint
       const roundedDistance = Math.round(distance);
@@ -504,7 +506,23 @@ export const CheckoutAdress = ({
         `/stk-item/costo/${roundedDistance}?${query.toString()}`
       );
       console.log("Costo de envío recibido:", response);
-      return { itemId: response.itemId, costoTotal: response.costoTotal };
+      const itemId = typeof response?.itemId === "string"
+        ? response.itemId.trim()
+        : "";
+      const costoTotal = Number(response?.costoTotal);
+
+      if (!itemId || !Number.isFinite(costoTotal) || costoTotal < 0) {
+        throw new Error("La API devolvió una cotización de envío inválida.");
+      }
+
+      return {
+        distanciaEnvio: roundedDistance,
+        provinciaEnvio: "Mendoza",
+        departamentoEnvio: formData.city.trim(),
+        addressFingerprint: buildShippingAddressFingerprint(formData),
+        itemId,
+        costoTotal,
+      };
     } catch (error) {
       console.error("Error al obtener costo de envío:", error);
       return null;

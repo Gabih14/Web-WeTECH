@@ -29,9 +29,6 @@ export type OrderProductPricingInput = {
   couponApplied?: boolean;
 };
 
-export const isShippingProductName = (name: string): boolean =>
-  /^ENV-\d+K-GM-DELIVERY$/i.test(name);
-
 type CalculatedOrderProduct = {
   line: OrderLineAmounts;
   netSubtotal: number;
@@ -188,6 +185,35 @@ export const hasValidOrderLineAmounts = (
       Number.isInteger(line.subtotal)
     );
   });
+
+export const hasValidShippingOrder = ({
+  shippingItemId,
+  distanciaEnvio,
+  productos,
+  total,
+  visualTotal,
+}: {
+  shippingItemId: string;
+  distanciaEnvio: number;
+  productos: NamedOrderLine[];
+  total: number;
+  visualTotal: number;
+}): boolean => {
+  const shippingLines = productos.filter(
+    (line) => line.nombre === shippingItemId
+  );
+  const linesTotal = productos.reduce((sum, line) => sum + line.subtotal, 0);
+
+  return (
+    shippingItemId.trim().length > 0 &&
+    Number.isFinite(distanciaEnvio) &&
+    distanciaEnvio >= 0 &&
+    shippingLines.length === 1 &&
+    shippingLines[0].cantidad === 1 &&
+    total === visualTotal &&
+    total === linesTotal
+  );
+};
 
 export const buildOrderAmounts = ({
   products,

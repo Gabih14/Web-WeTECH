@@ -2,7 +2,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, Tag, AlertCircle, X, ChevronRight, ChevronLeft, Lock, CheckCircle } from "lucide-react";
 import { useCart } from "../../context/CartContext";
-import { Product, Coupon } from "../../types";
+import { Product, Coupon, type ShippingQuote } from "../../types";
 import { CheckoutPersonal } from "./CheckoutPersonal";
 import { CheckoutAdress } from "./CheckoutAdress";
 import { StepIndicator } from "./StepIndicator";
@@ -24,6 +24,7 @@ import { calculateCheckoutLinePricing } from "../../utils/checkoutPricing";
 import {
   buildOrderAmounts,
   hasValidOrderLineAmounts,
+  hasValidShippingOrder,
 } from "../../utils/orderPricing";
 import {
   getCouponPercentageForPaymentMethod,
@@ -52,6 +53,10 @@ import {
   stripArgentinaMobilePrefix,
 } from "../../utils/validation";
 import { buildOrderAddressPayload } from "../../utils/orderAddress";
+import {
+  buildShippingOrderPayloadFields,
+  isShippingQuoteCurrent,
+} from "../../utils/shippingQuote";
 import {
   clearStoredCoupon,
   getCouponCodeFromSearch,
@@ -109,7 +114,7 @@ export default function Checkout() {
   const { items, total, clearCart, syncCartWithProducts } = useCart();
   const eligibleQuantityDiscountCartQuantity =
     getEligibleQuantityDiscountCartQuantity(items);
-  const [shippingData, setShippingData] = useState<{ itemId: string; costoTotal: number } | null>(null);
+  const [shippingData, setShippingData] = useState<ShippingQuote | null>(null);
   const [deliveryMethod, setDeliveryMethod] = useState<"pickup" | "shipping">(
     "pickup"
   );
@@ -633,11 +638,36 @@ export default function Checkout() {
       return;
     }
 
+    if (
+      deliveryMethod === "shipping" &&
+      (!isShippingQuoteCurrent(shippingData, formData) ||
+        !hasValidShippingOrder({
+          shippingItemId: shippingData?.itemId ?? "",
+          distanciaEnvio: shippingData?.distanciaEnvio ?? Number.NaN,
+          productos,
+          total: orderTotal,
+          visualTotal: finalTotal,
+        }))
+    ) {
+      setError({
+        code: "COTIZACION_ENVIO_INVALIDA",
+        message:
+          "La cotización del envío cambió o no es válida. Volvé a calcularla antes de confirmar el pedido.",
+        retryable: true,
+      });
+      setShowErrorModal(true);
+      return;
+    }
+
     const body = {
       cliente_nombre: clienteNombre,
       cliente_cuit: cleanCuit,
       total: orderTotal,
-      costo_envio: costoEnvio,
+      ...buildShippingOrderPayloadFields(
+        deliveryMethod,
+        shippingData,
+        costoEnvio
+      ),
       descuento_cupon: orderAmounts.descuentoCupon,
       codigo_cupon: shouldSendCouponInOrder ? appliedCoupon?.code || "" : "",
       metodo_pago: paymentMethod,
@@ -1044,7 +1074,7 @@ export default function Checkout() {
         }
         // Si es shipping, debe tener dirección confirmada y costo calculado
         return !!(
-          shippingData &&
+          isShippingQuoteCurrent(shippingData, formData) &&
           confirmedAddress
         );
       case 4: // Resumen
@@ -1517,7 +1547,8 @@ export default function Checkout() {
                 !formData.city ||
                 !formData.postalCode
                   ? "Debes completar la dirección o marcar sin número antes de continuar."
-                  : deliveryMethod === "shipping" && !shippingData
+                  : deliveryMethod === "shipping" &&
+                      !isShippingQuoteCurrent(shippingData, formData)
                     ? "Debes calcular el costo de envío antes de continuar."
                     : deliveryMethod === "shipping" && !confirmedAddress
                       ? "Debes confirmar tu dirección antes de continuar."
