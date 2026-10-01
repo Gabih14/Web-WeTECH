@@ -18,8 +18,8 @@ export interface EcommerceUser {
 
 export const WHOLESALE_STATUS_LABELS: Record<WholesaleStatus, string> = {
   NO_SOLICITADO: "Acceso mayorista no solicitado",
-  PENDIENTE: "Solicitud mayorista pendiente",
-  APROBADO: "Mayorista aprobado",
+  PENDIENTE: "Solicitud mayorista pendiente de revisión",
+  APROBADO: "Acceso mayorista aprobado",
   RECHAZADO: "Solicitud mayorista rechazada",
   SUSPENDIDO: "Acceso mayorista suspendido",
 };

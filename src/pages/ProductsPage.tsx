@@ -1211,6 +1211,11 @@ export function ProductsPage() {
             selectedLevel={selectedDifficulty}
             onLevelChange={setSelectedDifficulty}
           />
+          <MaterialFilter
+            materials={availableMaterials}
+            selectedMaterial={selectedMaterial}
+            onMaterialChange={setSelectedMaterial}
+          />
           <ColorFilter
             colorGroups={availableColorGroups}
             selectedColorGroupId={selectedColorGroupId}
@@ -1225,11 +1230,6 @@ export function ProductsPage() {
             lines={availableLines}
             selectedLine={selectedLine}
             onLineChange={setSelectedLine}
-          />
-          <MaterialFilter
-            materials={availableMaterials}
-            selectedMaterial={selectedMaterial}
-            onMaterialChange={setSelectedMaterial}
           />
           <MoreFilters
             weights={availableWeights}
@@ -1338,6 +1338,11 @@ export function ProductsPage() {
             selectedLevel={selectedDifficulty}
             onLevelChange={setSelectedDifficulty}
           />
+          <MaterialFilter
+            materials={availableMaterials}
+            selectedMaterial={selectedMaterial}
+            onMaterialChange={setSelectedMaterial}
+          />
           <ColorFilter
             colorGroups={availableColorGroups}
             selectedColorGroupId={selectedColorGroupId}
@@ -1352,11 +1357,6 @@ export function ProductsPage() {
             lines={availableLines}
             selectedLine={selectedLine}
             onLineChange={setSelectedLine}
-          />
-          <MaterialFilter
-            materials={availableMaterials}
-            selectedMaterial={selectedMaterial}
-            onMaterialChange={setSelectedMaterial}
           />
           <MoreFilters
             weights={availableWeights}

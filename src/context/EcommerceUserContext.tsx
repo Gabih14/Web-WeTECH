@@ -23,6 +23,7 @@ interface EcommerceUserContextValue {
   isLoading: boolean;
   error: Error | null;
   refresh: () => void;
+  setWholesaleStatus: (status: WholesaleStatus) => void;
 }
 
 const EcommerceUserContext = createContext<EcommerceUserContextValue | null>(
@@ -38,6 +39,14 @@ export function EcommerceUserProvider({ children }: { children: ReactNode }) {
 
   const refresh = useCallback(() => {
     setRefreshVersion((version) => version + 1);
+  }, []);
+
+  const setWholesaleStatus = useCallback((status: WholesaleStatus) => {
+    setUser((current) =>
+      current
+        ? { ...current, customer: { ...current.customer, wholesaleStatus: status } }
+        : current
+    );
   }, []);
 
   useEffect(() => {
@@ -91,8 +100,9 @@ export function EcommerceUserProvider({ children }: { children: ReactNode }) {
       isLoading,
       error,
       refresh,
+      setWholesaleStatus,
     }),
-    [error, isLoading, refresh, user, wholesaleStatus]
+    [error, isLoading, refresh, setWholesaleStatus, user, wholesaleStatus]
   );
 
   return (

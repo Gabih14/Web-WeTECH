@@ -12,6 +12,7 @@ const {
 const {
   hasWholesaleAccess,
 } = require("../src/types/ecommerceUser.ts");
+const { validateWholesaleRequest } = require("../src/utils/wholesaleRequest.ts");
 
 test("Clerk loading waits and signed out clears ecommerce state", () => {
   assert.equal(getEcommerceAuthAction(false, undefined), "WAIT");
@@ -49,4 +50,35 @@ test("missing Clerk authentication fails intentionally", async () => {
     createClerkAuthorizationHeaders(async () => null),
     MissingAuthenticationError
   );
+});
+
+test("wholesale request trims and validates the submitted fields", () => {
+  const result = validateWholesaleRequest({
+    cuit: " 20123456789 ",
+    razonSocial: " Empresa SA ",
+    telefono: " 2615551234 ",
+  });
+
+  assert.deepEqual(result, {
+    values: { cuit: "20123456789", razonSocial: "Empresa SA", telefono: "2615551234" },
+    errors: {},
+  });
+});
+
+test("wholesale navbar shows the request button and submits into pending state", () => {
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const indicator = fs.readFileSync(
+    require("node:path").join(__dirname, "../src/components/layout/WholesaleStatusIndicator.tsx"),
+    "utf8"
+  );
+  const modal = fs.readFileSync(
+    path.join(__dirname, "../src/components/layout/WholesaleRequestModal.tsx"),
+    "utf8"
+  );
+
+  assert.match(indicator, /NO_SOLICITADO[\s\S]*Solicitar acceso mayorista/);
+  assert.match(modal, /"\/mayorista\/solicitud"[\s\S]*method: "POST"[\s\S]*JSON\.stringify\(validated\.values\)/);
+  assert.match(modal, /setWholesaleStatus\("PENDIENTE"\)/);
+  assert.equal(require("../src/types/ecommerceUser.ts").WHOLESALE_STATUS_LABELS.PENDIENTE, "Solicitud mayorista pendiente de revisión");
 });

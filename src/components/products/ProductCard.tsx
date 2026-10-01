@@ -298,19 +298,35 @@ export function ProductCard({
         {/* Weight selector */}
         {product.weights && (
           <div className="flex flex-wrap gap-1.5">
-            {product.weights.map((w) => (
-              <button
-                key={w.weight}
-                onClick={() => setSelectedWeight(w.weight)}
-                className={`px-2.5 py-1 text-xs rounded-lg border font-medium transition-all duration-150 ${
-                  selectedWeight === w.weight
-                    ? "bg-gray-900 text-white border-gray-900"
-                    : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
-                }`}
-              >
-                {w.weight}kg
-              </button>
-            ))}
+            {product.weights.map((w) => {
+              const hasStockForSelectedColor =
+                availableStock === 0 &&
+                !!selectedColor &&
+                getVariantStock(product, selectedColor, w.weight) > 0;
+
+              return (
+                <button
+                  key={w.weight}
+                  onClick={() => setSelectedWeight(w.weight)}
+                  className={`relative px-2.5 py-1 text-xs rounded-lg border font-medium transition-all duration-150 ${
+                    selectedWeight === w.weight
+                      ? "bg-gray-900 text-white border-gray-900"
+                      : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
+                  }`}
+                >
+                  {hasStockForSelectedColor && (
+                    <span
+                      className="absolute -right-1.5 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-amber-400 text-[10px] font-black text-black"
+                      title="Hay stock de este color en este peso"
+                      aria-label="Hay stock de este color en este peso"
+                    >
+                      !
+                    </span>
+                  )}
+                  {w.weight}kg
+                </button>
+              );
+            })}
           </div>
         )}
 
