@@ -569,18 +569,34 @@ export function ProductPage() {
                     Peso
                   </h3>
                   <div className="grid grid-cols-4 gap-2">
-                    {product.weights.map((weight) => (
-                      <button
-                        key={weight.weight}
-                        onClick={() => setSelectedWeight(weight.weight)}
-                        className={`rounded-xl border px-3 py-2 text-sm font-semibold transition-all ${selectedWeight === weight.weight
-                          ? "border-gray-900 bg-gray-900 text-white"
-                          : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"
-                          }`}
-                      >
-                        {weight.weight}kg
-                      </button>
-                    ))}
+                    {product.weights.map((weight) => {
+                      const hasStockForSelectedColor =
+                        availableStock === 0 &&
+                        !!selectedColor &&
+                        getVariantStock(product, selectedColor, weight.weight) > 0;
+
+                      return (
+                        <button
+                          key={weight.weight}
+                          onClick={() => setSelectedWeight(weight.weight)}
+                          className={`relative rounded-xl border px-3 py-2 text-sm font-semibold transition-all ${selectedWeight === weight.weight
+                            ? "border-gray-900 bg-gray-900 text-white"
+                            : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"
+                            }`}
+                        >
+                          {hasStockForSelectedColor && (
+                            <span
+                              className="absolute -right-1.5 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-xs font-black text-black"
+                              title="Hay stock de este color en este peso"
+                              aria-label="Hay stock de este color en este peso"
+                            >
+                              !
+                            </span>
+                          )}
+                          {weight.weight}kg
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
