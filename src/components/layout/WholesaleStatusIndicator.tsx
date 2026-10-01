@@ -1,7 +1,10 @@
+import { useState } from "react";
 import { useEcommerceUser } from "../../context/EcommerceUserContext";
 import { WHOLESALE_STATUS_LABELS } from "../../types/ecommerceUser";
+import { WholesaleRequestModal } from "./WholesaleRequestModal";
 
 export function WholesaleStatusIndicator() {
+  const [isOpen, setIsOpen] = useState(false);
   const { wholesaleStatus, isWholesale, isLoading, error, refresh } =
     useEcommerceUser();
 
@@ -27,6 +30,17 @@ export function WholesaleStatusIndicator() {
   }
 
   if (!wholesaleStatus) return null;
+
+  if (wholesaleStatus === "NO_SOLICITADO" || wholesaleStatus === "RECHAZADO") {
+    return (
+      <>
+        <button type="button" onClick={() => setIsOpen(true)} className="rounded-lg bg-black px-3 py-2 text-xs font-semibold text-white hover:bg-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-2">
+          {wholesaleStatus === "RECHAZADO" ? "Volver a solicitar acceso mayorista" : "Solicitar acceso mayorista"}
+        </button>
+        <WholesaleRequestModal isOpen={isOpen} onClose={() => setIsOpen(false)} />
+      </>
+    );
+  }
 
   return (
     <span
