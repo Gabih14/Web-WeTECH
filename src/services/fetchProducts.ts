@@ -1,7 +1,8 @@
-import { apiFetch, dashboardReadApiFetch } from "../services/api";
+import { ApiError, apiFetch, authenticatedApiFetch, dashboardReadApiFetch, type SessionTokenGetter } from "../services/api";
 import { Colors, Product } from "../types";
 import { shouldExcludeFamily } from "../data/excludedFamilies";
 import sparePartsFallbackImage from "../assets/pngtree-no-image-vector-illustration-isolated-png-image_1694547.jpg";
+import { shouldFallbackFromWholesaleStatus } from "../utils/wholesalePricing";
 
 const MINIMUM_PRODUCT_PRICE = 100;
 const MINIMUM_FILAMENT_PRICE = 10000;
@@ -24,6 +25,7 @@ interface CatalogoVariante {
   observaciones: string | null;
   fotoUrl: string | null;
   precioVtaCotizadoMin: string | null;
+  wholesalePrice?: string | null;
   invoicePrice: string | null;
   promotionalPrice: string | null;
   stock: number;
@@ -43,6 +45,7 @@ interface CatalogoProducto {
   grupo: string | null;
   subgrupo: string | null;
   precioDesde: string | null;
+  wholesalePriceFrom?: string | null;
   atributos: CatalogoAtributo[];
   dimensiones: { clase: string; valores: { valor: string; color: string | null }[] }[];
   variantes: CatalogoVariante[];
@@ -170,17 +173,45 @@ const fetchColors = async (): Promise<Colors[]> => {
     : [];
 };
 
-export const fetchProducts = async (): Promise<Product[]> => {
+interface FetchProductsOptions {
+  isWholesale?: boolean;
+  getToken?: SessionTokenGetter;
+  onWholesaleDenied?: () => void;
+}
+
+export const fetchProducts = async ({
+  isWholesale = false,
+  getToken,
+  onWholesaleDenied,
+}: FetchProductsOptions = {}): Promise<Product[]> => {
   try {
     // El backend ya arma los productos (agrupa variantes por atributos). Solo
     // aplicamos los filtros de publicación y mapeamos a la forma `Product`.
-    const [catalogo, colors] = await Promise.all([
-      apiFetch("/stk-item/catalogo"),
+    let wholesaleCatalog = isWholesale && !!getToken;
+    const catalogRequest = wholesaleCatalog
+      ? authenticatedApiFetch<{ minimumPurchase: number; products: CatalogoProducto[] }>(
+          "/stk-item/catalogo/mayorista",
+          getToken,
+        ).catch((error) => {
+          if (error instanceof ApiError && shouldFallbackFromWholesaleStatus(error.status)) {
+            wholesaleCatalog = false;
+            onWholesaleDenied?.();
+            return apiFetch("/stk-item/catalogo");
+          }
+          throw error;
+        })
+      : apiFetch("/stk-item/catalogo");
+    const [catalogResponse, colors] = await Promise.all([
+      catalogRequest,
       fetchColors(),
     ]);
-    const catalogProducts = Array.isArray(catalogo)
-      ? (catalogo as CatalogoProducto[])
-      : [];
+    const minimumPurchase = wholesaleCatalog && !Array.isArray(catalogResponse)
+      ? Number(catalogResponse.minimumPurchase) || 0
+      : 0;
+    const catalogo = wholesaleCatalog && !Array.isArray(catalogResponse)
+      ? catalogResponse.products
+      : catalogResponse;
+    const catalogProducts = Array.isArray(catalogo) ? catalogo as CatalogoProducto[] : [];
 
     if (import.meta.env.DEV) {
       console.log("Catálogo recibido:", catalogo);
@@ -259,7 +290,8 @@ export const fetchProducts = async (): Promise<Product[]> => {
 
       const id = buildProductId(prod);
       const first = variantesPublicables[0];
-      const firstPrice = toNumber(first.precioVtaCotizadoMin) ?? 0;
+      const firstRetailPrice = toNumber(first.precioVtaCotizadoMin) ?? 0;
+      const firstPrice = firstRetailPrice;
       const observaciones = variantesPublicables
         .map((v) => v.observaciones)
         .find((o): o is string => typeof o === "string" && o.trim().length > 0);
@@ -286,6 +318,10 @@ export const fetchProducts = async (): Promise<Product[]> => {
         subcategory: prod.subgrupo ? String(prod.subgrupo).toUpperCase() : undefined,
         difficultyLevel: difficultyLevelOf(prod.atributos, first.atributos),
         price: firstPrice,
+        retailPrice: firstRetailPrice,
+        wholesalePriceFrom: wholesaleCatalog ? toNumber(prod.wholesalePriceFrom) : undefined,
+        wholesaleMinimumPurchase: wholesaleCatalog ? minimumPurchase : undefined,
+        isWholesaleCatalog: wholesaleCatalog,
         invoicePrice: toNumber(first.invoicePrice) ?? firstPrice,
         promotionalPrice: toNumber(first.promotionalPrice),
         itemId: first.id,
@@ -299,6 +335,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
           const weight = v.pesoKg as number;
           const weightKey = weight.toString();
           const price = toNumber(v.precioVtaCotizadoMin) ?? 0;
+          const wholesalePrice = wholesaleCatalog ? toNumber(v.wholesalePrice) : undefined;
           const invoicePrice = toNumber(v.invoicePrice) ?? price;
           const promotionalPrice =
             toNumber(v.promotionalPrice) ?? price * (1 - BASE_FILAMENT_DISCOUNT);
@@ -309,13 +346,15 @@ export const fetchProducts = async (): Promise<Product[]> => {
           const img = imageFor(v.fotoUrl, isAccessory);
 
           if (!weights.some((w) => w.weight === weight)) {
-            weights.push({ weight, price, invoicePrice, promotionalPrice });
+            weights.push({ weight, price, retailPrice: price, wholesalePrice, invoicePrice, promotionalPrice });
           }
 
           const existing = colorMap.get(colorName);
           if (existing) {
             existing.stock[weightKey] = (existing.stock[weightKey] || 0) + stock;
             existing.prices = { ...(existing.prices || {}), [weightKey]: price };
+            existing.retailPrices = { ...(existing.retailPrices || {}), [weightKey]: price };
+            existing.wholesalePrices = { ...(existing.wholesalePrices || {}), [weightKey]: wholesalePrice };
             existing.invoicePrices = {
               ...(existing.invoicePrices || {}),
               [weightKey]: invoicePrice,
@@ -343,6 +382,8 @@ export const fetchProducts = async (): Promise<Product[]> => {
               colorGroup: colorData?.colorGroup,
               stock: { [weightKey]: stock },
               prices: { [weightKey]: price },
+              retailPrices: { [weightKey]: price },
+              wholesalePrices: wholesalePrice ? { [weightKey]: wholesalePrice } : {},
               invoicePrices: { [weightKey]: invoicePrice },
               promotionalPrices: { [weightKey]: promotionalPrice },
               itemIds: { [weightKey]: v.id },

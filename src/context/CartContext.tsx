@@ -18,6 +18,10 @@ import {
 } from "../utils/cartPurchase";
 import { syncCartItemsWithCatalog } from "../utils/cartCatalogSync";
 import { getCartItemPrice } from "../utils/pricing";
+import { useEcommerceUser } from "./EcommerceUserContext";
+import { stripWholesaleProduct } from "../utils/wholesalePricing";
+import { useAuth } from "@clerk/react";
+import { fetchProducts } from "../services/fetchProducts";
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 const CART_STORAGE_KEY = "cartItems";
@@ -64,7 +68,27 @@ const removeStoredCartItems = () => {
 };
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
+  const { getToken } = useAuth();
+  const { isWholesale, isLoading: isUserLoading, denyWholesaleAccess } = useEcommerceUser();
   const [items, setItems] = useState<CartItem[]>(getStoredCartItems);
+
+  useEffect(() => {
+    if (!isUserLoading && !isWholesale) {
+      setItems((current) => current.map((item) => ({ ...item, product: stripWholesaleProduct(item.product) })));
+    }
+  }, [isUserLoading, isWholesale]);
+
+  useEffect(() => {
+    if (!isWholesale) return;
+    let active = true;
+    fetchProducts({ isWholesale: true, getToken, onWholesaleDenied: denyWholesaleAccess })
+      .then((products) => {
+        if (!active) return;
+        setItems((current) => syncCartItemsWithCatalog(current, products).items);
+      })
+      .catch((error) => console.error("No se pudo actualizar el carrito mayorista:", error));
+    return () => { active = false; };
+  }, [denyWholesaleAccess, getToken, isWholesale]);
 
   useEffect(() => {
     persistCartItems(items);

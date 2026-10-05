@@ -7,6 +7,8 @@ import { fetchProducts } from "../services/fetchProducts";
 import { categories } from "../data/categories";
 import type { Product } from "../types";
 import { useSEO } from "../hooks/useSEO";
+import { useAuth } from "@clerk/react";
+import { useEcommerceUser } from "../context/EcommerceUserContext";
 
 const normalizeSearchText = (value: string) =>
   value
@@ -16,6 +18,8 @@ const normalizeSearchText = (value: string) =>
     .trim();
 
 export default function SearchResultsPage() {
+  const { getToken } = useAuth();
+  const { isWholesale, denyWholesaleAccess } = useEcommerceUser();
   const location = useLocation();
   const query = new URLSearchParams(location.search).get("query") || "";
   const [products, setProducts] = useState<Product[]>([]);
@@ -40,7 +44,8 @@ export default function SearchResultsPage() {
     try {
       setLoading(true);
       setError(null);
-      const data = await fetchProducts();
+      setProducts([]);
+      const data = await fetchProducts({ isWholesale, getToken, onWholesaleDenied: denyWholesaleAccess });
       setProducts(data);
     } catch (err: any) {
       setError(
@@ -53,8 +58,7 @@ export default function SearchResultsPage() {
 
   useEffect(() => {
     loadProducts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [denyWholesaleAccess, getToken, isWholesale]);
 
   const normalizedQuery = normalizeSearchText(query);
 

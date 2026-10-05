@@ -12,6 +12,7 @@ import {
 import { getVariantImage, getVariantPrice } from "../../utils/pricing";
 import { formatPrice, roundPrice } from "../../utils/money";
 import { calculateCheckoutLinePricing } from "../../utils/checkoutPricing";
+import { getWholesaleCartState } from "../../utils/wholesalePricing";
 
 interface CartModalProps {
   isOpen: boolean;
@@ -109,6 +110,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
 
   const originalTotal = calculateOriginalTotal();
   const discount = originalTotal - total;
+  const wholesale = getWholesaleCartState(items);
 
   const handleOutsideClick = () => {
     onClose();
@@ -313,9 +315,17 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                     {formatPrice(total)}
                   </span>
                 </div>
+                {wholesale.isWholesale && (
+                  <div className="mb-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900" role="status">
+                    <div className="flex justify-between"><span>Compra mínima mayorista</span><strong>${formatPrice(wholesale.minimumPurchase)}</strong></div>
+                    <div className="flex justify-between"><span>Subtotal mayorista</span><strong>${formatPrice(wholesale.subtotal)}</strong></div>
+                    {wholesale.missing > 0 && <p className="mt-2">Te faltan ${formatPrice(wholesale.missing)} para alcanzar el mínimo mayorista.</p>}
+                  </div>
+                )}
                 <button
-                  className="w-full py-2 px-4 rounded-lg bg-yellow-400 hover:bg-yellow-700 transition-colors"
+                  className="w-full py-2 px-4 rounded-lg bg-yellow-400 hover:bg-yellow-700 transition-colors disabled:cursor-not-allowed disabled:bg-gray-300"
                   onClick={handleCheckout}
+                  disabled={!wholesale.canCheckout}
                 >
                   Finalizar Compra
                 </button>

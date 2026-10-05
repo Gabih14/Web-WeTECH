@@ -29,6 +29,7 @@ import {
   getVariantImage,
   getVariantItemId,
   getVariantPrice,
+  getVariantRetailPrice,
 } from "../utils/pricing";
 import { formatPrice } from "../utils/money";
 import { ColorSwatch } from "../components/products/ColorSwatch";
@@ -36,6 +37,8 @@ import { ProductDescription } from "../components/products/ProductDescription";
 import { StockWaitRequestModal } from "../components/products/StockWaitRequestModal";
 import { useSEO } from "../hooks/useSEO";
 import { buildProductSchema, DEFAULT_SITE_URL } from "../seo/productSchema.mjs";
+import { useAuth } from "@clerk/react";
+import { useEcommerceUser } from "../context/EcommerceUserContext";
 
 const QUANTITY_OPTIONS = [1, 5, 10, 50];
 
@@ -70,6 +73,8 @@ const looksLikeSeoSlug = (value: string) =>
   /^[a-z0-9]+(?:[-_][a-z0-9]+)*$/.test(value) && /[a-z]/.test(value);
 
 export function ProductPage() {
+  const { getToken } = useAuth();
+  const { isWholesale, denyWholesaleAccess } = useEcommerceUser();
   const params = useParams();
   const id = params["*"] ? safeDecodeURIComponent(params["*"]) : undefined;
   const location = useLocation();
@@ -99,7 +104,9 @@ export function ProductPage() {
   useEffect(() => {
     let ignore = false;
 
-    fetchProducts()
+    setProducts([]);
+    setLoading(true);
+    fetchProducts({ isWholesale, getToken, onWholesaleDenied: denyWholesaleAccess })
       .then((data) => {
         if (ignore) {
           return;
@@ -121,7 +128,7 @@ export function ProductPage() {
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [denyWholesaleAccess, getToken, isWholesale]);
 
   useEffect(() => {
     if (!id || !looksLikeSeoSlug(id)) {
@@ -184,6 +191,7 @@ export function ProductPage() {
     product
       ? getVariantPrice(product, seoSelectedColor, seoSelectedWeight)
       : undefined;
+  const retailPrice = product ? getVariantRetailPrice(product, selectedColor, selectedWeight) : undefined;
   const seoStock = product
     ? getVariantStock(product, seoSelectedColor, seoSelectedWeight)
     : 0;
@@ -560,6 +568,9 @@ export function ProductPage() {
                   </span>
                 )}
               </div>
+              {product.isWholesaleCatalog && retailPrice !== undefined && currentPrice !== retailPrice && (
+                <p className="text-sm text-gray-500">Precio minorista: <span className="line-through">${formatPrice(retailPrice)}</span></p>
+              )}
 
               <ProductDescription product={product} />
 

@@ -17,10 +17,16 @@ export interface Product {
   weights?: {
     weight: number;
     price: number;
+    retailPrice?: number;
+    wholesalePrice?: number;
     invoicePrice?: number;
     promotionalPrice?: number;
   }[];
   price?: number;
+  retailPrice?: number;
+  wholesalePriceFrom?: number;
+  wholesaleMinimumPurchase?: number;
+  isWholesaleCatalog?: boolean;
   invoicePrice?: number;
   discountQuantity?: { [quantity: number]: number };
   promotionalPrice?: number;
@@ -31,6 +37,8 @@ export interface Product {
     colorGroup?: ColorGroup;
     stock: { [weight: string]: number };
     prices?: { [weight: string]: number };
+    retailPrices?: { [weight: string]: number };
+    wholesalePrices?: { [weight: string]: number };
     invoicePrices?: { [weight: string]: number };
     promotionalPrices?: { [weight: string]: number };
     itemIds?: { [weight: string]: string };

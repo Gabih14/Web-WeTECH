@@ -19,7 +19,10 @@ export function getVariantPrice(
   weight: number | null | undefined
 ): number | undefined {
   const key = weightKey(weight);
-  const colorPrice = getColorVariant(product, color)?.prices?.[key];
+  const colorVariant = getColorVariant(product, color);
+  const colorPrice = product.isWholesaleCatalog
+    ? colorVariant?.wholesalePrices?.[key] ?? colorVariant?.prices?.[key]
+    : colorVariant?.prices?.[key];
 
   if (colorPrice !== undefined) {
     return colorPrice;
@@ -30,7 +33,21 @@ export function getVariantPrice(
       ? product.weights?.find((variantWeight) => variantWeight.weight === weight)
       : undefined;
 
-  return weightData?.price ?? product.price;
+  return product.isWholesaleCatalog
+    ? weightData?.wholesalePrice ?? weightData?.price ?? product.wholesalePriceFrom ?? product.price
+    : weightData?.price ?? product.price;
+}
+
+export function getVariantRetailPrice(
+  product: Product,
+  color: string | null | undefined,
+  weight: number | null | undefined
+): number | undefined {
+  const key = weightKey(weight);
+  const colorVariant = getColorVariant(product, color);
+  const weightData = product.weights?.find((variantWeight) => variantWeight.weight === weight);
+  return colorVariant?.retailPrices?.[key] ?? colorVariant?.prices?.[key]
+    ?? weightData?.retailPrice ?? weightData?.price ?? product.retailPrice ?? product.price;
 }
 
 export function getVariantInvoicePrice(

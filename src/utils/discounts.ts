@@ -96,8 +96,8 @@ const getTieredDiscount = (discounts: Record<number, number>, quantity: number):
 };
 
 // API basada en producto/categoría
-export const shouldApplyDiscount = (product: { category: string }): boolean => {
-  return Boolean(DISCOUNT_RULES[product.category]);
+export const shouldApplyDiscount = (product: { category: string; isWholesaleCatalog?: boolean }): boolean => {
+  return !product.isWholesaleCatalog && Boolean(DISCOUNT_RULES[product.category]);
 };
 
 // Verificar si un producto es elegible para descuentos por cantidad
