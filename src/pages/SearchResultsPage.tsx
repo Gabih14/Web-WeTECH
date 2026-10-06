@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
-import { Filter, X } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
+import { ArrowLeft, Filter, X } from "lucide-react";
 import { ProductCard } from "../components/products/ProductCard";
 import { CategoryFilter } from "../components/products/CategoryFilter";
 import { fetchProducts } from "../services/fetchProducts";
@@ -89,9 +89,18 @@ export default function SearchResultsPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-3xl font-bold mb-6">
-        Resultados de búsqueda para "{query}"
-      </h1>
+      <div className="mb-6 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-3xl font-bold">
+          Resultados de búsqueda para "{query}"
+        </h1>
+        <Link
+          to="/products"
+          className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 font-medium text-gray-800 transition-colors hover:border-yellow-500 hover:bg-yellow-50 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2"
+        >
+          <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+          Volver al catálogo
+        </Link>
+      </div>
 
       <div className="flex gap-8 min-h-screen">
         {/* Desktop Sidebar */}
