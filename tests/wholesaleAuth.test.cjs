@@ -54,15 +54,57 @@ test("missing Clerk authentication fails intentionally", async () => {
 
 test("wholesale request trims and validates the submitted fields", () => {
   const result = validateWholesaleRequest({
-    cuit: " 20123456789 ",
-    razonSocial: " Empresa SA ",
+    nombreComercio: " Impresiones Cuyo ",
+    personaResponsable: " Ana Pérez ",
+    ubicacionZona: " Godoy Cruz, Mendoza ",
     telefono: " 2615551234 ",
+    figuraFiscalComercial: "EMPRENDEDOR_MONOTRIBUTISTA",
+    perfilCompraInicial: "GRAN_CONSUMIDOR_FINAL_96_239_KG",
+    sedeComercial: "TALLER_OFICINA",
+    ofertasPublico: ["SERVICIO_IMPRESION_3D", "VENTA_ACTUAL_FILAMENTOS", "SERVICIO_IMPRESION_3D"],
+    marcasFilamento: " WeTech, Grilon3 ",
   });
 
   assert.deepEqual(result, {
-    values: { cuit: "20123456789", razonSocial: "Empresa SA", telefono: "2615551234" },
+    values: {
+      nombreComercio: "Impresiones Cuyo",
+      personaResponsable: "Ana Pérez",
+      ubicacionZona: "Godoy Cruz, Mendoza",
+      telefono: "2615551234",
+      figuraFiscalComercial: "EMPRENDEDOR_MONOTRIBUTISTA",
+      perfilCompraInicial: "GRAN_CONSUMIDOR_FINAL_96_239_KG",
+      sedeComercial: "TALLER_OFICINA",
+      ofertasPublico: ["SERVICIO_IMPRESION_3D", "VENTA_ACTUAL_FILAMENTOS"],
+      marcasFilamento: "WeTech, Grilon3",
+    },
     errors: {},
   });
+});
+
+test("wholesale request requires every field and at least one public offer", () => {
+  const result = validateWholesaleRequest({
+    nombreComercio: " ", personaResponsable: "", ubicacionZona: "", telefono: "",
+    figuraFiscalComercial: "", perfilCompraInicial: "", sedeComercial: "",
+    ofertasPublico: [], marcasFilamento: "ignored",
+  });
+
+  assert.deepEqual(Object.keys(result.errors).sort(), [
+    "figuraFiscalComercial", "nombreComercio", "ofertasPublico", "perfilCompraInicial",
+    "personaResponsable", "sedeComercial", "telefono", "ubicacionZona",
+  ].sort());
+  assert.equal("marcasFilamento" in result.values, false);
+});
+
+test("filament brands are conditional and required for filament sales", () => {
+  const base = {
+    nombreComercio: "Comercio", personaResponsable: "Persona", ubicacionZona: "Zona", telefono: "123",
+    figuraFiscalComercial: "SOCIEDAD_SIMPLE", perfilCompraInicial: "PLUS_960_KG",
+    sedeComercial: "LOCAL_PUBLICO", ofertasPublico: ["VENTA_ACTUAL_FILAMENTOS"], marcasFilamento: " ",
+  };
+  const result = validateWholesaleRequest(base);
+
+  assert.equal(result.errors.marcasFilamento, "Ingresá al menos una marca de filamento.");
+  assert.equal(result.values.marcasFilamento, "");
 });
 
 test("wholesale navbar shows the request button and submits into pending state", () => {
