@@ -5,7 +5,7 @@ import { WholesaleRequestModal } from "./WholesaleRequestModal";
 
 export function WholesaleStatusIndicator() {
   const [isOpen, setIsOpen] = useState(false);
-  const { wholesaleStatus, isWholesale, isLoading, error, refresh } =
+  const { wholesaleStatus, isWholesale, isLoading, error, refresh, wholesaleNotice } =
     useEcommerceUser();
 
   if (isLoading) {
@@ -29,6 +29,7 @@ export function WholesaleStatusIndicator() {
     );
   }
 
+  if (wholesaleNotice) return <span className="text-xs text-amber-700" role="status">{wholesaleNotice}</span>;
   if (!wholesaleStatus) return null;
 
   if (wholesaleStatus === "NO_SOLICITADO" || wholesaleStatus === "RECHAZADO") {

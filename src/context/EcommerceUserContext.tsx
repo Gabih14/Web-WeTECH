@@ -24,6 +24,8 @@ interface EcommerceUserContextValue {
   error: Error | null;
   refresh: () => void;
   setWholesaleStatus: (status: WholesaleStatus) => void;
+  wholesaleNotice: string | null;
+  denyWholesaleAccess: () => void;
 }
 
 const EcommerceUserContext = createContext<EcommerceUserContextValue | null>(
@@ -36,17 +38,26 @@ export function EcommerceUserProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [refreshVersion, setRefreshVersion] = useState(0);
+  const [wholesaleDenied, setWholesaleDenied] = useState(false);
+  const [wholesaleNotice, setWholesaleNotice] = useState<string | null>(null);
 
   const refresh = useCallback(() => {
     setRefreshVersion((version) => version + 1);
   }, []);
 
   const setWholesaleStatus = useCallback((status: WholesaleStatus) => {
+    setWholesaleDenied(false);
+    setWholesaleNotice(null);
     setUser((current) =>
       current
         ? { ...current, customer: { ...current.customer, wholesaleStatus: status } }
         : current
     );
+  }, []);
+
+  const denyWholesaleAccess = useCallback(() => {
+    setWholesaleDenied(true);
+    setWholesaleNotice("Tu acceso mayorista ya no está disponible. Mostramos precios minoristas.");
   }, []);
 
   useEffect(() => {
@@ -59,6 +70,8 @@ export function EcommerceUserProvider({ children }: { children: ReactNode }) {
 
     if (authAction === "CLEAR") {
       setUser(null);
+      setWholesaleDenied(false);
+      setWholesaleNotice(null);
       setError(null);
       setIsLoading(false);
       return;
@@ -96,13 +109,15 @@ export function EcommerceUserProvider({ children }: { children: ReactNode }) {
     () => ({
       user,
       wholesaleStatus,
-      isWholesale: hasWholesaleAccess(wholesaleStatus),
+      isWholesale: hasWholesaleAccess(wholesaleStatus) && !wholesaleDenied,
+      wholesaleNotice,
+      denyWholesaleAccess,
       isLoading,
       error,
       refresh,
       setWholesaleStatus,
     }),
-    [error, isLoading, refresh, setWholesaleStatus, user, wholesaleStatus]
+    [denyWholesaleAccess, error, isLoading, refresh, setWholesaleStatus, user, wholesaleDenied, wholesaleNotice, wholesaleStatus]
   );
 
   return (

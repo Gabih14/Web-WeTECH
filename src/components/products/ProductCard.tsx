@@ -20,7 +20,7 @@ import {
   getPurchaseState,
   getVariantStock,
 } from "../../utils/cartPurchase";
-import { getVariantImage, getVariantItemId, getVariantPrice } from "../../utils/pricing";
+import { getVariantImage, getVariantItemId, getVariantPrice, getVariantRetailPrice } from "../../utils/pricing";
 import { formatPrice } from "../../utils/money";
 import { ColorSwatch } from "./ColorSwatch";
 import { StockWaitRequestModal } from "./StockWaitRequestModal";
@@ -68,6 +68,7 @@ export function ProductCard({
   const [isColorMenuOpen, setIsColorMenuOpen] = useState(false);
   const [isStockWaitOpen, setIsStockWaitOpen] = useState(false);
   const [currentPrice, setCurrentPrice] = useState<number | undefined>(product.price);
+  const retailPrice = getVariantRetailPrice(product, selectedColor, selectedWeight);
   const [currentPromotionalPrice, setCurrentPromotionalPrice] = useState<number | undefined>(
     isFilament ? product.promotionalPrice : undefined
   );
@@ -293,6 +294,10 @@ export function ProductCard({
               </div>
             )}
           </div>
+        )}
+
+        {product.isWholesaleCatalog && retailPrice !== undefined && currentPrice !== retailPrice && (
+          <p className="text-xs text-gray-500">Minorista: <span className="line-through">${formatPrice(retailPrice)}</span></p>
         )}
 
         {/* Weight selector */}

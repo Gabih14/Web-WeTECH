@@ -8,6 +8,8 @@ import { ColorSwatch } from "../components/products/ColorSwatch";
 import { ColorGroup, Product } from "../types";
 import { fetchProducts } from "../services/fetchProducts";
 import { useSEO } from "../hooks/useSEO";
+import { useAuth } from "@clerk/react";
+import { useEcommerceUser } from "../context/EcommerceUserContext";
 
 interface ColorFilterProps {
   colorGroups: ColorGroup[];
@@ -621,6 +623,8 @@ function ColorFilter({
 }
 
 export function ProductsPage() {
+  const { getToken } = useAuth();
+  const { isWholesale, denyWholesaleAccess } = useEcommerceUser();
   const [products, setProducts] = useState<Product[]>([]);
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(
@@ -669,7 +673,9 @@ export function ProductsPage() {
   
 
   useEffect(() => {
-    fetchProducts()
+    setProducts([]);
+    setLoading(true);
+    fetchProducts({ isWholesale, getToken, onWholesaleDenied: denyWholesaleAccess })
       .then((data) => {
         setProducts(data);
         setLoading(false);
@@ -678,7 +684,7 @@ export function ProductsPage() {
         console.error("Error fetching products:", error);
         setLoading(false);
       });
-  }, []);
+  }, [denyWholesaleAccess, getToken, isWholesale]);
 
   const categoriesWithFilamentSubcategories = useMemo(() => {
     const filamentCategoryId = "FILAMENTO 3D";

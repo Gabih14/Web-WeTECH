@@ -63,6 +63,9 @@ import {
   readStoredCoupon,
 } from "../../utils/couponPrefill";
 import { useSEO } from "../../hooks/useSEO";
+import { useAuth } from "@clerk/react";
+import { useEcommerceUser } from "../../context/EcommerceUserContext";
+import { getWholesaleCartState } from "../../utils/wholesalePricing";
 
 function useMediaQuery(query: string): boolean {
   const getMatches = () => {
@@ -98,6 +101,8 @@ function useMediaQuery(query: string): boolean {
 }
 
 export default function Checkout() {
+  const { getToken } = useAuth();
+  const { isWholesale, denyWholesaleAccess } = useEcommerceUser();
   useSEO({
     title: "Checkout | WeTECH",
     description:
@@ -112,6 +117,7 @@ export default function Checkout() {
   const location = useLocation();
   const isMobile = useMediaQuery("(max-width: 768px)"); // Detecta si es móvil
   const { items, total, clearCart, syncCartWithProducts } = useCart();
+  const wholesale = getWholesaleCartState(items);
   const eligibleQuantityDiscountCartQuantity =
     getEligibleQuantityDiscountCartQuantity(items);
   const [shippingData, setShippingData] = useState<ShippingQuote | null>(null);
@@ -188,9 +194,9 @@ export default function Checkout() {
   }, []);
 
   const refreshCartPricesFromCatalog = useCallback(async () => {
-    const freshProducts = await fetchProducts();
+    const freshProducts = await fetchProducts({ isWholesale, getToken, onWholesaleDenied: denyWholesaleAccess });
     return syncCartWithProducts(freshProducts);
-  }, [syncCartWithProducts]);
+  }, [denyWholesaleAccess, getToken, isWholesale, syncCartWithProducts]);
 
   useEffect(() => {
     let isMounted = true;
@@ -784,6 +790,7 @@ export default function Checkout() {
   };
 
   const handleConfirmOrder = async () => {
+    if (!wholesale.canCheckout) return;
     if (currentStep !== 4) {
       return;
     }
@@ -1519,11 +1526,12 @@ export default function Checkout() {
                   <ChevronRight className="h-5 w-5 ml-2" />
                 </button>
               ) : (
+                <>
                 <button
                   type="button"
                   onClick={handleConfirmOrder}
                   className="flex-1 py-3 px-4 rounded-md transition-colors bg-yellow-400 hover:bg-yellow-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                  disabled={isLoading || !isCuitValid}
+                  disabled={isLoading || !isCuitValid || !wholesale.canCheckout}
                 >
                   {isLoading ? (
                     <div className="flex items-center justify-center">
@@ -1536,6 +1544,12 @@ export default function Checkout() {
                     `Confirmar y generar pedido`
                   )}
                 </button>
+                {wholesale.isWholesale && wholesale.missing > 0 && (
+                  <p className="w-full text-sm text-amber-700" role="status">
+                    Compra mínima mayorista: ${formatPrice(wholesale.minimumPurchase)}. Te faltan ${formatPrice(wholesale.missing)}.
+                  </p>
+                )}
+                </>
               )}
             </div>
 
