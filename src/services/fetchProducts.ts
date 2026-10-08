@@ -189,7 +189,7 @@ export const fetchProducts = async ({
     // aplicamos los filtros de publicación y mapeamos a la forma `Product`.
     let wholesaleCatalog = isWholesale && !!getToken;
     const catalogRequest = wholesaleCatalog
-      ? authenticatedApiFetch<{ minimumPurchase: number; products: CatalogoProducto[] }>(
+      ? authenticatedApiFetch<{ minimumPurchaseKg: number; products: CatalogoProducto[] }>(
           "/stk-item/catalogo/mayorista",
           getToken,
         ).catch((error) => {
@@ -205,8 +205,8 @@ export const fetchProducts = async ({
       catalogRequest,
       fetchColors(),
     ]);
-    const minimumPurchase = wholesaleCatalog && !Array.isArray(catalogResponse)
-      ? Number(catalogResponse.minimumPurchase) || 0
+    const minimumPurchaseKg = wholesaleCatalog && !Array.isArray(catalogResponse)
+      ? Number(catalogResponse.minimumPurchaseKg) || 0
       : 0;
     const catalogo = wholesaleCatalog && !Array.isArray(catalogResponse)
       ? catalogResponse.products
@@ -277,7 +277,7 @@ export const fetchProducts = async ({
         if (!imageFor(v.fotoUrl, isAccessory)) return false;
 
         // Filamentos: debe tener peso numérico (descarta "Kit 20 Colores", etc.)
-        if (isFilament && v.pesoKg == null) return false;
+        // `pesoKg` nulo se conserva como variante de 0 kg para no bloquear el catálogo.
 
         return true;
       });
@@ -320,7 +320,7 @@ export const fetchProducts = async ({
         price: firstPrice,
         retailPrice: firstRetailPrice,
         wholesalePriceFrom: wholesaleCatalog ? toNumber(prod.wholesalePriceFrom) : undefined,
-        wholesaleMinimumPurchase: wholesaleCatalog ? minimumPurchase : undefined,
+        wholesaleMinimumPurchaseKg: wholesaleCatalog ? minimumPurchaseKg : undefined,
         isWholesaleCatalog: wholesaleCatalog,
         invoicePrice: toNumber(first.invoicePrice) ?? firstPrice,
         promotionalPrice: toNumber(first.promotionalPrice),
@@ -332,7 +332,7 @@ export const fetchProducts = async ({
         const colorMap = new Map<string, ColorVariant>();
 
         for (const v of variantesPublicables) {
-          const weight = v.pesoKg as number;
+          const weight = v.pesoKg ?? 0;
           const weightKey = weight.toString();
           const price = toNumber(v.precioVtaCotizadoMin) ?? 0;
           const wholesalePrice = wholesaleCatalog ? toNumber(v.wholesalePrice) : undefined;
@@ -346,7 +346,7 @@ export const fetchProducts = async ({
           const img = imageFor(v.fotoUrl, isAccessory);
 
           if (!weights.some((w) => w.weight === weight)) {
-            weights.push({ weight, price, retailPrice: price, wholesalePrice, invoicePrice, promotionalPrice });
+            weights.push({ weight, pesoKg: v.pesoKg, price, retailPrice: price, wholesalePrice, invoicePrice, promotionalPrice });
           }
 
           const existing = colorMap.get(colorName);

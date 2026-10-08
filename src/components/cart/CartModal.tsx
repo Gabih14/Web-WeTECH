@@ -12,7 +12,7 @@ import {
 import { getVariantImage, getVariantPrice } from "../../utils/pricing";
 import { formatPrice, roundPrice } from "../../utils/money";
 import { calculateCheckoutLinePricing } from "../../utils/checkoutPricing";
-import { getWholesaleCartState } from "../../utils/wholesalePricing";
+import { formatKg, getWholesaleCartState } from "../../utils/wholesalePricing";
 
 interface CartModalProps {
   isOpen: boolean;
@@ -21,6 +21,7 @@ interface CartModalProps {
 
 export default function CartModal({ isOpen, onClose }: CartModalProps) {
   const { items, updateQuantity, removeFromCart, clearCart, total } = useCart();
+  const wholesale = getWholesaleCartState(items);
 
   const navigate = useNavigate();
 
@@ -52,7 +53,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
     color: string,
     weight: number
   ): number | undefined => {
-    return getVariantPrice(product, color, weight);
+    return getVariantPrice(product, color, weight, wholesale.reached);
   };
 
 /*   const getPromotionalPrice = (
@@ -110,7 +111,6 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
 
   const originalTotal = calculateOriginalTotal();
   const discount = originalTotal - total;
-  const wholesale = getWholesaleCartState(items);
 
   const handleOutsideClick = () => {
     onClose();
@@ -317,9 +317,9 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                 </div>
                 {wholesale.isWholesale && (
                   <div className="mb-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900" role="status">
-                    <div className="flex justify-between"><span>Compra mínima mayorista</span><strong>${formatPrice(wholesale.minimumPurchase)}</strong></div>
-                    <div className="flex justify-between"><span>Subtotal mayorista</span><strong>${formatPrice(wholesale.subtotal)}</strong></div>
-                    {wholesale.missing > 0 && <p className="mt-2">Te faltan ${formatPrice(wholesale.missing)} para alcanzar el mínimo mayorista.</p>}
+                    <div className="flex justify-between"><span>Compra mínima mayorista</span><strong>{formatKg(wholesale.minimumPurchaseKg)} kg de filamentos</strong></div>
+                    <div className="flex justify-between"><span>Peso de filamentos</span><strong>{formatKg(wholesale.filamentKg)} kg</strong></div>
+                    {wholesale.missingKg > 0 && <p className="mt-2">Te faltan {formatKg(wholesale.missingKg)} kg de filamentos para acceder al precio mayorista.</p>}
                   </div>
                 )}
                 <button

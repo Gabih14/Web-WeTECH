@@ -1,4 +1,5 @@
 import { CartItem, Product } from "../types";
+import { isFilamentProduct } from "./cartPurchase";
 
 const weightKey = (weight: number | null | undefined) =>
   weight === null || weight === undefined ? "" : weight.toString();
@@ -16,11 +17,13 @@ const getColorVariant = (product: Product, color: string | null | undefined) => 
 export function getVariantPrice(
   product: Product,
   color: string | null | undefined,
-  weight: number | null | undefined
+  weight: number | null | undefined,
+  useWholesale = false
 ): number | undefined {
   const key = weightKey(weight);
   const colorVariant = getColorVariant(product, color);
-  const colorPrice = product.isWholesaleCatalog
+  const wholesale = useWholesale && product.isWholesaleCatalog && isFilamentProduct(product);
+  const colorPrice = wholesale
     ? colorVariant?.wholesalePrices?.[key] ?? colorVariant?.prices?.[key]
     : colorVariant?.prices?.[key];
 
@@ -33,7 +36,7 @@ export function getVariantPrice(
       ? product.weights?.find((variantWeight) => variantWeight.weight === weight)
       : undefined;
 
-  return product.isWholesaleCatalog
+  return wholesale
     ? weightData?.wholesalePrice ?? weightData?.price ?? product.wholesalePriceFrom ?? product.price
     : weightData?.price ?? product.price;
 }
@@ -113,6 +116,6 @@ export function getVariantImage(
     ?? product.image;
 }
 
-export function getCartItemPrice(item: CartItem): number | undefined {
-  return getVariantPrice(item.product, item.color, item.weight);
+export function getCartItemPrice(item: CartItem, useWholesale = false): number | undefined {
+  return getVariantPrice(item.product, item.color, item.weight, useWholesale);
 }
