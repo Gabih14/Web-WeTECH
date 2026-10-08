@@ -1,7 +1,7 @@
 import { CartItem, Product } from "../types";
 
 export const isFilamentProduct = (product: Product): boolean =>
-  product.category === "FILAMENTO 3D";
+  product.category === "FILAMENTO 3D" || product.category === "FILAMENTOS";
 
 export function getDefaultProductWeight(product: Product): number | null {
   return (

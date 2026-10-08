@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Product } from "../../types";
 import { Bell, ChevronDown, ShoppingCart, Check, Zap } from "lucide-react";
 import { useCart } from "../../context/CartContext";
+import { getWholesaleCartState } from "../../utils/wholesalePricing";
 import { Link, useLocation } from "react-router-dom";
 import {
   shouldApplyDiscount,
@@ -37,6 +38,7 @@ export function ProductCard({
   selectedColorGroupId = null,
 }: ProductCardProps) {
   const { addToCart, items } = useCart();
+  const wholesale = getWholesaleCartState(items);
   const location = useLocation();
   const { justAdded, triggerAddedFeedback } = useAddToCartFeedback();
 
@@ -130,7 +132,7 @@ export function ProductCard({
   useEffect(() => {
     if (shouldApplyDiscount(product)) {
       const base =
-        getVariantPrice(product, selectedColor, selectedWeight) ?? 0;
+        getVariantPrice(product, selectedColor, selectedWeight, wholesale.reached) ?? 0;
 
       setCurrentPrice(base);
       setCurrentPromotionalPrice(
@@ -144,11 +146,11 @@ export function ProductCard({
       );
     } else {
       const weightPrice =
-        getVariantPrice(product, selectedColor, selectedWeight);
+        getVariantPrice(product, selectedColor, selectedWeight, wholesale.reached);
       setCurrentPrice(weightPrice ?? product.price);
       setCurrentPromotionalPrice(undefined);
     }
-  }, [selectedWeight, selectedColor, quantity, product, effectiveDiscountQuantity]);
+  }, [selectedWeight, selectedColor, quantity, product, effectiveDiscountQuantity, wholesale.reached]);
 
   useEffect(() => {
     setSelectedColor((currentColor) =>

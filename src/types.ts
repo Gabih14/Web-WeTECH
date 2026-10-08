@@ -16,6 +16,7 @@ export interface Product {
   difficultyLevel?: string;
   weights?: {
     weight: number;
+    pesoKg?: number | null;
     price: number;
     retailPrice?: number;
     wholesalePrice?: number;
@@ -25,7 +26,7 @@ export interface Product {
   price?: number;
   retailPrice?: number;
   wholesalePriceFrom?: number;
-  wholesaleMinimumPurchase?: number;
+  wholesaleMinimumPurchaseKg?: number;
   isWholesaleCatalog?: boolean;
   invoicePrice?: number;
   discountQuantity?: { [quantity: number]: number };

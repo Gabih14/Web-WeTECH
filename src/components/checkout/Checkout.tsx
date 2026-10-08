@@ -65,7 +65,7 @@ import {
 import { useSEO } from "../../hooks/useSEO";
 import { useAuth } from "@clerk/react";
 import { useEcommerceUser } from "../../context/EcommerceUserContext";
-import { getWholesaleCartState } from "../../utils/wholesalePricing";
+import { formatKg, getWholesaleCartState } from "../../utils/wholesalePricing";
 
 function useMediaQuery(query: string): boolean {
   const getMatches = () => {
@@ -337,7 +337,7 @@ export default function Checkout() {
     weight: number
   ): number | undefined => {
     if (!requiresInvoice(facturaTipo)) {
-      return getVariantPrice(product, color, weight);
+      return getVariantPrice(product, color, weight, wholesale.reached);
     }
 
     return getVariantInvoicePrice(product, color, weight);
@@ -1544,9 +1544,9 @@ export default function Checkout() {
                     `Confirmar y generar pedido`
                   )}
                 </button>
-                {wholesale.isWholesale && wholesale.missing > 0 && (
+                {wholesale.isWholesale && wholesale.missingKg > 0 && (
                   <p className="w-full text-sm text-amber-700" role="status">
-                    Compra mínima mayorista: ${formatPrice(wholesale.minimumPurchase)}. Te faltan ${formatPrice(wholesale.missing)}.
+                    Compra mínima mayorista: {formatKg(wholesale.minimumPurchaseKg)} kg de filamentos. Te faltan {formatKg(wholesale.missingKg)} kg de filamentos para acceder al precio mayorista.
                   </p>
                 )}
                 </>

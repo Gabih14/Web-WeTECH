@@ -19,7 +19,7 @@ import {
 import { syncCartItemsWithCatalog } from "../utils/cartCatalogSync";
 import { getCartItemPrice } from "../utils/pricing";
 import { useEcommerceUser } from "./EcommerceUserContext";
-import { stripWholesaleProduct } from "../utils/wholesalePricing";
+import { getWholesaleCartState, stripWholesaleProduct } from "../utils/wholesalePricing";
 import { useAuth } from "@clerk/react";
 import { fetchProducts } from "../services/fetchProducts";
 
@@ -205,9 +205,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     () => getEligibleQuantityDiscountCartQuantity(items),
     [items]
   );
+  const wholesale = getWholesaleCartState(items);
 
   const calculateItemTotal = (item: CartItem) => {
-    const originalPrice = getCartItemPrice(item);
+    const originalPrice = getCartItemPrice(item, wholesale.reached);
     
     if (originalPrice) {
       const effectiveQuantity = getEffectiveQuantityForProductDiscount(
