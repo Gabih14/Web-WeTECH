@@ -218,6 +218,22 @@ export default function Navbar() {
             </div>
           </form>
         </div>
+        <div
+          className="overflow-hidden bg-black py-2.5 text-base font-semibold text-white"
+          aria-label="Envío gratis en compras desde 10 kilogramos"
+        >
+          <div className="animate-shippingBanner flex w-max" aria-hidden="true">
+            {[0, 1].map((group) => (
+              <div key={group} className="shipping-banner-group flex shrink-0 justify-around">
+                {[0, 1, 2, 3].map((item) => (
+                  <span key={item} className="whitespace-nowrap px-10">
+                    ¡Envío gratis en compras desde 10 kg!
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
       </header>
 
       <CartModal isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
