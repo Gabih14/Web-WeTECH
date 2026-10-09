@@ -40,7 +40,7 @@ function App() {
           <CartProvider>
             <CouponUrlCapture />
             <Navbar />
-            <main className="pt-40 sm:pt-32 w-full overflow-x-hidden">
+            <main className="pt-48 sm:pt-44 w-full overflow-x-hidden">
               <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/search" element={<SearchResultsPage />} />

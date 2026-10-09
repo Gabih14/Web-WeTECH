@@ -166,4 +166,24 @@
   .animate-badgePop {
     animation: badgePop 0.45s ease-out;
   }
+
+  @keyframes shippingBanner {
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  .animate-shippingBanner {
+    animation: shippingBanner 22s linear infinite;
+  }
+
+  .shipping-banner-group {
+    min-width: 100vw;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-shippingBanner {
+      animation: none;
+    }
+  }
 }
