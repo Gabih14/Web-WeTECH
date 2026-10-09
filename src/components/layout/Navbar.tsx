@@ -227,7 +227,10 @@ export default function Navbar() {
               <div key={group} className="shipping-banner-group flex shrink-0 justify-around">
                 {[0, 1, 2, 3].map((item) => (
                   <span key={item} className="whitespace-nowrap px-10">
-                    ¡Envío gratis en compras desde 10 kg!
+                    🚚 ¡Envío gratis en compras desde 10 kg! 🎁
+                    <span className="ml-10 rounded border border-white px-3 py-1">
+                      ¡APROVECHA!
+                    </span>
                   </span>
                 ))}
               </div>
