@@ -236,6 +236,11 @@ export function ProductCard({
           <p className={`mt-0.5 text-[11px] font-medium ${stockStatus.color}`}>
             {stockStatus.label}
           </p>
+          {import.meta.env.DEV && (
+            <span className="mt-1 inline-block rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[10px] text-gray-500">
+              ID: {selectedItemId}
+            </span>
+          )}
         </div>
 
         {/* Color selector */}
