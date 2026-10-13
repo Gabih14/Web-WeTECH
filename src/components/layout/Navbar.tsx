@@ -137,15 +137,17 @@ export default function Navbar() {
             </form>
 
             <div className="flex items-center space-x-2 pl-2 sm:space-x-4">
-              <Show when="signed-out">
-                <button
-                  type="button"
-                  onClick={() => setIsWholesaleAccessOpen(true)}
-                  className="rounded-md bg-black px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-gray-800 sm:text-sm"
-                >
-                  Accedé a precios mayoristas
-                </button>
-              </Show>
+              {import.meta.env.DEV && (
+                <Show when="signed-out">
+                  <button
+                    type="button"
+                    onClick={() => setIsWholesaleAccessOpen(true)}
+                    className="rounded-md bg-black px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-gray-800 sm:text-sm"
+                  >
+                    Accedé a precios mayoristas
+                  </button>
+                </Show>
+              )}
               <Show when="signed-in">
                 <WholesaleStatusIndicator />
                 <UserButton />
