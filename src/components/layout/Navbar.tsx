@@ -218,9 +218,10 @@ export default function Navbar() {
             </div>
           </form>
         </div>
-        <div
-          className="overflow-hidden bg-black py-2.5 text-base font-semibold text-white"
-          aria-label="Envío gratis en compras desde 10 kilogramos"
+        <Link
+          to="/products?category=FILAMENTO+3D"
+          className="block overflow-hidden bg-black py-2.5 text-base font-semibold text-white"
+          aria-label="Ver filamentos: envío gratis en compras desde 10 kilogramos"
         >
           <div className="animate-shippingBanner flex w-max" aria-hidden="true">
             {[0, 1].map((group) => (
@@ -236,7 +237,7 @@ export default function Navbar() {
               </div>
             ))}
           </div>
-        </div>
+        </Link>
       </header>
 
       <CartModal isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
