@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ShoppingCart } from "lucide-react"; // UserCircle
+import { ShoppingCart, X } from "lucide-react"; // UserCircle
 import {
   Show,
   SignInButton,
@@ -15,6 +15,7 @@ import { WholesaleStatusIndicator } from "./WholesaleStatusIndicator";
 
 export default function Navbar() {
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isWholesaleAccessOpen, setIsWholesaleAccessOpen] = useState(false);
   const [isBadgeBumping, setIsBadgeBumping] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   //const [selectedProvince, setSelectedProvince] = useState("Mendoza");
@@ -38,6 +39,17 @@ export default function Navbar() {
 
     previousItemCount.current = itemCount;
   }, [itemCount]);
+
+  useEffect(() => {
+    if (!isWholesaleAccessOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsWholesaleAccessOpen(false);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isWholesaleAccessOpen]);
 
   // Verificar si estamos en la página de franquicias
   const isInFranquiciasPage = location.pathname === '/franquicias';
@@ -125,20 +137,15 @@ export default function Navbar() {
             </form>
 
             <div className="flex items-center space-x-2 pl-2 sm:space-x-4">
-              {import.meta.env.DEV && (
-                <Show when="signed-out">
-                  <SignInButton mode="modal">
-                    <button className="rounded-md px-3 py-2 text-sm font-medium text-black transition-colors hover:bg-white">
-                      Iniciar sesión
-                    </button>
-                  </SignInButton>
-                  <SignUpButton mode="modal">
-                    <button className="hidden rounded-md bg-black px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 sm:block">
-                      Crear cuenta
-                    </button>
-                  </SignUpButton>
-                </Show>
-              )}
+              <Show when="signed-out">
+                <button
+                  type="button"
+                  onClick={() => setIsWholesaleAccessOpen(true)}
+                  className="rounded-md bg-black px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-gray-800 sm:text-sm"
+                >
+                  Accedé a precios mayoristas
+                </button>
+              </Show>
               <Show when="signed-in">
                 <WholesaleStatusIndicator />
                 <UserButton />
@@ -218,15 +225,16 @@ export default function Navbar() {
             </div>
           </form>
         </div>
-        <div
-          className="overflow-hidden bg-black py-2.5 text-base font-semibold text-white"
-          aria-label="Envío gratis en compras desde 10 kilogramos"
+        <Link
+          to="/products?category=FILAMENTO+3D"
+          className="block overflow-hidden bg-black py-2.5 text-base font-semibold text-white"
+          aria-label="Ver filamentos: envío gratis en compras desde 10 kilogramos"
         >
           <div className="animate-shippingBanner flex w-max" aria-hidden="true">
             {[0, 1].map((group) => (
               <div key={group} className="shipping-banner-group flex shrink-0 justify-around">
                 {[0, 1, 2, 3].map((item) => (
-                  <span key={item} className="whitespace-nowrap px-10">
+                  <span key={item} className="whitespace-nowrap px-40">
                     🚚 ¡Envío gratis en compras desde 10 kg! 🎁
                     <span className="ml-10 rounded border border-white px-3 py-1">
                       ¡APROVECHA!
@@ -236,10 +244,62 @@ export default function Navbar() {
               </div>
             ))}
           </div>
-        </div>
+        </Link>
       </header>
 
       <CartModal isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+
+      {isWholesaleAccessOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="wholesale-access-title"
+          onClick={() => setIsWholesaleAccessOpen(false)}
+        >
+          <div
+            className="relative w-full max-w-md rounded-xl bg-white p-6 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setIsWholesaleAccessOpen(false)}
+              className="absolute right-4 top-4 rounded-full p-1 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900"
+              aria-label="Cerrar"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <h2 id="wholesale-access-title" className="pr-8 text-xl font-bold text-gray-900">
+              Accedé a precios mayoristas
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-gray-600">
+              Para acceder a precios mayoristas, deberás comprar un mínimo de 96 kg por mes.
+            </p>
+
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <SignInButton mode="modal">
+                <button
+                  type="button"
+                  onClick={() => setIsWholesaleAccessOpen(false)}
+                  className="flex-1 rounded-md border border-black px-4 py-2.5 text-sm font-semibold text-black transition-colors hover:bg-gray-100"
+                >
+                  Iniciar sesión
+                </button>
+              </SignInButton>
+              <SignUpButton mode="modal">
+                <button
+                  type="button"
+                  onClick={() => setIsWholesaleAccessOpen(false)}
+                  className="flex-1 rounded-md bg-black px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-gray-800"
+                >
+                  Crear cuenta
+                </button>
+              </SignUpButton>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* WhatsApp Floating Button - Solo mostrar si NO estamos en franquicias */}
       {!isInFranquiciasPage && (

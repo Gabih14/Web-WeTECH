@@ -214,6 +214,12 @@ export const fetchProducts = async ({
     const catalogProducts = Array.isArray(catalogo) ? catalogo as CatalogoProducto[] : [];
 
     if (import.meta.env.DEV) {
+      if (wholesaleCatalog) {
+        console.log("Catálogo mayorista recibido:", {
+          minimumPurchaseKg,
+          products: catalogProducts,
+        });
+      }
       console.log("Catálogo recibido:", catalogo);
       console.log(
         "Repuestos recibidos:",

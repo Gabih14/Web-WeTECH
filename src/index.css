@@ -174,7 +174,7 @@
   }
 
   .animate-shippingBanner {
-    animation: shippingBanner 22s linear infinite;
+    animation: shippingBanner 30s linear infinite;
   }
 
   .shipping-banner-group {
