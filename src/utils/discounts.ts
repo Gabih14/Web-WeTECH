@@ -26,6 +26,7 @@ export const ELIGIBLE_FILAMENT_ATTRIBUTES: ReadonlyArray<{
   { marca: "Grilon3", material: "PLA" },
   { marca: "Grilon3", material: "PLA Boutique" },
   { marca: "GST3D", material: "PLA" },
+  { marca: "GST3D", material: "PLA+" },
   { marca: "Hellbot", material: "PLA" },
   { marca: "3nMax", material: "PLA+ Matte" },
   { marca: "Fremover", material: "High Speed PLA" },
