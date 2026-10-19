@@ -5,14 +5,15 @@ require("sucrase/register/ts");
 
 const {
   buildMaterialGroups,
+  isGrupoWebAvailable,
   materialLabel,
   matchesMaterialFilter,
   setMaterialSearchParams,
 } = require("../src/utils/materialFilters.ts");
 
-const product = (material, submaterial, historical = material) => ({
+const product = (material, submaterial, historical = material, grupoWebValues = []) => ({
   material: historical,
-  materialClassifications: [{ material, submaterial }],
+  materialClassifications: [{ material, submaterial, grupoWebValues }],
 });
 
 test("presenta PLA como PLA / PLA+ sin cambiar su valor", () => {
@@ -28,7 +29,11 @@ test("agrupa PLA y PLA+ bajo la clave PLA", () => {
   assert.deepEqual(groups, [{
     material: "PLA",
     label: "PLA / PLA+",
-    submaterials: ["MATTE", "SILK"],
+    grupoWebValues: [],
+    submaterials: [
+      { value: "MATTE", label: "MATTE", grupoWebValues: [] },
+      { value: "SILK", label: "SILK", grupoWebValues: [] },
+    ],
   }]);
   assert.equal(matchesMaterialFilter(product("PLA+", null), "PLA", null), true);
   assert.equal(matchesMaterialFilter(product("PLA", null), "PLA+", null), true);
@@ -43,7 +48,12 @@ test("unifica cualquier material que solo se diferencia por un + final", () => {
   assert.deepEqual(groups, [{
     material: "PETG",
     label: "PETG / PETG+",
-    submaterials: ["FIBRA DE CARBONO"],
+    grupoWebValues: [],
+    submaterials: [{
+      value: "FIBRA DE CARBONO",
+      label: "FIBRA DE CARBONO",
+      grupoWebValues: [],
+    }],
   }]);
   assert.equal(matchesMaterialFilter(product("PETG+", null), "PETG", null), true);
 });
@@ -77,7 +87,9 @@ test("cambiar de PLA a NYLON elimina el submaterial anterior", () => {
 
 test("deduplica submateriales con comparacion normalizada", () => {
   const groups = buildMaterialGroups([product("PLA", "SILK"), product("PLA", " silk ")]);
-  assert.deepEqual(groups[0].submaterials, ["SILK"]);
+  assert.deepEqual(groups[0].submaterials, [
+    { value: "SILK", label: "SILK", grupoWebValues: [] },
+  ]);
 });
 
 test("no infiere MATTE desde el valor historico", () => {
@@ -91,6 +103,101 @@ test("una URL historica sigue filtrando por el valor historico", () => {
 
 test("cada submaterial pertenece solamente a su material", () => {
   const groups = buildMaterialGroups([product("PLA", "SILK"), product("PETG+", "FIBRA DE CARBONO")]);
-  assert.deepEqual(groups.find((group) => group.material === "PLA").submaterials, ["SILK"]);
-  assert.deepEqual(groups.find((group) => group.material === "PETG").submaterials, ["FIBRA DE CARBONO"]);
+  assert.deepEqual(
+    groups.find((group) => group.material === "PLA").submaterials.map(({ value }) => value),
+    ["SILK"],
+  );
+  assert.deepEqual(
+    groups.find((group) => group.material === "PETG").submaterials.map(({ value }) => value),
+    ["FIBRA DE CARBONO"],
+  );
+});
+
+test("asocia Grupo Web al material y solamente a su submaterial real", () => {
+  const groups = buildMaterialGroups([
+    product("PLA", "SILK", "PLA Silk", ["Decorativo"]),
+    product("PLA", "MATTE", "PLA Matte", ["Estandar"]),
+    product("PETG", null, "PETG", ["Tecnico"]),
+  ]);
+  const pla = groups.find((group) => group.material === "PLA");
+
+  assert.deepEqual(pla.grupoWebValues, ["Decorativo", "Estandar"]);
+  assert.deepEqual(
+    pla.submaterials.find(({ value }) => value === "SILK").grupoWebValues,
+    ["Decorativo"],
+  );
+  assert.deepEqual(
+    pla.submaterials.find(({ value }) => value === "MATTE").grupoWebValues,
+    ["Estandar"],
+  );
+  assert.equal(pla.grupoWebValues.includes("Tecnico"), false);
+});
+
+test("deduplica y ordena Grupo Web sin valores hardcodeados", () => {
+  const groups = buildMaterialGroups([
+    product("PLA", "SILK", "PLA Silk", ["Zeta", " decorativo "]),
+    product("PLA+", "SILK", "PLA+ Silk", ["DECORATIVO", "Alfa"]),
+  ]);
+
+  assert.deepEqual(groups[0].grupoWebValues, ["Alfa", "decorativo", "Zeta"]);
+  assert.deepEqual(groups[0].submaterials[0].grupoWebValues, ["Alfa", "decorativo", "Zeta"]);
+});
+
+test("filtra Grupo Web junto con la combinacion Material y Submaterial", () => {
+  const silk = product("PLA", "SILK", "PLA Silk", ["Decorativo"]);
+  assert.equal(matchesMaterialFilter(silk, "PLA", null, "Decorativo"), true);
+  assert.equal(matchesMaterialFilter(silk, "PLA", "SILK", "Decorativo"), true);
+  assert.equal(matchesMaterialFilter(silk, "PLA", "MATTE", "Decorativo"), false);
+  assert.equal(matchesMaterialFilter(silk, "PLA", "SILK", "Tecnico"), false);
+  assert.equal(matchesMaterialFilter(product("PLA", "SILK"), "PLA", "SILK", null), true);
+  assert.equal(matchesMaterialFilter(product("PLA", "SILK"), "PLA", "SILK", "Decorativo"), false);
+});
+
+test("serializa Grupo Web para Todos y para un submaterial", () => {
+  assert.equal(
+    setMaterialSearchParams(new URLSearchParams(), "PLA", null, "Decorativo").toString(),
+    "material=PLA&grupoWeb=Decorativo",
+  );
+  assert.equal(
+    setMaterialSearchParams(new URLSearchParams(), "PLA", "SILK", "Decorativo").toString(),
+    "material=PLA&submaterial=SILK&grupoWeb=Decorativo",
+  );
+});
+
+test("quitar Grupo Web conserva Material y Submaterial", () => {
+  const result = setMaterialSearchParams(
+    new URLSearchParams("material=PLA&submaterial=SILK&grupoWeb=Decorativo"),
+    "PLA",
+    "SILK",
+    null,
+  );
+  assert.equal(result.toString(), "material=PLA&submaterial=SILK");
+});
+
+test("cambiar de material limpia Submaterial y Grupo Web", () => {
+  const result = setMaterialSearchParams(
+    new URLSearchParams("material=PLA&submaterial=SILK&grupoWeb=Decorativo"),
+    "PETG",
+    null,
+    null,
+  );
+  assert.equal(result.toString(), "material=PETG");
+});
+
+test("detecta Grupo Web valido o invalido para la seleccion exacta", () => {
+  const group = buildMaterialGroups([
+    product("PLA", "SILK", "PLA Silk", ["Decorativo"]),
+    product("PLA", "MATTE", "PLA Matte", ["Estandar"]),
+  ])[0];
+
+  assert.equal(isGrupoWebAvailable(group, null, "Decorativo"), true);
+  assert.equal(isGrupoWebAvailable(group, "SILK", "Decorativo"), true);
+  assert.equal(isGrupoWebAvailable(group, "MATTE", "Decorativo"), false);
+  assert.equal(isGrupoWebAvailable(group, "SILK", "Inexistente"), false);
+});
+
+test("no inventa Grupo Web desde valores historicos", () => {
+  const groups = buildMaterialGroups([{ material: "PLA Boutique" }]);
+  assert.deepEqual(groups[0].grupoWebValues, []);
+  assert.equal(matchesMaterialFilter({ material: "PLA Silk" }, "PLA Silk", null, "Decorativo"), false);
 });

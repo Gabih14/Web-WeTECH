@@ -12,6 +12,8 @@ import { useAuth } from "@clerk/react";
 import { useEcommerceUser } from "../context/EcommerceUserContext";
 import {
   buildMaterialGroups,
+  grupoWebValuesForSelection,
+  isGrupoWebAvailable,
   materialGroupValue,
   matchesMaterialFilter,
   normalizeMaterial,
@@ -41,7 +43,13 @@ interface MaterialFilterProps {
   materials: MaterialGroup[];
   selectedMaterial: string | null;
   selectedSubmaterial: string | null;
+  selectedGrupoWeb: string | null;
   onMaterialChange: (material: string | null, submaterial: string | null) => void;
+  onGrupoWebChange: (
+    material: string,
+    submaterial: string | null,
+    grupoWeb: string,
+  ) => void;
 }
 
 interface MoreFiltersProps {
@@ -329,7 +337,9 @@ function MaterialFilter({
   materials,
   selectedMaterial,
   selectedSubmaterial,
+  selectedGrupoWeb,
   onMaterialChange,
+  onGrupoWebChange,
 }: MaterialFilterProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [expandedMaterials, setExpandedMaterials] = useState<string[]>([]);
@@ -357,7 +367,7 @@ function MaterialFilter({
       </div>
 
       <div className="space-y-2">
-        {visibleMaterials.map(({ material, label, submaterials }) => {
+        {visibleMaterials.map(({ material, label, grupoWebValues, submaterials }) => {
           const isSelected =
             selectedMaterial !== null &&
             normalizeMaterial(materialGroupValue(selectedMaterial)) ===
@@ -384,23 +394,51 @@ function MaterialFilter({
               </button>
               {isOpen && (
                 <div className="ml-4 mt-1 space-y-1 border-l border-gray-200 pl-2">
-                  {[null, ...submaterials].map((submaterial) => {
+                  {[
+                    { value: null, label: "Todos", grupoWebValues },
+                    ...submaterials,
+                  ].map((option) => {
+                    const submaterial = option.value;
                     const subSelected = isSelected &&
                       (submaterial === null
                         ? selectedSubmaterial === null
                         : selectedSubmaterial !== null &&
                           normalizeMaterial(selectedSubmaterial) === normalizeMaterial(submaterial));
                     return (
-                      <button
+                      <div
                         key={submaterial ?? "all"}
-                        onClick={() => onMaterialChange(material, submaterial)}
-                        className={`w-full rounded px-2 py-1 text-left text-sm ${
+                        className={`flex flex-wrap items-center gap-1 rounded ${
                           subSelected ? "bg-yellow-100 font-medium" : "hover:bg-gray-100"
                         }`}
-                        type="button"
                       >
-                        {submaterial ?? "Todos"}
-                      </button>
+                        <button
+                          onClick={() => onMaterialChange(material, submaterial)}
+                          className="min-w-20 flex-1 px-2 py-1 text-left text-sm"
+                          type="button"
+                        >
+                          {option.label}
+                        </button>
+                        {option.grupoWebValues.map((grupoWeb) => {
+                          const grupoWebSelected = subSelected &&
+                            selectedGrupoWeb !== null &&
+                            normalizeMaterial(selectedGrupoWeb) === normalizeMaterial(grupoWeb);
+                          return (
+                            <button
+                              key={grupoWeb}
+                              onClick={() => onGrupoWebChange(material, submaterial, grupoWeb)}
+                              className={`mr-1 rounded-full border px-2 py-0.5 text-xs transition-colors ${
+                                grupoWebSelected
+                                  ? "border-yellow-500 bg-yellow-300 text-black"
+                                  : "border-yellow-300 bg-yellow-50 text-yellow-900 hover:bg-yellow-200"
+                              }`}
+                              type="button"
+                              aria-pressed={grupoWebSelected}
+                            >
+                              {grupoWeb}
+                            </button>
+                          );
+                        })}
+                      </div>
                     );
                   })}
                 </div>
@@ -675,6 +713,9 @@ export function ProductsPage() {
   const [selectedSubmaterial, setSelectedSubmaterial] = useState<string | null>(
     searchParams.get("submaterial")
   );
+  const [selectedGrupoWeb, setSelectedGrupoWeb] = useState<string | null>(
+    searchParams.get("grupoWeb")
+  );
   const [selectedWeight, setSelectedWeight] = useState<number | null>(null);
   const [selectedOrigin, setSelectedOrigin] = useState<string | null>(null);
   const [foodSafeOnly, setFoodSafeOnly] = useState(false);
@@ -725,6 +766,7 @@ export function ProductsPage() {
   useEffect(() => {
     setSelectedMaterial(searchParams.get("material"));
     setSelectedSubmaterial(searchParams.get("submaterial"));
+    setSelectedGrupoWeb(searchParams.get("grupoWeb"));
   }, [searchParams]);
 
   const categoriesWithFilamentSubcategories = useMemo(() => {
@@ -954,6 +996,7 @@ export function ProductsPage() {
   }, [availableLines, selectedLine]);
 
   useEffect(() => {
+    if (loading) return;
     if (
       selectedMaterial !== null &&
       !availableMaterials.some(
@@ -969,11 +1012,13 @@ export function ProductsPage() {
     ) {
       setSelectedMaterial(null);
       setSelectedSubmaterial(null);
-      setSearchParams(setMaterialSearchParams(searchParams, null, null));
+      setSelectedGrupoWeb(null);
+      setSearchParams(setMaterialSearchParams(searchParams, null, null, null));
     }
-  }, [availableMaterials, products, searchParams, selectedMaterial, setSearchParams]);
+  }, [availableMaterials, loading, products, searchParams, selectedMaterial, setSearchParams]);
 
   useEffect(() => {
+    if (loading) return;
     if (!selectedMaterial || !selectedSubmaterial) return;
     const group = availableMaterials.find(
       ({ material }) =>
@@ -983,13 +1028,62 @@ export function ProductsPage() {
     if (
       group &&
       !group.submaterials.some(
-        (submaterial) => normalizeMaterial(submaterial) === normalizeMaterial(selectedSubmaterial),
+        (submaterial) =>
+          normalizeMaterial(submaterial.value) === normalizeMaterial(selectedSubmaterial),
       )
     ) {
       setSelectedSubmaterial(null);
-      setSearchParams(setMaterialSearchParams(searchParams, selectedMaterial, null));
+      setSelectedGrupoWeb(null);
+      setSearchParams(setMaterialSearchParams(searchParams, selectedMaterial, null, null));
     }
-  }, [availableMaterials, searchParams, selectedMaterial, selectedSubmaterial, setSearchParams]);
+  }, [
+    availableMaterials,
+    loading,
+    searchParams,
+    selectedMaterial,
+    selectedSubmaterial,
+    setSearchParams,
+  ]);
+
+  useEffect(() => {
+    if (loading) return;
+    if (!selectedGrupoWeb) return;
+    if (!selectedMaterial) {
+      setSelectedGrupoWeb(null);
+      setSearchParams(
+        setMaterialSearchParams(searchParams, null, null, null),
+      );
+      return;
+    }
+    const group = availableMaterials.find(
+      ({ material }) =>
+        normalizeMaterial(material) ===
+        normalizeMaterial(materialGroupValue(selectedMaterial)),
+    );
+    if (!group) return;
+    if (
+      selectedSubmaterial &&
+      !group.submaterials.some(
+        ({ value }) => normalizeMaterial(value) === normalizeMaterial(selectedSubmaterial),
+      )
+    ) {
+      return;
+    }
+    if (!isGrupoWebAvailable(group, selectedSubmaterial, selectedGrupoWeb)) {
+      setSelectedGrupoWeb(null);
+      setSearchParams(
+        setMaterialSearchParams(searchParams, selectedMaterial, selectedSubmaterial, null),
+      );
+    }
+  }, [
+    availableMaterials,
+    loading,
+    searchParams,
+    selectedGrupoWeb,
+    selectedMaterial,
+    selectedSubmaterial,
+    setSearchParams,
+  ]);
 
   useEffect(() => {
     if (
@@ -1036,6 +1130,7 @@ export function ProductsPage() {
       product,
       selectedMaterial,
       selectedSubmaterial,
+      selectedGrupoWeb,
     );
     const matchesWeight =
       selectedWeight === null ||
@@ -1078,9 +1173,61 @@ export function ProductsPage() {
   };
 
   function handleMaterialChange(material: string | null, submaterial: string | null) {
+    if (!material) {
+      setSelectedMaterial(null);
+      setSelectedSubmaterial(null);
+      setSelectedGrupoWeb(null);
+      setSearchParams(setMaterialSearchParams(searchParams, null, null, null));
+      return;
+    }
+
+    const sameMaterial = selectedMaterial !== null &&
+      normalizeMaterial(materialGroupValue(selectedMaterial)) ===
+        normalizeMaterial(materialGroupValue(material));
+    const group = availableMaterials.find(
+      (candidate) => normalizeMaterial(candidate.material) === normalizeMaterial(material),
+    );
+    const compatibleGrupoWebValues = group && submaterial
+      ? grupoWebValuesForSelection(group, submaterial)
+      : [];
+    const nextGrupoWeb = sameMaterial && selectedGrupoWeb &&
+      compatibleGrupoWebValues.some(
+        (value) => normalizeMaterial(value) === normalizeMaterial(selectedGrupoWeb),
+      )
+      ? selectedGrupoWeb
+      : null;
+
     setSelectedMaterial(material);
-    setSelectedSubmaterial(material ? submaterial : null);
-    setSearchParams(setMaterialSearchParams(searchParams, material, submaterial));
+    setSelectedSubmaterial(submaterial);
+    setSelectedGrupoWeb(nextGrupoWeb);
+    setSearchParams(
+      setMaterialSearchParams(searchParams, material, submaterial, nextGrupoWeb),
+    );
+  }
+
+  function handleGrupoWebChange(
+    material: string,
+    submaterial: string | null,
+    grupoWeb: string,
+  ) {
+    const sameSelection = selectedMaterial !== null &&
+      normalizeMaterial(materialGroupValue(selectedMaterial)) ===
+        normalizeMaterial(materialGroupValue(material)) &&
+      (submaterial === null
+        ? selectedSubmaterial === null
+        : selectedSubmaterial !== null &&
+          normalizeMaterial(selectedSubmaterial) === normalizeMaterial(submaterial));
+    const nextGrupoWeb = sameSelection && selectedGrupoWeb !== null &&
+      normalizeMaterial(selectedGrupoWeb) === normalizeMaterial(grupoWeb)
+      ? null
+      : grupoWeb;
+
+    setSelectedMaterial(material);
+    setSelectedSubmaterial(submaterial);
+    setSelectedGrupoWeb(nextGrupoWeb);
+    setSearchParams(
+      setMaterialSearchParams(searchParams, material, submaterial, nextGrupoWeb),
+    );
   }
 
   const handleSubcategoryChange = (subcategory: string | null) => {
@@ -1095,11 +1242,12 @@ export function ProductsPage() {
     setSelectedLine(null);
     setSelectedMaterial(null);
     setSelectedSubmaterial(null);
+    setSelectedGrupoWeb(null);
     setSelectedWeight(null);
     setSelectedOrigin(null);
     setFoodSafeOnly(false);
     setSelectedDifficulty(null);
-    const next = setMaterialSearchParams(searchParams, null, null);
+    const next = setMaterialSearchParams(searchParams, null, null, null);
     next.delete("category");
     setSearchParams(next);
   };
@@ -1111,6 +1259,7 @@ export function ProductsPage() {
     selectedLine !== null ||
     selectedMaterial !== null ||
     selectedSubmaterial !== null ||
+    selectedGrupoWeb !== null ||
     selectedWeight !== null ||
     selectedOrigin !== null ||
     foodSafeOnly ||
@@ -1276,7 +1425,9 @@ export function ProductsPage() {
             materials={availableMaterials}
             selectedMaterial={selectedMaterial}
             selectedSubmaterial={selectedSubmaterial}
+            selectedGrupoWeb={selectedGrupoWeb}
             onMaterialChange={handleMaterialChange}
+            onGrupoWebChange={handleGrupoWebChange}
           />
           <ColorFilter
             colorGroups={availableColorGroups}
@@ -1404,7 +1555,9 @@ export function ProductsPage() {
             materials={availableMaterials}
             selectedMaterial={selectedMaterial}
             selectedSubmaterial={selectedSubmaterial}
+            selectedGrupoWeb={selectedGrupoWeb}
             onMaterialChange={handleMaterialChange}
+            onGrupoWebChange={handleGrupoWebChange}
           />
           <ColorFilter
             colorGroups={availableColorGroups}

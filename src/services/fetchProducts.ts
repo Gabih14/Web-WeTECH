@@ -42,6 +42,9 @@ interface CatalogoProducto {
   nombre: string;
   marca: string | null;
   material: string | null;
+  materialGrupo?: string | null;
+  submaterial?: string | null;
+  grupoWeb?: string | null;
   linea: string | null;
   origen: string | null;
   grupo: string | null;
@@ -98,21 +101,88 @@ const normalizeAttributeName = (value: string): string =>
     .replace(/[\u0300-\u036f]/g, "")
     .toUpperCase();
 
+const grupoWebFromAttributes = (attributes: CatalogoAtributo[]): string | undefined =>
+  attributes
+    .find((attribute) => normalizeAttributeName(attribute.clase) === "GRUPO WEB")
+    ?.valor?.trim() || undefined;
+
 const materialClassificationsOf = (
-  productAttributes: CatalogoAtributo[],
+  product: CatalogoProducto,
   variants: CatalogoVariante[],
 ) => {
-  const classifications = new Map<string, { material: string; submaterial: string | null }>();
-  [...productAttributes, ...variants.flatMap((variant) => variant.atributos)]
-    .filter((attribute) => normalizeAttributeName(attribute.clase) === "MATERIAL")
-    .forEach((attribute) => {
-      const material = (attribute.grupoAtributo ?? attribute.valor)?.trim();
-      const submaterial = attribute.subgrupoAtributo?.trim() || null;
-      if (!material) return;
-      const key = `${material.toLocaleUpperCase()}\0${submaterial?.toLocaleUpperCase() ?? ""}`;
-      if (!classifications.has(key)) classifications.set(key, { material, submaterial });
+  const classifications = new Map<string, {
+    material: string;
+    submaterial: string | null;
+    grupoWebValues: Map<string, string>;
+  }>();
+  const explicitGrupoWeb = product.grupoWeb?.trim() || undefined;
+  const productAttributeGrupoWeb = grupoWebFromAttributes(product.atributos);
+  const productGrupoWeb = explicitGrupoWeb ?? productAttributeGrupoWeb;
+  const productMaterialAttributes = product.atributos.filter(
+    (attribute) => normalizeAttributeName(attribute.clase) === "MATERIAL",
+  );
+  const topLevelMaterial = (product.materialGrupo ?? product.material)?.trim();
+  const topLevelSubmaterial = product.submaterial?.trim() || null;
+  const productMaterialValues = productMaterialAttributes.length
+    ? productMaterialAttributes.map((attribute) => ({
+        material: (attribute.grupoAtributo ?? attribute.valor)?.trim(),
+        submaterial: attribute.subgrupoAtributo?.trim() || null,
+      }))
+    : topLevelMaterial
+      ? [{ material: topLevelMaterial, submaterial: topLevelSubmaterial }]
+      : [];
+
+  const addClassification = (
+    material: string | undefined,
+    submaterial: string | null,
+    grupoWeb: string | undefined,
+  ) => {
+    if (!material) return;
+    const key = `${material.toLocaleUpperCase()}\0${submaterial?.toLocaleUpperCase() ?? ""}`;
+    const classification = classifications.get(key) ?? {
+      material,
+      submaterial,
+      grupoWebValues: new Map<string, string>(),
+    };
+    if (grupoWeb) {
+      const grupoWebKey = grupoWeb.toLocaleUpperCase();
+      if (!classification.grupoWebValues.has(grupoWebKey)) {
+        classification.grupoWebValues.set(grupoWebKey, grupoWeb);
+      }
+    }
+    classifications.set(key, classification);
+  };
+
+  productMaterialValues.forEach(({ material, submaterial }) => {
+    addClassification(material, submaterial, productGrupoWeb);
+  });
+
+  variants.forEach((variant) => {
+    const variantGrupoWeb = explicitGrupoWeb ??
+      grupoWebFromAttributes(variant.atributos) ??
+      productAttributeGrupoWeb;
+    const variantMaterialAttributes = variant.atributos.filter(
+      (attribute) => normalizeAttributeName(attribute.clase) === "MATERIAL",
+    );
+    const materialValues = variantMaterialAttributes.length
+      ? variantMaterialAttributes.map((attribute) => ({
+          material: (attribute.grupoAtributo ?? attribute.valor)?.trim(),
+          submaterial: attribute.subgrupoAtributo?.trim() || null,
+        }))
+      : productMaterialValues;
+
+    materialValues.forEach(({ material, submaterial }) => {
+      addClassification(material, submaterial, variantGrupoWeb);
     });
-  return Array.from(classifications.values());
+  });
+
+  return Array.from(classifications.values()).map(
+    ({ material, submaterial, grupoWebValues }) => ({
+      material,
+      submaterial,
+      grupoWebValues: Array.from(grupoWebValues.values()),
+    }),
+  );
 };
 
 const colorNameOf = (variante: CatalogoVariante): string | undefined => {
@@ -334,7 +404,8 @@ export const fetchProducts = async ({
         brand: prod.marca ?? undefined,
         line: prod.linea ?? undefined,
         material: prod.material ?? undefined,
-        materialClassifications: materialClassificationsOf(prod.atributos, variantesPublicables),
+        grupoWeb: prod.grupoWeb?.trim() || grupoWebFromAttributes(prod.atributos),
+        materialClassifications: materialClassificationsOf(prod, variantesPublicables),
         foodSafe: foodSafeOf(
           prod.atributos,
           variantesPublicables.flatMap((variant) => variant.atributos),

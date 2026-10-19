@@ -9,9 +9,11 @@ export interface Product {
   brand?: string;
   line?: string;
   material?: string;
+  grupoWeb?: string;
   materialClassifications?: {
     material: string;
     submaterial: string | null;
+    grupoWebValues?: string[];
   }[];
   foodSafe?: boolean;
   origin?: string;
