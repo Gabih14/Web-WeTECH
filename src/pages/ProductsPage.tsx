@@ -10,6 +10,14 @@ import { fetchProducts } from "../services/fetchProducts";
 import { useSEO } from "../hooks/useSEO";
 import { useAuth } from "@clerk/react";
 import { useEcommerceUser } from "../context/EcommerceUserContext";
+import {
+  buildMaterialGroups,
+  materialGroupValue,
+  matchesMaterialFilter,
+  normalizeMaterial,
+  setMaterialSearchParams,
+  type MaterialGroup,
+} from "../utils/materialFilters";
 
 interface ColorFilterProps {
   colorGroups: ColorGroup[];
@@ -30,9 +38,10 @@ interface LineFilterProps {
 }
 
 interface MaterialFilterProps {
-  materials: string[];
+  materials: MaterialGroup[];
   selectedMaterial: string | null;
-  onMaterialChange: (material: string | null) => void;
+  selectedSubmaterial: string | null;
+  onMaterialChange: (material: string | null, submaterial: string | null) => void;
 }
 
 interface MoreFiltersProps {
@@ -60,17 +69,7 @@ const normalizeLine = (line: string) =>
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toUpperCase();
-const normalizeMaterial = (material: string) =>
-  material.trim().toUpperCase();
 const normalizeOrigin = (origin: string) => origin.trim().toUpperCase();
-const PLA_MATERIAL_LABEL = "PLA / PLA+";
-const materialFilterValue = (material: string) => {
-  const normalizedMaterial = normalizeMaterial(material);
-
-  return normalizedMaterial === "PLA" || normalizedMaterial === "PLA+"
-    ? PLA_MATERIAL_LABEL
-    : material.trim();
-};
 const normalizeDifficulty = (level: string) =>
   level
     .trim()
@@ -329,9 +328,11 @@ function LineFilter({
 function MaterialFilter({
   materials,
   selectedMaterial,
+  selectedSubmaterial,
   onMaterialChange,
 }: MaterialFilterProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [expandedMaterials, setExpandedMaterials] = useState<string[]>([]);
 
   if (materials.length === 0) {
     return null;
@@ -346,7 +347,7 @@ function MaterialFilter({
         <h2 className="text-xl font-bold">Material</h2>
         {selectedMaterial !== null && (
           <button
-            onClick={() => onMaterialChange(null)}
+            onClick={() => onMaterialChange(null, null)}
             className="text-sm font-medium text-yellow-700 hover:text-yellow-900"
             type="button"
           >
@@ -356,25 +357,55 @@ function MaterialFilter({
       </div>
 
       <div className="space-y-2">
-        {visibleMaterials.map((material) => {
+        {visibleMaterials.map(({ material, label, submaterials }) => {
           const isSelected =
             selectedMaterial !== null &&
-            normalizeMaterial(materialFilterValue(selectedMaterial)) ===
-              normalizeMaterial(materialFilterValue(material));
+            normalizeMaterial(materialGroupValue(selectedMaterial)) ===
+              normalizeMaterial(material);
+          const isOpen = isSelected || expandedMaterials.includes(normalizeMaterial(material));
 
           return (
-            <button
-              key={material}
-              onClick={() =>
-                onMaterialChange(isSelected ? null : material)
-              }
-              className={`w-full rounded p-2 text-left transition-colors ${
-                isSelected ? "bg-yellow-100 text-black" : "hover:bg-gray-100"
-              }`}
-              type="button"
-            >
-              {material}
-            </button>
+            <div key={material}>
+              <button
+                onClick={() => setExpandedMaterials((expanded) => {
+                  const key = normalizeMaterial(material);
+                  return expanded.includes(key)
+                    ? expanded.filter((value) => value !== key)
+                    : [...expanded, key];
+                })}
+                className={`flex w-full items-center justify-between rounded p-2 text-left transition-colors ${
+                  isSelected ? "bg-yellow-100 text-black" : "hover:bg-gray-100"
+                }`}
+                type="button"
+                aria-expanded={isOpen}
+              >
+                <span>{label}</span>
+                {isOpen ? <Minus className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+              </button>
+              {isOpen && (
+                <div className="ml-4 mt-1 space-y-1 border-l border-gray-200 pl-2">
+                  {[null, ...submaterials].map((submaterial) => {
+                    const subSelected = isSelected &&
+                      (submaterial === null
+                        ? selectedSubmaterial === null
+                        : selectedSubmaterial !== null &&
+                          normalizeMaterial(selectedSubmaterial) === normalizeMaterial(submaterial));
+                    return (
+                      <button
+                        key={submaterial ?? "all"}
+                        onClick={() => onMaterialChange(material, submaterial)}
+                        className={`w-full rounded px-2 py-1 text-left text-sm ${
+                          subSelected ? "bg-yellow-100 font-medium" : "hover:bg-gray-100"
+                        }`}
+                        type="button"
+                      >
+                        {submaterial ?? "Todos"}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           );
         })}
       </div>
@@ -638,7 +669,12 @@ export function ProductsPage() {
   >(null);
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
   const [selectedLine, setSelectedLine] = useState<string | null>(null);
-  const [selectedMaterial, setSelectedMaterial] = useState<string | null>(null);
+  const [selectedMaterial, setSelectedMaterial] = useState<string | null>(
+    searchParams.get("material")
+  );
+  const [selectedSubmaterial, setSelectedSubmaterial] = useState<string | null>(
+    searchParams.get("submaterial")
+  );
   const [selectedWeight, setSelectedWeight] = useState<number | null>(null);
   const [selectedOrigin, setSelectedOrigin] = useState<string | null>(null);
   const [foodSafeOnly, setFoodSafeOnly] = useState(false);
@@ -685,6 +721,11 @@ export function ProductsPage() {
         setLoading(false);
       });
   }, [denyWholesaleAccess, getToken, isWholesale]);
+
+  useEffect(() => {
+    setSelectedMaterial(searchParams.get("material"));
+    setSelectedSubmaterial(searchParams.get("submaterial"));
+  }, [searchParams]);
 
   const categoriesWithFilamentSubcategories = useMemo(() => {
     const filamentCategoryId = "FILAMENTO 3D";
@@ -800,30 +841,7 @@ export function ProductsPage() {
   }, [matchesSelectedCategory, products]);
 
   const availableMaterials = useMemo(() => {
-    const materialMap = new Map<string, string>();
-
-    products.filter(matchesSelectedCategory).forEach((product) => {
-      if (!product.material?.trim()) {
-        return;
-      }
-
-      const filterValue = materialFilterValue(product.material);
-      const normalizedMaterial = normalizeMaterial(filterValue);
-      if (!materialMap.has(normalizedMaterial)) {
-        materialMap.set(normalizedMaterial, filterValue);
-      }
-    });
-
-    return Array.from(materialMap.values()).sort((a, b) => {
-      const aIsPla = normalizeMaterial(a) === normalizeMaterial(PLA_MATERIAL_LABEL);
-      const bIsPla = normalizeMaterial(b) === normalizeMaterial(PLA_MATERIAL_LABEL);
-
-      if (aIsPla !== bIsPla) {
-        return aIsPla ? -1 : 1;
-      }
-
-      return a.localeCompare(b);
-    });
+    return buildMaterialGroups(products.filter(matchesSelectedCategory));
   }, [matchesSelectedCategory, products]);
 
   const availableWeights = useMemo(() => {
@@ -939,13 +957,39 @@ export function ProductsPage() {
     if (
       selectedMaterial !== null &&
       !availableMaterials.some(
-        (material) =>
-          normalizeMaterial(material) === normalizeMaterial(selectedMaterial)
+        ({ material }) =>
+          normalizeMaterial(material) ===
+          normalizeMaterial(materialGroupValue(selectedMaterial))
+      ) &&
+      !products.some(
+        (product) =>
+          product.material &&
+          normalizeMaterial(product.material) === normalizeMaterial(selectedMaterial)
       )
     ) {
       setSelectedMaterial(null);
+      setSelectedSubmaterial(null);
+      setSearchParams(setMaterialSearchParams(searchParams, null, null));
     }
-  }, [availableMaterials, selectedMaterial]);
+  }, [availableMaterials, products, searchParams, selectedMaterial, setSearchParams]);
+
+  useEffect(() => {
+    if (!selectedMaterial || !selectedSubmaterial) return;
+    const group = availableMaterials.find(
+      ({ material }) =>
+        normalizeMaterial(material) ===
+        normalizeMaterial(materialGroupValue(selectedMaterial)),
+    );
+    if (
+      group &&
+      !group.submaterials.some(
+        (submaterial) => normalizeMaterial(submaterial) === normalizeMaterial(selectedSubmaterial),
+      )
+    ) {
+      setSelectedSubmaterial(null);
+      setSearchParams(setMaterialSearchParams(searchParams, selectedMaterial, null));
+    }
+  }, [availableMaterials, searchParams, selectedMaterial, selectedSubmaterial, setSearchParams]);
 
   useEffect(() => {
     if (
@@ -988,11 +1032,11 @@ export function ProductsPage() {
       selectedLine === null ||
       (product.line &&
         normalizeLine(product.line) === normalizeLine(selectedLine));
-    const matchesMaterial =
-      selectedMaterial === null ||
-      (product.material &&
-        normalizeMaterial(materialFilterValue(product.material)) ===
-          normalizeMaterial(materialFilterValue(selectedMaterial)));
+    const matchesMaterial = matchesMaterialFilter(
+      product,
+      selectedMaterial,
+      selectedSubmaterial,
+    );
     const matchesWeight =
       selectedWeight === null ||
       product.weights?.some(({ weight }) => weight === selectedWeight);
@@ -1026,28 +1070,38 @@ export function ProductsPage() {
 
   const handleCategoryChange = (category: string | null) => {
     setSelectedCategory(category);
-    if (category) {
-      setSearchParams({ category });
-    } else {
-      setSearchParams({});
-    }
+    const next = new URLSearchParams(searchParams);
+    if (category) next.set("category", category);
+    else next.delete("category");
+    setSearchParams(next);
     setSelectedSubcategory(null);
   };
+
+  function handleMaterialChange(material: string | null, submaterial: string | null) {
+    setSelectedMaterial(material);
+    setSelectedSubmaterial(material ? submaterial : null);
+    setSearchParams(setMaterialSearchParams(searchParams, material, submaterial));
+  }
 
   const handleSubcategoryChange = (subcategory: string | null) => {
     setSelectedSubcategory(subcategory);
   };
 
   const clearActiveFilters = () => {
-    handleCategoryChange(null);
+    setSelectedCategory(null);
+    setSelectedSubcategory(null);
     setSelectedColorGroupId(null);
     setSelectedBrand(null);
     setSelectedLine(null);
     setSelectedMaterial(null);
+    setSelectedSubmaterial(null);
     setSelectedWeight(null);
     setSelectedOrigin(null);
     setFoodSafeOnly(false);
     setSelectedDifficulty(null);
+    const next = setMaterialSearchParams(searchParams, null, null);
+    next.delete("category");
+    setSearchParams(next);
   };
 
   const hasActiveFilters =
@@ -1056,6 +1110,7 @@ export function ProductsPage() {
     selectedBrand !== null ||
     selectedLine !== null ||
     selectedMaterial !== null ||
+    selectedSubmaterial !== null ||
     selectedWeight !== null ||
     selectedOrigin !== null ||
     foodSafeOnly ||
@@ -1220,7 +1275,8 @@ export function ProductsPage() {
           <MaterialFilter
             materials={availableMaterials}
             selectedMaterial={selectedMaterial}
-            onMaterialChange={setSelectedMaterial}
+            selectedSubmaterial={selectedSubmaterial}
+            onMaterialChange={handleMaterialChange}
           />
           <ColorFilter
             colorGroups={availableColorGroups}
@@ -1347,7 +1403,8 @@ export function ProductsPage() {
           <MaterialFilter
             materials={availableMaterials}
             selectedMaterial={selectedMaterial}
-            onMaterialChange={setSelectedMaterial}
+            selectedSubmaterial={selectedSubmaterial}
+            onMaterialChange={handleMaterialChange}
           />
           <ColorFilter
             colorGroups={availableColorGroups}

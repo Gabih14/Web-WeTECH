@@ -18,6 +18,8 @@ interface CatalogoAtributo {
   color: string | null;
   heredado: boolean;
   orden: number | null;
+  grupoAtributo?: string | null;
+  subgrupoAtributo?: string | null;
 }
 interface CatalogoVariante {
   id: string;
@@ -95,6 +97,23 @@ const normalizeAttributeName = (value: string): string =>
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toUpperCase();
+
+const materialClassificationsOf = (
+  productAttributes: CatalogoAtributo[],
+  variants: CatalogoVariante[],
+) => {
+  const classifications = new Map<string, { material: string; submaterial: string | null }>();
+  [...productAttributes, ...variants.flatMap((variant) => variant.atributos)]
+    .filter((attribute) => normalizeAttributeName(attribute.clase) === "MATERIAL")
+    .forEach((attribute) => {
+      const material = (attribute.grupoAtributo ?? attribute.valor)?.trim();
+      const submaterial = attribute.subgrupoAtributo?.trim() || null;
+      if (!material) return;
+      const key = `${material.toLocaleUpperCase()}\0${submaterial?.toLocaleUpperCase() ?? ""}`;
+      if (!classifications.has(key)) classifications.set(key, { material, submaterial });
+    });
+  return Array.from(classifications.values());
+};
 
 const colorNameOf = (variante: CatalogoVariante): string | undefined => {
   const optionColor = variante.opciones?.["Colores"]?.trim();
@@ -315,6 +334,7 @@ export const fetchProducts = async ({
         brand: prod.marca ?? undefined,
         line: prod.linea ?? undefined,
         material: prod.material ?? undefined,
+        materialClassifications: materialClassificationsOf(prod.atributos, variantesPublicables),
         foodSafe: foodSafeOf(
           prod.atributos,
           variantesPublicables.flatMap((variant) => variant.atributos),
@@ -440,8 +460,11 @@ export const fetchProducts = async ({
     }
 
     return products;
-  } catch (error: any) {
-    console.error("Error al obtener los productos:", error.message);
+  } catch (error: unknown) {
+    console.error(
+      "Error al obtener los productos:",
+      error instanceof Error ? error.message : error,
+    );
     throw new Error(
       "No se pudieron obtener los productos. Intenta nuevamente más tarde.",
     );

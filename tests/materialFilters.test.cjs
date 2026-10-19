@@ -1,0 +1,96 @@
+const assert = require("node:assert/strict");
+const test = require("node:test");
+
+require("sucrase/register/ts");
+
+const {
+  buildMaterialGroups,
+  materialLabel,
+  matchesMaterialFilter,
+  setMaterialSearchParams,
+} = require("../src/utils/materialFilters.ts");
+
+const product = (material, submaterial, historical = material) => ({
+  material: historical,
+  materialClassifications: [{ material, submaterial }],
+});
+
+test("presenta PLA como PLA / PLA+ sin cambiar su valor", () => {
+  assert.equal(materialLabel("PLA"), "PLA / PLA+");
+  assert.equal(buildMaterialGroups([product("PLA", null)])[0].material, "PLA");
+});
+
+test("agrupa PLA y PLA+ bajo la clave PLA", () => {
+  const groups = buildMaterialGroups([
+    product("PLA", "SILK"),
+    product("PLA+", "MATTE"),
+  ]);
+  assert.deepEqual(groups, [{
+    material: "PLA",
+    label: "PLA / PLA+",
+    submaterials: ["MATTE", "SILK"],
+  }]);
+  assert.equal(matchesMaterialFilter(product("PLA+", null), "PLA", null), true);
+  assert.equal(matchesMaterialFilter(product("PLA", null), "PLA+", null), true);
+  assert.equal(matchesMaterialFilter({ material: "PLA+" }, "PLA", null), true);
+});
+
+test("unifica cualquier material que solo se diferencia por un + final", () => {
+  const groups = buildMaterialGroups([
+    product("PETG", null),
+    product("PETG+", "FIBRA DE CARBONO"),
+  ]);
+  assert.deepEqual(groups, [{
+    material: "PETG",
+    label: "PETG / PETG+",
+    submaterials: ["FIBRA DE CARBONO"],
+  }]);
+  assert.equal(matchesMaterialFilter(product("PETG+", null), "PETG", null), true);
+});
+
+test("Todos conserva material y elimina submaterial de la query", () => {
+  const result = setMaterialSearchParams(
+    new URLSearchParams("category=FILAMENTO+3D&material=PLA&submaterial=SILK"),
+    "PLA",
+    null,
+  );
+  assert.equal(result.get("material"), "PLA");
+  assert.equal(result.has("submaterial"), false);
+  assert.equal(result.get("category"), "FILAMENTO 3D");
+});
+
+test("seleccionar SILK serializa material y submaterial", () => {
+  assert.equal(
+    setMaterialSearchParams(new URLSearchParams(), "PLA", "SILK").toString(),
+    "material=PLA&submaterial=SILK",
+  );
+});
+
+test("cambiar de PLA a NYLON elimina el submaterial anterior", () => {
+  const result = setMaterialSearchParams(
+    new URLSearchParams("material=PLA&submaterial=SILK"),
+    "NYLON",
+    null,
+  );
+  assert.equal(result.toString(), "material=NYLON");
+});
+
+test("deduplica submateriales con comparacion normalizada", () => {
+  const groups = buildMaterialGroups([product("PLA", "SILK"), product("PLA", " silk ")]);
+  assert.deepEqual(groups[0].submaterials, ["SILK"]);
+});
+
+test("no infiere MATTE desde el valor historico", () => {
+  const groups = buildMaterialGroups([product("PLA", null, "PLA+ Matte")]);
+  assert.deepEqual(groups[0].submaterials, []);
+});
+
+test("una URL historica sigue filtrando por el valor historico", () => {
+  assert.equal(matchesMaterialFilter(product("PLA", null, "PLA Boutique"), "PLA Boutique", null), true);
+});
+
+test("cada submaterial pertenece solamente a su material", () => {
+  const groups = buildMaterialGroups([product("PLA", "SILK"), product("PETG+", "FIBRA DE CARBONO")]);
+  assert.deepEqual(groups.find((group) => group.material === "PLA").submaterials, ["SILK"]);
+  assert.deepEqual(groups.find((group) => group.material === "PETG").submaterials, ["FIBRA DE CARBONO"]);
+});

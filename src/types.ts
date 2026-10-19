@@ -9,6 +9,10 @@ export interface Product {
   brand?: string;
   line?: string;
   material?: string;
+  materialClassifications?: {
+    material: string;
+    submaterial: string | null;
+  }[];
   foodSafe?: boolean;
   origin?: string;
   category: string;
