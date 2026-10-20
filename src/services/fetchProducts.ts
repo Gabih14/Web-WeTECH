@@ -3,6 +3,7 @@ import { Colors, Product } from "../types";
 import { shouldExcludeFamily } from "../data/excludedFamilies";
 import sparePartsFallbackImage from "../assets/pngtree-no-image-vector-illustration-isolated-png-image_1694547.jpg";
 import { shouldFallbackFromWholesaleStatus } from "../utils/wholesalePricing";
+import { preferredSubmaterial } from "../utils/materialFilters";
 
 const MINIMUM_PRODUCT_PRICE = 100;
 const MINIMUM_FILAMENT_PRICE = 10000;
@@ -36,6 +37,8 @@ interface CatalogoVariante {
   visible: boolean;
   opciones: Record<string, string>;
   atributos: CatalogoAtributo[];
+  submaterial?: string | null;
+  sublinea?: string | null;
 }
 interface CatalogoProducto {
   key: string;
@@ -44,6 +47,7 @@ interface CatalogoProducto {
   material: string | null;
   materialGrupo?: string | null;
   submaterial?: string | null;
+  sublinea?: string | null;
   grupoWeb?: string | null;
   linea: string | null;
   origen: string | null;
@@ -106,6 +110,18 @@ const grupoWebFromAttributes = (attributes: CatalogoAtributo[]): string | undefi
     .find((attribute) => normalizeAttributeName(attribute.clase) === "GRUPO WEB")
     ?.valor?.trim() || undefined;
 
+const taxonomyValueFromAttributes = (
+  attributes: CatalogoAtributo[],
+  attributeClass: string,
+): string | undefined =>
+  attributes
+    .find(
+      (attribute) =>
+        normalizeAttributeName(attribute.clase).replace(/[\s_-]+/g, "") ===
+        normalizeAttributeName(attributeClass).replace(/[\s_-]+/g, ""),
+    )
+    ?.valor?.trim() || undefined;
+
 const materialClassificationsOf = (
   product: CatalogoProducto,
   variants: CatalogoVariante[],
@@ -118,15 +134,26 @@ const materialClassificationsOf = (
   const explicitGrupoWeb = product.grupoWeb?.trim() || undefined;
   const productAttributeGrupoWeb = grupoWebFromAttributes(product.atributos);
   const productGrupoWeb = explicitGrupoWeb ?? productAttributeGrupoWeb;
+  const productSubmaterial = product.submaterial?.trim() ||
+    taxonomyValueFromAttributes(product.atributos, "SUBMATERIAL");
+  const productSublinea = product.sublinea?.trim() ||
+    taxonomyValueFromAttributes(product.atributos, "SUB-LINEA");
+  const productFallbackSubmaterial = preferredSubmaterial(
+    productSubmaterial,
+    productSublinea,
+  );
   const productMaterialAttributes = product.atributos.filter(
     (attribute) => normalizeAttributeName(attribute.clase) === "MATERIAL",
   );
   const topLevelMaterial = (product.materialGrupo ?? product.material)?.trim();
-  const topLevelSubmaterial = product.submaterial?.trim() || null;
+  const topLevelSubmaterial = productFallbackSubmaterial;
   const productMaterialValues = productMaterialAttributes.length
     ? productMaterialAttributes.map((attribute) => ({
         material: (attribute.grupoAtributo ?? attribute.valor)?.trim(),
-        submaterial: attribute.subgrupoAtributo?.trim() || null,
+        submaterial: preferredSubmaterial(
+          attribute.subgrupoAtributo,
+          productFallbackSubmaterial,
+        ),
       }))
     : topLevelMaterial
       ? [{ material: topLevelMaterial, submaterial: topLevelSubmaterial }]
@@ -161,13 +188,26 @@ const materialClassificationsOf = (
     const variantGrupoWeb = explicitGrupoWeb ??
       grupoWebFromAttributes(variant.atributos) ??
       productAttributeGrupoWeb;
+    const variantSubmaterial = variant.submaterial?.trim() ||
+      taxonomyValueFromAttributes(variant.atributos, "SUBMATERIAL") ||
+      productSubmaterial;
+    const variantSublinea = variant.sublinea?.trim() ||
+      taxonomyValueFromAttributes(variant.atributos, "SUB-LINEA") ||
+      productSublinea;
+    const variantFallbackSubmaterial = preferredSubmaterial(
+      variantSubmaterial,
+      variantSublinea,
+    );
     const variantMaterialAttributes = variant.atributos.filter(
       (attribute) => normalizeAttributeName(attribute.clase) === "MATERIAL",
     );
     const materialValues = variantMaterialAttributes.length
       ? variantMaterialAttributes.map((attribute) => ({
           material: (attribute.grupoAtributo ?? attribute.valor)?.trim(),
-          submaterial: attribute.subgrupoAtributo?.trim() || null,
+          submaterial: preferredSubmaterial(
+            attribute.subgrupoAtributo,
+            variantFallbackSubmaterial,
+          ),
         }))
       : productMaterialValues;
 

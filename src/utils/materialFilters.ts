@@ -26,6 +26,11 @@ type MaterialProduct = {
 export const normalizeMaterial = (value: string) =>
   value.trim().toLocaleUpperCase();
 
+export const preferredSubmaterial = (
+  submaterial?: string | null,
+  sublinea?: string | null,
+) => submaterial?.trim() || sublinea?.trim() || null;
+
 export const materialGroupValue = (material: string) =>
   material.trim().replace(/\+$/, "").trim();
 
@@ -36,8 +41,31 @@ export const materialLabel = (material: string, hasPlusVariant = false) => {
     : groupedMaterial;
 };
 
-export const grupoWebLabel = (grupoWeb: string) =>
-  normalizeMaterial(grupoWeb) === "ESTANDAR" ? "General" : grupoWeb;
+export const grupoWebLabel = (grupoWeb: string, material?: string) => {
+  const label = normalizeMaterial(grupoWeb) === "ESTANDAR"
+    ? "General"
+    : grupoWeb;
+  return material && normalizeMaterial(materialGroupValue(material)) === "PLA"
+    ? `PLA ${label}`
+    : label;
+};
+
+export const showsSubmaterialOptionsForGrupoWeb = (grupoWeb: string) =>
+  normalizeMaterial(grupoWeb) !== "ESTANDAR";
+
+export const hasMaterialFilterOptions = (group: MaterialGroup) =>
+  group.grupoWebValues.length > 0 || group.submaterials.length > 0;
+
+export function partitionMaterialGroups(groups: MaterialGroup[]) {
+  return {
+    pla: groups.filter(
+      ({ material }) => normalizeMaterial(materialGroupValue(material)) === "PLA",
+    ),
+    technical: groups.filter(
+      ({ material }) => normalizeMaterial(materialGroupValue(material)) !== "PLA",
+    ),
+  };
+}
 
 const compareGrupoWeb = (a: string, b: string) => {
   const aIsGeneral = normalizeMaterial(a) === "ESTANDAR";
@@ -45,7 +73,13 @@ const compareGrupoWeb = (a: string, b: string) => {
   return aIsGeneral === bIsGeneral ? a.localeCompare(b) : aIsGeneral ? -1 : 1;
 };
 
-export function buildMaterialGroups(products: MaterialProduct[]): MaterialGroup[] {
+export function buildMaterialGroups(
+  products: MaterialProduct[],
+  availableSubmaterials?: string[],
+): MaterialGroup[] {
+  const availableSubmaterialKeys = availableSubmaterials
+    ? new Set(availableSubmaterials.map(normalizeMaterial))
+    : null;
   const groups = new Map<string, {
     material: string;
     hasPlusVariant: boolean;
@@ -93,7 +127,11 @@ export function buildMaterialGroups(products: MaterialProduct[]): MaterialGroup[
         }
       });
       const cleanSubmaterial = submaterial?.trim();
-      if (cleanSubmaterial) {
+      if (
+        cleanSubmaterial &&
+        (!availableSubmaterialKeys ||
+          availableSubmaterialKeys.has(normalizeMaterial(cleanSubmaterial)))
+      ) {
         const submaterialKey = normalizeMaterial(cleanSubmaterial);
         const submaterialOption = group.submaterials.get(submaterialKey) ?? {
           value: cleanSubmaterial,
@@ -140,13 +178,16 @@ export function matchesMaterialFilter(
   submaterial: string | null,
   grupoWeb: string | null = null,
 ) {
-  if (!material) return true;
-  const materialKey = normalizeMaterial(materialGroupValue(material));
+  if (!material && !submaterial && !grupoWeb) return true;
+  const materialKey = material
+    ? normalizeMaterial(materialGroupValue(material))
+    : null;
   const submaterialKey = submaterial ? normalizeMaterial(submaterial) : null;
   const grupoWebKey = grupoWeb ? normalizeMaterial(grupoWeb) : null;
   const classificationMatches = product.materialClassifications?.some(
     (value) =>
-      normalizeMaterial(materialGroupValue(value.material)) === materialKey &&
+      (!materialKey ||
+        normalizeMaterial(materialGroupValue(value.material)) === materialKey) &&
       (!submaterialKey ||
         (value.submaterial && normalizeMaterial(value.submaterial) === submaterialKey)) &&
       (!grupoWebKey ||
@@ -155,12 +196,14 @@ export function matchesMaterialFilter(
         ) || (!!product.grupoWeb && normalizeMaterial(product.grupoWeb) === grupoWebKey))),
   );
 
-  return classificationMatches ||
-    (!submaterialKey &&
-      !!product.material &&
-      normalizeMaterial(materialGroupValue(product.material)) === materialKey &&
-      (!grupoWebKey ||
-        (!!product.grupoWeb && normalizeMaterial(product.grupoWeb) === grupoWebKey)));
+  if (classificationMatches) return true;
+
+  return !submaterialKey &&
+    (!materialKey ||
+      (!!product.material &&
+        normalizeMaterial(materialGroupValue(product.material)) === materialKey)) &&
+    (!grupoWebKey ||
+      (!!product.grupoWeb && normalizeMaterial(product.grupoWeb) === grupoWebKey));
 }
 
 export function grupoWebValuesForSelection(

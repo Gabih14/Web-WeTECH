@@ -7,6 +7,7 @@ import { CategoryFilter } from "../components/products/CategoryFilter";
 import { ColorSwatch } from "../components/products/ColorSwatch";
 import { ColorGroup, Product } from "../types";
 import { fetchProducts } from "../services/fetchProducts";
+import { fetchCatalogFacets } from "../services/fetchCatalogFacets";
 import { useSEO } from "../hooks/useSEO";
 import { useAuth } from "@clerk/react";
 import { useEcommerceUser } from "../context/EcommerceUserContext";
@@ -14,14 +15,18 @@ import {
   buildMaterialGroups,
   grupoWebLabel,
   grupoWebValuesForSelection,
+  hasMaterialFilterOptions,
   isGrupoWebAvailable,
   materialGroupValue,
   matchesMaterialFilter,
   normalizeMaterial,
+  partitionMaterialGroups,
   setMaterialSearchParams,
+  showsSubmaterialOptionsForGrupoWeb,
   submaterialsForGrupoWeb,
   type MaterialGroup,
 } from "../utils/materialFilters";
+import { valuesForFacet, type CatalogFacet } from "../utils/catalogFacets";
 
 interface ColorFilterProps {
   colorGroups: ColorGroup[];
@@ -52,6 +57,7 @@ interface MaterialFilterProps {
     submaterial: string | null,
     grupoWeb: string,
   ) => void;
+  embedded?: boolean;
 }
 
 interface MoreFiltersProps {
@@ -342,6 +348,7 @@ function MaterialFilter({
   selectedGrupoWeb,
   onMaterialChange,
   onGrupoWebChange,
+  embedded = false,
 }: MaterialFilterProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [expandedMaterials, setExpandedMaterials] = useState<string[]>([]);
@@ -354,19 +361,21 @@ function MaterialFilter({
   const hasMoreMaterials = materials.length > 5;
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow mb-6">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="text-xl font-bold">Material</h2>
-        {selectedMaterial !== null && (
-          <button
-            onClick={() => onMaterialChange(null, null)}
-            className="text-sm font-medium text-yellow-700 hover:text-yellow-900"
-            type="button"
-          >
-            Limpiar
-          </button>
-        )}
-      </div>
+    <div className={embedded ? "" : "mb-6 rounded-lg bg-white p-4 shadow"}>
+      {!embedded && (
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="text-xl font-bold">Material</h2>
+          {selectedMaterial !== null && (
+            <button
+              onClick={() => onMaterialChange(null, null)}
+              className="text-sm font-medium text-yellow-700 hover:text-yellow-900"
+              type="button"
+            >
+              Limpiar
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="space-y-2">
         {visibleMaterials.map(({ material, label, grupoWebValues, submaterials }) => {
@@ -375,26 +384,45 @@ function MaterialFilter({
             normalizeMaterial(materialGroupValue(selectedMaterial)) ===
               normalizeMaterial(material);
           const isOpen = isSelected || expandedMaterials.includes(normalizeMaterial(material));
+          const hasOptions = hasMaterialFilterOptions({
+            material,
+            label,
+            grupoWebValues,
+            submaterials,
+          });
+          const ungroupedSubmaterials = submaterials.filter(
+            ({ grupoWebValues: values }) => values.length === 0,
+          );
 
           return (
             <div key={material}>
               <button
-                onClick={() => setExpandedMaterials((expanded) => {
-                  const key = normalizeMaterial(material);
-                  return expanded.includes(key)
-                    ? expanded.filter((value) => value !== key)
-                    : [...expanded, key];
-                })}
+                onClick={() => {
+                  if (!hasOptions) {
+                    onMaterialChange(isSelected ? null : material, null);
+                    return;
+                  }
+                  setExpandedMaterials((expanded) => {
+                    const key = normalizeMaterial(material);
+                    return expanded.includes(key)
+                      ? expanded.filter((value) => value !== key)
+                      : [...expanded, key];
+                  });
+                }}
                 className={`flex w-full items-center justify-between rounded p-2 text-left transition-colors ${
                   isSelected ? "bg-yellow-100 text-black" : "hover:bg-gray-100"
                 }`}
                 type="button"
-                aria-expanded={isOpen}
+                aria-expanded={hasOptions ? isOpen : undefined}
               >
                 <span>{label}</span>
-                {isOpen ? <Minus className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                {hasOptions && (
+                  isOpen
+                    ? <Minus className="h-4 w-4" />
+                    : <Plus className="h-4 w-4" />
+                )}
               </button>
-              {isOpen && (
+              {hasOptions && isOpen && (
                 <div className="ml-4 mt-1 space-y-1 border-l border-gray-200 pl-2">
                   <button
                     onClick={() => onMaterialChange(material, null)}
@@ -412,11 +440,13 @@ function MaterialFilter({
                     const grupoWebSelected = isSelected &&
                       selectedGrupoWeb !== null &&
                       normalizeMaterial(selectedGrupoWeb) === normalizeMaterial(grupoWeb);
-                    const compatibleSubmaterials = submaterialsForGrupoWeb(
-                      { material, label, grupoWebValues, submaterials },
-                      grupoWeb,
-                    );
-
+                    const compatibleSubmaterials =
+                      showsSubmaterialOptionsForGrupoWeb(grupoWeb)
+                        ? submaterialsForGrupoWeb(
+                            { material, label, grupoWebValues, submaterials },
+                            grupoWeb,
+                          )
+                        : [];
                     return (
                       <div key={grupoWeb}>
                         <button
@@ -430,18 +460,17 @@ function MaterialFilter({
                           aria-expanded={grupoWebSelected}
                           aria-pressed={grupoWebSelected}
                         >
-                          <span>{grupoWebLabel(grupoWeb)}</span>
+                          <span>{grupoWebLabel(grupoWeb, material)}</span>
                           {compatibleSubmaterials.length > 0 && (
                             grupoWebSelected
                               ? <Minus className="h-3.5 w-3.5" />
                               : <Plus className="h-3.5 w-3.5" />
                           )}
                         </button>
-
                         {grupoWebSelected && compatibleSubmaterials.length > 0 && (
                           <div className="ml-3 mt-1 space-y-1 border-l border-gray-200 pl-2">
                             {compatibleSubmaterials.map((submaterial) => {
-                              const submaterialSelected = selectedSubmaterial !== null &&
+                              const isSubmaterialSelected = selectedSubmaterial !== null &&
                                 normalizeMaterial(selectedSubmaterial) ===
                                   normalizeMaterial(submaterial.value);
                               return (
@@ -453,7 +482,7 @@ function MaterialFilter({
                                     grupoWeb,
                                   )}
                                   className={`w-full rounded px-2 py-1 text-left text-sm transition-colors ${
-                                    submaterialSelected
+                                    isSubmaterialSelected
                                       ? "bg-yellow-100 font-medium"
                                       : "hover:bg-gray-100"
                                   }`}
@@ -466,6 +495,28 @@ function MaterialFilter({
                           </div>
                         )}
                       </div>
+                    );
+                  })}
+
+                  {ungroupedSubmaterials.map((submaterial) => {
+                    const isSubmaterialSelected = isSelected &&
+                      selectedGrupoWeb === null &&
+                      selectedSubmaterial !== null &&
+                      normalizeMaterial(selectedSubmaterial) ===
+                        normalizeMaterial(submaterial.value);
+                    return (
+                      <button
+                        key={submaterial.value}
+                        onClick={() => onMaterialChange(material, submaterial.value)}
+                        className={`w-full rounded px-2 py-1 text-left text-sm transition-colors ${
+                          isSubmaterialSelected
+                            ? "bg-yellow-100 font-medium"
+                            : "hover:bg-gray-100"
+                        }`}
+                        type="button"
+                      >
+                        {submaterial.label}
+                      </button>
                     );
                   })}
                 </div>
@@ -485,6 +536,63 @@ function MaterialFilter({
           {isExpanded ? "Ver menos" : `Ver los ${materials.length} materiales`}
         </button>
       )}
+    </div>
+  );
+}
+
+function GroupedMaterialFilter(props: MaterialFilterProps) {
+  const [isTechnicalExpanded, setIsTechnicalExpanded] = useState(false);
+  const { pla, technical } = partitionMaterialGroups(props.materials);
+  const selectedMaterialIsTechnical = props.selectedMaterial !== null &&
+    normalizeMaterial(materialGroupValue(props.selectedMaterial)) !== "PLA";
+  const technicalIsOpen = selectedMaterialIsTechnical || isTechnicalExpanded;
+
+  if (props.materials.length === 0) return null;
+
+  return (
+    <div className="mb-6 rounded-lg bg-white p-4 shadow">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h2 className="text-xl font-bold">Material</h2>
+        {props.selectedMaterial !== null && (
+          <button
+            onClick={() => props.onMaterialChange(null, null)}
+            className="text-sm font-medium text-yellow-700 hover:text-yellow-900"
+            type="button"
+          >
+            Limpiar
+          </button>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <MaterialFilter {...props} materials={pla} embedded />
+
+        {technical.length > 0 && (
+          <div>
+            <button
+              onClick={() => setIsTechnicalExpanded((expanded) => !expanded)}
+              className={`flex w-full items-center justify-between rounded p-2 text-left transition-colors ${
+                selectedMaterialIsTechnical
+                  ? "bg-yellow-100 text-black"
+                  : "hover:bg-gray-100"
+              }`}
+              type="button"
+              aria-expanded={technicalIsOpen}
+            >
+              <span>Técnicos</span>
+              {technicalIsOpen
+                ? <Minus className="h-4 w-4" />
+                : <Plus className="h-4 w-4" />}
+            </button>
+
+            {technicalIsOpen && (
+              <div className="ml-4 mt-1 border-l border-gray-200 pl-2">
+                <MaterialFilter {...props} materials={technical} embedded />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -722,6 +830,7 @@ export function ProductsPage() {
   const { getToken } = useAuth();
   const { isWholesale, denyWholesaleAccess } = useEcommerceUser();
   const [products, setProducts] = useState<Product[]>([]);
+  const [facets, setFacets] = useState<CatalogFacet[]>([]);
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(
     searchParams.get("category")
@@ -775,6 +884,15 @@ export function ProductsPage() {
   }; */
 
   
+
+  useEffect(() => {
+    fetchCatalogFacets()
+      .then(setFacets)
+      .catch((error) => {
+        console.error("Error fetching catalog facets:", error);
+        setFacets([]);
+      });
+  }, []);
 
   useEffect(() => {
     setProducts([]);
@@ -909,9 +1027,33 @@ export function ProductsPage() {
     });
   }, [matchesSelectedCategory, products]);
 
+  const availableSubmaterials = useMemo(() => {
+    const values = new Map<string, string>();
+    [
+      ...valuesForFacet(facets, "Submaterial"),
+      ...valuesForFacet(facets, "Sub-línea"),
+      ...valuesForFacet(facets, "Sub-linea"),
+      ...valuesForFacet(facets, "Sub línea"),
+      ...valuesForFacet(facets, "Sub linea"),
+      ...products.flatMap((product) =>
+        product.materialClassifications?.flatMap(({ submaterial }) =>
+          submaterial ? [submaterial] : [],
+        ) ?? [],
+      ),
+    ].forEach((value) => {
+      const cleanValue = value.trim();
+      const key = normalizeMaterial(cleanValue);
+      if (cleanValue && !values.has(key)) values.set(key, cleanValue);
+    });
+    return Array.from(values.values());
+  }, [facets, products]);
+
   const availableMaterials = useMemo(() => {
-    return buildMaterialGroups(products.filter(matchesSelectedCategory));
-  }, [matchesSelectedCategory, products]);
+    return buildMaterialGroups(
+      products.filter(matchesSelectedCategory),
+      facets.length > 0 ? availableSubmaterials : undefined,
+    );
+  }, [availableSubmaterials, facets.length, matchesSelectedCategory, products]);
 
   const availableWeights = useMemo(() => {
     const weights = new Set<number>();
@@ -1042,11 +1184,18 @@ export function ProductsPage() {
       setSelectedGrupoWeb(null);
       setSearchParams(setMaterialSearchParams(searchParams, null, null, null));
     }
-  }, [availableMaterials, loading, products, searchParams, selectedMaterial, setSearchParams]);
+  }, [
+    availableMaterials,
+    loading,
+    products,
+    searchParams,
+    selectedMaterial,
+    selectedSubmaterial,
+    setSearchParams,
+  ]);
 
   useEffect(() => {
-    if (loading) return;
-    if (!selectedMaterial || !selectedSubmaterial) return;
+    if (loading || !selectedMaterial || !selectedSubmaterial) return;
     const group = availableMaterials.find(
       ({ material }) =>
         normalizeMaterial(material) ===
@@ -1055,13 +1204,15 @@ export function ProductsPage() {
     if (
       group &&
       !group.submaterials.some(
-        (submaterial) =>
-          normalizeMaterial(submaterial.value) === normalizeMaterial(selectedSubmaterial),
+        ({ value }) =>
+          normalizeMaterial(value) === normalizeMaterial(selectedSubmaterial),
       )
     ) {
       setSelectedSubmaterial(null);
       setSelectedGrupoWeb(null);
-      setSearchParams(setMaterialSearchParams(searchParams, selectedMaterial, null, null));
+      setSearchParams(
+        setMaterialSearchParams(searchParams, selectedMaterial, null, null),
+      );
     }
   }, [
     availableMaterials,
@@ -1090,10 +1241,17 @@ export function ProductsPage() {
     if (!group) return;
     if (
       selectedSubmaterial &&
-      !group.submaterials.some(
-        ({ value }) => normalizeMaterial(value) === normalizeMaterial(selectedSubmaterial),
-      )
+      !showsSubmaterialOptionsForGrupoWeb(selectedGrupoWeb)
     ) {
+      setSelectedSubmaterial(null);
+      setSearchParams(
+        setMaterialSearchParams(
+          searchParams,
+          selectedMaterial,
+          null,
+          selectedGrupoWeb,
+        ),
+      );
       return;
     }
     if (!isGrupoWebAvailable(group, selectedSubmaterial, selectedGrupoWeb)) {
@@ -1448,7 +1606,7 @@ export function ProductsPage() {
             selectedLevel={selectedDifficulty}
             onLevelChange={setSelectedDifficulty}
           />
-          <MaterialFilter
+          <GroupedMaterialFilter
             materials={availableMaterials}
             selectedMaterial={selectedMaterial}
             selectedSubmaterial={selectedSubmaterial}
@@ -1578,7 +1736,7 @@ export function ProductsPage() {
             selectedLevel={selectedDifficulty}
             onLevelChange={setSelectedDifficulty}
           />
-          <MaterialFilter
+          <GroupedMaterialFilter
             materials={availableMaterials}
             selectedMaterial={selectedMaterial}
             selectedSubmaterial={selectedSubmaterial}

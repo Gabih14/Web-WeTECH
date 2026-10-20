@@ -6,10 +6,14 @@ require("sucrase/register/ts");
 const {
   buildMaterialGroups,
   grupoWebLabel,
+  hasMaterialFilterOptions,
   isGrupoWebAvailable,
   materialLabel,
   matchesMaterialFilter,
+  partitionMaterialGroups,
+  preferredSubmaterial,
   setMaterialSearchParams,
+  showsSubmaterialOptionsForGrupoWeb,
   submaterialsForGrupoWeb,
 } = require("../src/utils/materialFilters.ts");
 
@@ -23,13 +27,41 @@ test("presenta PLA como PLA / PLA+ sin cambiar su valor", () => {
   assert.equal(buildMaterialGroups([product("PLA", null)])[0].material, "PLA");
 });
 
+test("usa Submaterial antes que Sub-linea y Sub-linea solo como fallback", () => {
+  assert.equal(preferredSubmaterial("SILK", "Ecofila"), "SILK");
+  assert.equal(preferredSubmaterial(null, "Ecofila"), "Ecofila");
+  assert.equal(preferredSubmaterial("  FLEX  ", "Otra"), "FLEX");
+  assert.equal(preferredSubmaterial(null, null), null);
+});
+
 test("muestra Estandar como General sin cambiar el valor del filtro", () => {
   assert.equal(grupoWebLabel("Estandar"), "General");
   assert.equal(grupoWebLabel("Tecnico"), "Tecnico");
+  assert.equal(grupoWebLabel("Estandar", "PLA"), "PLA General");
+  assert.equal(grupoWebLabel("Decorativo", "PLA+"), "PLA Decorativo");
+  assert.equal(grupoWebLabel("Tecnico", "PLA"), "PLA Tecnico");
+  assert.equal(grupoWebLabel("Tecnico", "PETG"), "Tecnico");
   assert.equal(
     setMaterialSearchParams(new URLSearchParams(), "PLA", null, "Estandar").toString(),
     "material=PLA&grupoWeb=Estandar",
   );
+});
+
+test("General no despliega opciones de Submaterial o Sub-linea", () => {
+  assert.equal(showsSubmaterialOptionsForGrupoWeb("Estandar"), false);
+  assert.equal(showsSubmaterialOptionsForGrupoWeb(" estandar "), false);
+  assert.equal(showsSubmaterialOptionsForGrupoWeb("Decorativo"), true);
+  assert.equal(showsSubmaterialOptionsForGrupoWeb("Tecnico"), true);
+});
+
+test("solo despliega materiales con opciones ademas de Todos", () => {
+  const [withoutOptions] = buildMaterialGroups([product("ABS", null)]);
+  const [withOptions] = buildMaterialGroups([
+    product("PLA", "SILK", "PLA Silk", ["Decorativo"]),
+  ]);
+
+  assert.equal(hasMaterialFilterOptions(withoutOptions), false);
+  assert.equal(hasMaterialFilterOptions(withOptions), true);
 });
 
 test("agrupa PLA y PLA+ bajo la clave PLA", () => {
@@ -49,6 +81,22 @@ test("agrupa PLA y PLA+ bajo la clave PLA", () => {
   assert.equal(matchesMaterialFilter(product("PLA+", null), "PLA", null), true);
   assert.equal(matchesMaterialFilter(product("PLA", null), "PLA+", null), true);
   assert.equal(matchesMaterialFilter({ material: "PLA+" }, "PLA", null), true);
+});
+
+test("separa PLA / PLA+ de los materiales Tecnicos", () => {
+  const groups = buildMaterialGroups([
+    product("PLA", "SILK"),
+    product("PLA+", "MATTE"),
+    product("PETG", "FIBRA DE CARBONO"),
+    product("NYLON", "6"),
+  ]);
+  const partition = partitionMaterialGroups(groups);
+
+  assert.deepEqual(partition.pla.map(({ material }) => material), ["PLA"]);
+  assert.deepEqual(
+    partition.technical.map(({ material }) => material),
+    ["NYLON", "PETG"],
+  );
 });
 
 test("unifica cualquier material que solo se diferencia por un + final", () => {
@@ -101,6 +149,18 @@ test("deduplica submateriales con comparacion normalizada", () => {
   assert.deepEqual(groups[0].submaterials, [
     { value: "SILK", label: "SILK", grupoWebValues: [] },
   ]);
+});
+
+test("precarga solamente submateriales publicados por la faceta", () => {
+  const groups = buildMaterialGroups(
+    [
+      product("PLA", "SILK", "PLA Silk", ["Decorativo"]),
+      product("PLA", "LEGACY", "PLA Legacy", ["Decorativo"]),
+    ],
+    ["SILK"],
+  );
+
+  assert.deepEqual(groups[0].submaterials.map(({ value }) => value), ["SILK"]);
 });
 
 test("no infiere MATTE desde el valor historico", () => {
