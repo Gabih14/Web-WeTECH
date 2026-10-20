@@ -5,10 +5,12 @@ require("sucrase/register/ts");
 
 const {
   buildMaterialGroups,
+  grupoWebLabel,
   isGrupoWebAvailable,
   materialLabel,
   matchesMaterialFilter,
   setMaterialSearchParams,
+  submaterialsForGrupoWeb,
 } = require("../src/utils/materialFilters.ts");
 
 const product = (material, submaterial, historical = material, grupoWebValues = []) => ({
@@ -19,6 +21,15 @@ const product = (material, submaterial, historical = material, grupoWebValues = 
 test("presenta PLA como PLA / PLA+ sin cambiar su valor", () => {
   assert.equal(materialLabel("PLA"), "PLA / PLA+");
   assert.equal(buildMaterialGroups([product("PLA", null)])[0].material, "PLA");
+});
+
+test("muestra Estandar como General sin cambiar el valor del filtro", () => {
+  assert.equal(grupoWebLabel("Estandar"), "General");
+  assert.equal(grupoWebLabel("Tecnico"), "Tecnico");
+  assert.equal(
+    setMaterialSearchParams(new URLSearchParams(), "PLA", null, "Estandar").toString(),
+    "material=PLA&grupoWeb=Estandar",
+  );
 });
 
 test("agrupa PLA y PLA+ bajo la clave PLA", () => {
@@ -121,7 +132,7 @@ test("asocia Grupo Web al material y solamente a su submaterial real", () => {
   ]);
   const pla = groups.find((group) => group.material === "PLA");
 
-  assert.deepEqual(pla.grupoWebValues, ["Decorativo", "Estandar"]);
+  assert.deepEqual(pla.grupoWebValues, ["Estandar", "Decorativo"]);
   assert.deepEqual(
     pla.submaterials.find(({ value }) => value === "SILK").grupoWebValues,
     ["Decorativo"],
@@ -131,6 +142,14 @@ test("asocia Grupo Web al material y solamente a su submaterial real", () => {
     ["Estandar"],
   );
   assert.equal(pla.grupoWebValues.includes("Tecnico"), false);
+  assert.deepEqual(
+    submaterialsForGrupoWeb(pla, "Decorativo").map(({ value }) => value),
+    ["SILK"],
+  );
+  assert.deepEqual(
+    submaterialsForGrupoWeb(pla, "Estandar").map(({ value }) => value),
+    ["MATTE"],
+  );
 });
 
 test("deduplica y ordena Grupo Web sin valores hardcodeados", () => {
@@ -141,6 +160,14 @@ test("deduplica y ordena Grupo Web sin valores hardcodeados", () => {
 
   assert.deepEqual(groups[0].grupoWebValues, ["Alfa", "decorativo", "Zeta"]);
   assert.deepEqual(groups[0].submaterials[0].grupoWebValues, ["Alfa", "decorativo", "Zeta"]);
+});
+
+test("ordena General antes de Decorativo", () => {
+  const groups = buildMaterialGroups([
+    product("PLA", "SILK", "PLA Silk", ["Decorativo", "Estandar", "Tecnico"]),
+  ]);
+
+  assert.deepEqual(groups[0].grupoWebValues, ["Estandar", "Decorativo", "Tecnico"]);
 });
 
 test("filtra Grupo Web junto con la combinacion Material y Submaterial", () => {

@@ -36,6 +36,15 @@ export const materialLabel = (material: string, hasPlusVariant = false) => {
     : groupedMaterial;
 };
 
+export const grupoWebLabel = (grupoWeb: string) =>
+  normalizeMaterial(grupoWeb) === "ESTANDAR" ? "General" : grupoWeb;
+
+const compareGrupoWeb = (a: string, b: string) => {
+  const aIsGeneral = normalizeMaterial(a) === "ESTANDAR";
+  const bIsGeneral = normalizeMaterial(b) === "ESTANDAR";
+  return aIsGeneral === bIsGeneral ? a.localeCompare(b) : aIsGeneral ? -1 : 1;
+};
+
 export function buildMaterialGroups(products: MaterialProduct[]): MaterialGroup[] {
   const groups = new Map<string, {
     material: string;
@@ -108,13 +117,13 @@ export function buildMaterialGroups(products: MaterialProduct[]): MaterialGroup[
     .map(({ material, hasPlusVariant, grupoWebValues, submaterials }) => ({
       material,
       label: materialLabel(material, hasPlusVariant),
-      grupoWebValues: Array.from(grupoWebValues.values()).sort((a, b) => a.localeCompare(b)),
+      grupoWebValues: Array.from(grupoWebValues.values()).sort(compareGrupoWeb),
       submaterials: Array.from(submaterials.values())
         .map(({ value, grupoWebValues: submaterialGrupoWebValues }) => ({
           value,
           label: value,
           grupoWebValues: Array.from(submaterialGrupoWebValues.values())
-            .sort((a, b) => a.localeCompare(b)),
+            .sort(compareGrupoWeb),
         }))
         .sort((a, b) => a.label.localeCompare(b.label)),
     }))
@@ -171,6 +180,18 @@ export function isGrupoWebAvailable(
 ) {
   return grupoWebValuesForSelection(group, submaterial).some(
     (value) => normalizeMaterial(value) === normalizeMaterial(grupoWeb),
+  );
+}
+
+export function submaterialsForGrupoWeb(
+  group: MaterialGroup,
+  grupoWeb: string,
+): MaterialSubmaterial[] {
+  const grupoWebKey = normalizeMaterial(grupoWeb);
+  return group.submaterials.filter(({ grupoWebValues }) =>
+    grupoWebValues.some(
+      (value) => normalizeMaterial(value) === grupoWebKey,
+    ),
   );
 }
 

@@ -12,12 +12,14 @@ import { useAuth } from "@clerk/react";
 import { useEcommerceUser } from "../context/EcommerceUserContext";
 import {
   buildMaterialGroups,
+  grupoWebLabel,
   grupoWebValuesForSelection,
   isGrupoWebAvailable,
   materialGroupValue,
   matchesMaterialFilter,
   normalizeMaterial,
   setMaterialSearchParams,
+  submaterialsForGrupoWeb,
   type MaterialGroup,
 } from "../utils/materialFilters";
 
@@ -394,50 +396,75 @@ function MaterialFilter({
               </button>
               {isOpen && (
                 <div className="ml-4 mt-1 space-y-1 border-l border-gray-200 pl-2">
-                  {[
-                    { value: null, label: "Todos", grupoWebValues },
-                    ...submaterials,
-                  ].map((option) => {
-                    const submaterial = option.value;
-                    const subSelected = isSelected &&
-                      (submaterial === null
-                        ? selectedSubmaterial === null
-                        : selectedSubmaterial !== null &&
-                          normalizeMaterial(selectedSubmaterial) === normalizeMaterial(submaterial));
+                  <button
+                    onClick={() => onMaterialChange(material, null)}
+                    className={`w-full rounded px-2 py-1 text-left text-sm transition-colors ${
+                      isSelected && selectedGrupoWeb === null
+                        ? "bg-yellow-100 font-medium"
+                        : "hover:bg-gray-100"
+                    }`}
+                    type="button"
+                  >
+                    Todos
+                  </button>
+
+                  {grupoWebValues.map((grupoWeb) => {
+                    const grupoWebSelected = isSelected &&
+                      selectedGrupoWeb !== null &&
+                      normalizeMaterial(selectedGrupoWeb) === normalizeMaterial(grupoWeb);
+                    const compatibleSubmaterials = submaterialsForGrupoWeb(
+                      { material, label, grupoWebValues, submaterials },
+                      grupoWeb,
+                    );
+
                     return (
-                      <div
-                        key={submaterial ?? "all"}
-                        className={`flex flex-wrap items-center gap-1 rounded ${
-                          subSelected ? "bg-yellow-100 font-medium" : "hover:bg-gray-100"
-                        }`}
-                      >
+                      <div key={grupoWeb}>
                         <button
-                          onClick={() => onMaterialChange(material, submaterial)}
-                          className="min-w-20 flex-1 px-2 py-1 text-left text-sm"
+                          onClick={() => onGrupoWebChange(material, null, grupoWeb)}
+                          className={`flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-sm transition-colors ${
+                            grupoWebSelected
+                              ? "bg-yellow-100 font-medium text-black"
+                              : "hover:bg-gray-100"
+                          }`}
                           type="button"
+                          aria-expanded={grupoWebSelected}
+                          aria-pressed={grupoWebSelected}
                         >
-                          {option.label}
+                          <span>{grupoWebLabel(grupoWeb)}</span>
+                          {compatibleSubmaterials.length > 0 && (
+                            grupoWebSelected
+                              ? <Minus className="h-3.5 w-3.5" />
+                              : <Plus className="h-3.5 w-3.5" />
+                          )}
                         </button>
-                        {option.grupoWebValues.map((grupoWeb) => {
-                          const grupoWebSelected = subSelected &&
-                            selectedGrupoWeb !== null &&
-                            normalizeMaterial(selectedGrupoWeb) === normalizeMaterial(grupoWeb);
-                          return (
-                            <button
-                              key={grupoWeb}
-                              onClick={() => onGrupoWebChange(material, submaterial, grupoWeb)}
-                              className={`mr-1 rounded-full border px-2 py-0.5 text-xs transition-colors ${
-                                grupoWebSelected
-                                  ? "border-yellow-500 bg-yellow-300 text-black"
-                                  : "border-yellow-300 bg-yellow-50 text-yellow-900 hover:bg-yellow-200"
-                              }`}
-                              type="button"
-                              aria-pressed={grupoWebSelected}
-                            >
-                              {grupoWeb}
-                            </button>
-                          );
-                        })}
+
+                        {grupoWebSelected && compatibleSubmaterials.length > 0 && (
+                          <div className="ml-3 mt-1 space-y-1 border-l border-gray-200 pl-2">
+                            {compatibleSubmaterials.map((submaterial) => {
+                              const submaterialSelected = selectedSubmaterial !== null &&
+                                normalizeMaterial(selectedSubmaterial) ===
+                                  normalizeMaterial(submaterial.value);
+                              return (
+                                <button
+                                  key={submaterial.value}
+                                  onClick={() => onGrupoWebChange(
+                                    material,
+                                    submaterial.value,
+                                    grupoWeb,
+                                  )}
+                                  className={`w-full rounded px-2 py-1 text-left text-sm transition-colors ${
+                                    submaterialSelected
+                                      ? "bg-yellow-100 font-medium"
+                                      : "hover:bg-gray-100"
+                                  }`}
+                                  type="button"
+                                >
+                                  {submaterial.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
