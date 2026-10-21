@@ -3,6 +3,7 @@ import { Colors, Product } from "../types";
 import { shouldExcludeFamily } from "../data/excludedFamilies";
 import sparePartsFallbackImage from "../assets/pngtree-no-image-vector-illustration-isolated-png-image_1694547.jpg";
 import { shouldFallbackFromWholesaleStatus } from "../utils/wholesalePricing";
+import { preferredSubmaterial } from "../utils/materialFilters";
 
 const MINIMUM_PRODUCT_PRICE = 100;
 const MINIMUM_FILAMENT_PRICE = 10000;
@@ -18,6 +19,8 @@ interface CatalogoAtributo {
   color: string | null;
   heredado: boolean;
   orden: number | null;
+  grupoAtributo?: string | null;
+  subgrupoAtributo?: string | null;
 }
 interface CatalogoVariante {
   id: string;
@@ -34,12 +37,18 @@ interface CatalogoVariante {
   visible: boolean;
   opciones: Record<string, string>;
   atributos: CatalogoAtributo[];
+  submaterial?: string | null;
+  sublinea?: string | null;
 }
 interface CatalogoProducto {
   key: string;
   nombre: string;
   marca: string | null;
   material: string | null;
+  materialGrupo?: string | null;
+  submaterial?: string | null;
+  sublinea?: string | null;
+  grupoWeb?: string | null;
   linea: string | null;
   origen: string | null;
   grupo: string | null;
@@ -95,6 +104,126 @@ const normalizeAttributeName = (value: string): string =>
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toUpperCase();
+
+const grupoWebFromAttributes = (attributes: CatalogoAtributo[]): string | undefined =>
+  attributes
+    .find((attribute) => normalizeAttributeName(attribute.clase) === "GRUPO WEB")
+    ?.valor?.trim() || undefined;
+
+const taxonomyValueFromAttributes = (
+  attributes: CatalogoAtributo[],
+  attributeClass: string,
+): string | undefined =>
+  attributes
+    .find(
+      (attribute) =>
+        normalizeAttributeName(attribute.clase).replace(/[\s_-]+/g, "") ===
+        normalizeAttributeName(attributeClass).replace(/[\s_-]+/g, ""),
+    )
+    ?.valor?.trim() || undefined;
+
+const materialClassificationsOf = (
+  product: CatalogoProducto,
+  variants: CatalogoVariante[],
+) => {
+  const classifications = new Map<string, {
+    material: string;
+    submaterial: string | null;
+    grupoWebValues: Map<string, string>;
+  }>();
+  const explicitGrupoWeb = product.grupoWeb?.trim() || undefined;
+  const productAttributeGrupoWeb = grupoWebFromAttributes(product.atributos);
+  const productGrupoWeb = explicitGrupoWeb ?? productAttributeGrupoWeb;
+  const productSubmaterial = product.submaterial?.trim() ||
+    taxonomyValueFromAttributes(product.atributos, "SUBMATERIAL");
+  const productSublinea = product.sublinea?.trim() ||
+    taxonomyValueFromAttributes(product.atributos, "SUB-LINEA");
+  const productFallbackSubmaterial = preferredSubmaterial(
+    productSubmaterial,
+    productSublinea,
+  );
+  const productMaterialAttributes = product.atributos.filter(
+    (attribute) => normalizeAttributeName(attribute.clase) === "MATERIAL",
+  );
+  const topLevelMaterial = (product.materialGrupo ?? product.material)?.trim();
+  const topLevelSubmaterial = productFallbackSubmaterial;
+  const productMaterialValues = productMaterialAttributes.length
+    ? productMaterialAttributes.map((attribute) => ({
+        material: (attribute.grupoAtributo ?? attribute.valor)?.trim(),
+        submaterial: preferredSubmaterial(
+          attribute.subgrupoAtributo,
+          productFallbackSubmaterial,
+        ),
+      }))
+    : topLevelMaterial
+      ? [{ material: topLevelMaterial, submaterial: topLevelSubmaterial }]
+      : [];
+
+  const addClassification = (
+    material: string | undefined,
+    submaterial: string | null,
+    grupoWeb: string | undefined,
+  ) => {
+    if (!material) return;
+    const key = `${material.toLocaleUpperCase()}\0${submaterial?.toLocaleUpperCase() ?? ""}`;
+    const classification = classifications.get(key) ?? {
+      material,
+      submaterial,
+      grupoWebValues: new Map<string, string>(),
+    };
+    if (grupoWeb) {
+      const grupoWebKey = grupoWeb.toLocaleUpperCase();
+      if (!classification.grupoWebValues.has(grupoWebKey)) {
+        classification.grupoWebValues.set(grupoWebKey, grupoWeb);
+      }
+    }
+    classifications.set(key, classification);
+  };
+
+  productMaterialValues.forEach(({ material, submaterial }) => {
+    addClassification(material, submaterial, productGrupoWeb);
+  });
+
+  variants.forEach((variant) => {
+    const variantGrupoWeb = explicitGrupoWeb ??
+      grupoWebFromAttributes(variant.atributos) ??
+      productAttributeGrupoWeb;
+    const variantSubmaterial = variant.submaterial?.trim() ||
+      taxonomyValueFromAttributes(variant.atributos, "SUBMATERIAL") ||
+      productSubmaterial;
+    const variantSublinea = variant.sublinea?.trim() ||
+      taxonomyValueFromAttributes(variant.atributos, "SUB-LINEA") ||
+      productSublinea;
+    const variantFallbackSubmaterial = preferredSubmaterial(
+      variantSubmaterial,
+      variantSublinea,
+    );
+    const variantMaterialAttributes = variant.atributos.filter(
+      (attribute) => normalizeAttributeName(attribute.clase) === "MATERIAL",
+    );
+    const materialValues = variantMaterialAttributes.length
+      ? variantMaterialAttributes.map((attribute) => ({
+          material: (attribute.grupoAtributo ?? attribute.valor)?.trim(),
+          submaterial: preferredSubmaterial(
+            attribute.subgrupoAtributo,
+            variantFallbackSubmaterial,
+          ),
+        }))
+      : productMaterialValues;
+
+    materialValues.forEach(({ material, submaterial }) => {
+      addClassification(material, submaterial, variantGrupoWeb);
+    });
+  });
+
+  return Array.from(classifications.values()).map(
+    ({ material, submaterial, grupoWebValues }) => ({
+      material,
+      submaterial,
+      grupoWebValues: Array.from(grupoWebValues.values()),
+    }),
+  );
+};
 
 const colorNameOf = (variante: CatalogoVariante): string | undefined => {
   const optionColor = variante.opciones?.["Colores"]?.trim();
@@ -315,6 +444,8 @@ export const fetchProducts = async ({
         brand: prod.marca ?? undefined,
         line: prod.linea ?? undefined,
         material: prod.material ?? undefined,
+        grupoWeb: prod.grupoWeb?.trim() || grupoWebFromAttributes(prod.atributos),
+        materialClassifications: materialClassificationsOf(prod, variantesPublicables),
         foodSafe: foodSafeOf(
           prod.atributos,
           variantesPublicables.flatMap((variant) => variant.atributos),
@@ -440,8 +571,11 @@ export const fetchProducts = async ({
     }
 
     return products;
-  } catch (error: any) {
-    console.error("Error al obtener los productos:", error.message);
+  } catch (error: unknown) {
+    console.error(
+      "Error al obtener los productos:",
+      error instanceof Error ? error.message : error,
+    );
     throw new Error(
       "No se pudieron obtener los productos. Intenta nuevamente más tarde.",
     );

@@ -210,7 +210,7 @@ export function ProductCard({
       <Link
         to={productPath}
         state={{ from }}
-        className="block aspect-square overflow-hidden rounded-t-2xl bg-gray-50"
+        className="relative block aspect-square overflow-hidden rounded-t-2xl bg-gray-50"
       >
         <img
           src={displayImage}
@@ -221,6 +221,11 @@ export function ProductCard({
             event.currentTarget.src = product.image;
           }}
         />
+        {isFilament && product.line?.trim() && (
+          <span className="absolute bottom-3 right-3 z-10 rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-[10px] font-semibold text-amber-900 shadow-sm" aria-label={`Línea ${product.line.trim()}`}>
+            {product.line.trim()}
+          </span>
+        )}
       </Link>
 
       {/* Body */}
