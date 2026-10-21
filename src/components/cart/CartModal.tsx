@@ -228,9 +228,9 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                               </span>
                             )}
                           </div>
-                          {item.color && item.weight > 0 && (
+                          {item.color && (
                             <p className="text-gray-600 mt-1">
-                              Color: {item.color}, Peso: {item.weight}kg
+                              Color: {item.color}{item.weight > 0 && `, Peso: ${item.weight}kg`}
                             </p>
                           )}
                         </div>

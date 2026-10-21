@@ -313,7 +313,7 @@ export function ProductCard({
         )}
 
         {/* Weight selector */}
-        {product.weights && (
+        {product.weights?.some((w) => w.weight > 0) && (
           <div className="flex flex-wrap gap-1.5">
             {product.weights.map((w) => {
               const hasStockForSelectedColor =

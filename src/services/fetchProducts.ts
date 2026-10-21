@@ -373,7 +373,25 @@ export const fetchProducts = async ({
 
     const products: Product[] = [];
 
-    for (const prod of catalogProducts) {
+    const separateProducts = catalogProducts.flatMap((prod) => {
+      if (!isFilamentGroup(prod.grupo)) return [prod];
+
+      const weightedVariants = prod.variantes.filter((v) => (v.pesoKg ?? 0) !== 0);
+      const unweightedProducts = prod.variantes
+        .filter((v) => (v.pesoKg ?? 0) === 0)
+        .map((v) => ({
+          ...prod,
+          key: `item:${v.id}`,
+          nombre: v.descripcion?.trim() || prod.nombre,
+          variantes: [v],
+        }));
+
+      return weightedVariants.length
+        ? [{ ...prod, variantes: weightedVariants }, ...unweightedProducts]
+        : unweightedProducts;
+    });
+
+    for (const prod of separateProducts) {
       const isFilament = isFilamentGroup(prod.grupo);
       const category = isFilament ? FILAMENT_GROUP : prod.grupo ?? "";
       const upperGroup = String(prod.grupo ?? "").toUpperCase();
@@ -410,9 +428,6 @@ export const fetchProducts = async ({
 
         // Debe tener imagen (o fallback para grupos tratados como accesorios)
         if (!imageFor(v.fotoUrl, isAccessory)) return false;
-
-        // Filamentos: debe tener peso numérico (descarta "Kit 20 Colores", etc.)
-        // `pesoKg` nulo se conserva como variante de 0 kg para no bloquear el catálogo.
 
         return true;
       });
