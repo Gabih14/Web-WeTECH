@@ -576,7 +576,7 @@ export function ProductPage() {
 
               <ProductDescription product={product} />
 
-              {product.weights && (
+              {product.weights?.some((weight) => weight.weight > 0) && (
                 <div className="mt-6 space-y-2">
                   <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                     Peso
