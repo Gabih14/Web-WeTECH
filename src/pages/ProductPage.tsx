@@ -1,3 +1,4 @@
+import { isComplement } from "../utils/complementDiscounts";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { Bell, Check, ChevronDown, ShoppingCart, Sparkles } from "lucide-react";
@@ -29,6 +30,7 @@ import {
 import {
   getVariantImage,
   getVariantItemId,
+  getVariantPromotionalPrice,
   getVariantPrice,
   getVariantRetailPrice,
 } from "../utils/pricing";
@@ -286,6 +288,11 @@ export function ProductPage() {
       return;
     }
 
+    if (isComplement({ id: product.id, grupo: product.category })) {
+      setCurrentPrice(getVariantPrice(product, selectedColor, selectedWeight));
+      setCurrentPromotionalPrice(getVariantPromotionalPrice(product, selectedColor, selectedWeight));
+      return;
+    }
     if (shouldApplyDiscount(product)) {
       const originalPrice =
         getVariantPrice(product, selectedColor, selectedWeight, wholesale.reached) ?? 0;
@@ -370,7 +377,7 @@ export function ProductPage() {
   const hasVariants = !!product.colors && !!product.weights;
   const variantSelectionIncomplete = hasVariants && (!selectedColor || selectedWeight === null);
   const isAddDisabled = variantSelectionIncomplete || !canAddToCart || isOverStock;
-  const applyDiscount = shouldApplyDiscount(product) && !!currentPromotionalPrice;
+  const applyDiscount = (shouldApplyDiscount(product) || isComplement({ id: product.id, grupo: product.category })) && !!currentPromotionalPrice;
   const eligibleQuantityDiscountCartQuantity =
     getEligibleQuantityDiscountCartQuantity(items);
   const effectiveDiscountQuantity = getEffectiveQuantityForProductDiscount(
@@ -533,7 +540,7 @@ export function ProductPage() {
                       </span>
                       <span className="rounded-full bg-black px-2.5 py-1 text-xs font-semibold text-white">
                         -
-                        {getDiscountPercentageForProduct(
+                        {isComplement({ id: product.id, grupo: product.category }) ? "15%" : getDiscountPercentageForProduct(
                           product,
                           quantity,
                           selectedWeight ?? undefined,
@@ -547,7 +554,7 @@ export function ProductPage() {
                       Ahorras
                       {" "}
                       ${formatPrice(
-                        calculateSavingsForProduct(
+                        isComplement({ id: product.id, grupo: product.category }) ? Math.max(0, (currentPrice ?? 0) - (currentPromotionalPrice ?? 0)) * quantity : calculateSavingsForProduct(
                           product,
                           currentPrice || 0,
                           quantity,
@@ -574,6 +581,7 @@ export function ProductPage() {
                 <p className="text-sm text-gray-500">Precio minorista: <span className="line-through">${formatPrice(retailPrice)}</span></p>
               )}
 
+              {isComplement({ id: product.id, grupo: product.category }) && <p className="mt-2 text-sm text-emerald-700">15% base por transferencia. Los tramos y combos se calculan en el carrito.</p>}
               <ProductDescription product={product} />
 
               {product.weights?.some((weight) => weight.weight > 0) && (

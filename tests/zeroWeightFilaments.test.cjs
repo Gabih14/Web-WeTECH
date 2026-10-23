@@ -21,13 +21,18 @@ const family = (variantes, grupo = "FILAMENTO 3D") => ({
   linea: "General", origen: "Argentina", grupo, atributos: [], variantes,
 });
 
-async function loadProducts(catalog) {
+async function loadProducts(catalog, details = {}, calls = []) {
   const filename = path.resolve(__dirname, "../src/services/fetchProducts.ts");
   const source = fs.readFileSync(filename, "utf8").replaceAll("import.meta.env.DEV", "false");
   const exports = {};
   const localRequire = (name) => {
     if (name === "../services/api") return {
-      apiFetch: async () => catalog,
+      apiFetch: async (endpoint) => {
+        calls.push(endpoint);
+        if (endpoint === "/stk-item/catalogo") return catalog;
+        if (Object.hasOwn(details, endpoint)) return details[endpoint];
+        throw new Error(`Unexpected endpoint: ${endpoint}`);
+      },
       dashboardReadApiFetch: async () => [],
     };
     if (name.endsWith(".jpg")) return "fallback.jpg";
@@ -81,4 +86,20 @@ test("no divide otras categorias ni crea familias vacias cuando todos pesan cero
   assert.equal(products[1].id, "repuesto");
   assert.equal(products[1].name, "PLA");
   assert.equal(products[1].stock, 3);
+});
+
+test("complementos conservan SKU, precios promocionales y padres reales desde la ficha", async () => {
+  const calls = [];
+  const products = await loadProducts([{
+    ...family([
+      { ...variant("TAZA-ROJA", 0, "Taza roja", 12345, 8), promotionalPrice: "10493.25" },
+      { ...variant("TAZA-AZUL", 0, "Taza azul", 15000, 9), idPadre: "INS-TAZA-GENE", promotionalPrice: "12750" },
+    ], "COMPLEMENTOS PARA IMPRESION 3D"), key: "padre:INS-TAZA-GENE",
+  }], { "/stk-item/TAZA-ROJA": { idPadre: "INS-TAZA-GENE" } }, calls);
+  assert.equal(products.length, 2);
+  assert.deepEqual(products.map((p) => p.itemId), ["TAZA-ROJA", "TAZA-AZUL"]);
+  assert.deepEqual(products.map((p) => p.stock), [8, 9]);
+  assert.deepEqual(products.map((p) => p.promotionalPrice), [10493.25, 12750]);
+  assert.ok(products.every((p) => p.parentItemId === "INS-TAZA-GENE"));
+  assert.deepEqual(calls, ["/stk-item/catalogo", "/stk-item/TAZA-ROJA"]);
 });

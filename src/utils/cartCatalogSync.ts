@@ -1,5 +1,5 @@
 import { CartItem, Product } from "../types";
-import { getCartItemPrice, getVariantItemId } from "./pricing";
+import { getCartItemPrice, getVariantInvoicePrice, getVariantItemId } from "./pricing";
 
 const weightKey = (weight: number) => weight.toString();
 
@@ -36,7 +36,11 @@ const sameCartPricingSnapshot = (currentItem: CartItem, freshProduct: Product) =
     product: freshProduct,
   });
 
-  return currentItemId === freshItemId && currentPrice === freshPrice;
+  return currentItemId === freshItemId && currentPrice === freshPrice
+    && currentItem.product.category === freshProduct.category
+    && currentItem.product.parentItemId === freshProduct.parentItemId
+    && getVariantInvoicePrice(currentItem.product, currentItem.color, currentItem.weight)
+      === getVariantInvoicePrice(freshProduct, currentItem.color, currentItem.weight);
 };
 
 export type CartCatalogSyncResult = {

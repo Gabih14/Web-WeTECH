@@ -6,32 +6,22 @@ import { Product, Coupon, type ShippingQuote } from "../../types";
 import { CheckoutPersonal } from "./CheckoutPersonal";
 import { CheckoutAdress } from "./CheckoutAdress";
 import { StepIndicator } from "./StepIndicator";
+import CartModal from "../cart/CartModal";
 
-import {
-  getEffectiveQuantityForProductDiscount,
-  getDiscountPercentageForProduct,
-  getEligibleQuantityDiscountCartQuantity,
-  shouldApplyDiscount,
-} from "../../utils/discounts";
+import { buildCartOrderProducts, calculateCartPricing } from "../../utils/cartPricing";
+import { getCouponPercentageForPaymentMethod, isCouponApplicableToProductCategory } from "../../utils/checkoutDiscount";
 import {
   getVariantImage,
   getVariantInvoicePrice,
-  getVariantItemId,
   getVariantPrice,
 } from "../../utils/pricing";
-import { formatPrice, roundPrice } from "../../utils/money";
+import { formatPrice } from "../../utils/money";
 import { calculateCheckoutLinePricing } from "../../utils/checkoutPricing";
 import {
   buildOrderAmounts,
   hasValidOrderLineAmounts,
   hasValidShippingOrder,
 } from "../../utils/orderPricing";
-import {
-  getCouponPercentageForPaymentMethod,
-  isCouponApplicableToProductCategory,
-  selectCheckoutDiscount,
-  type CheckoutDiscountDecision,
-} from "../../utils/checkoutDiscount";
 import {
   calculateInvoiceLine,
   requiresInvoice,
@@ -116,11 +106,10 @@ export default function Checkout() {
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useMediaQuery("(max-width: 768px)"); // Detecta si es móvil
-  const { items, total, clearCart, syncCartWithProducts } = useCart();
+  const { items, syncCartWithProducts } = useCart();
   const wholesale = getWholesaleCartState(items);
-  const eligibleQuantityDiscountCartQuantity =
-    getEligibleQuantityDiscountCartQuantity(items);
   const [shippingData, setShippingData] = useState<ShippingQuote | null>(null);
+  const [isReviewCartOpen, setIsReviewCartOpen] = useState(false);
   const [deliveryMethod, setDeliveryMethod] = useState<"pickup" | "shipping">(
     "pickup"
   );
@@ -377,157 +366,13 @@ export default function Checkout() {
     };
   };
 
-  const getEffectiveDiscountQuantity = (
-    product: Product,
-    quantity: number,
-    weight: number
-  ): number =>
-    getEffectiveQuantityForProductDiscount(
-      product,
-      quantity,
-      weight,
-      eligibleQuantityDiscountCartQuantity
-    );
-
-  const effectiveCouponPercentage =
-    getCouponPercentageForPaymentMethod(
-      appliedCoupon,
-      paymentMethod
-    );
-
-  const calculateAutomaticDiscountPercentageForCheckout = (
-    product: Product,
-    weight: number,
-    quantity: number
-  ): number => {
-    if (paymentMethod !== "transfer" || !shouldApplyDiscount(product)) {
-      return 0;
-    }
-
-    const effectiveQuantity = getEffectiveDiscountQuantity(
-      product,
-      quantity,
-      weight
-    );
-    const discountPercentage = getDiscountPercentageForProduct(
-      product,
-      quantity,
-      weight,
-      effectiveQuantity
-    );
-    const numericPercentage = Number(discountPercentage.replace("%", ""));
-
-    return Number.isFinite(numericPercentage) ? numericPercentage : 0;
-  };
-
-  const calculateItemDiscountDecision = (
-    product: Product,
-    weight: number,
-    quantity: number
-  ): CheckoutDiscountDecision =>
-    selectCheckoutDiscount({
-      automaticPercentage: calculateAutomaticDiscountPercentageForCheckout(
-        product,
-        weight,
-        quantity
-      ),
-      couponPercentage:
-        appliedCoupon &&
-        isCouponApplicableToProductCategory({
-          couponCategory: appliedCoupon.categoriaAplicable,
-          productCategory: product.category,
-        })
-          ? effectiveCouponPercentage
-          : 0,
-    });
-  /*   const getPromotionalPrice = (
-    product: Product,
-    weight: number
-  ): number | undefined => {
-    const weightData = product.weights?.find((w) => w.weight === weight);
-    return weightData ? weightData.promotionalPrice : product.promotionalPrice;
-  }; */
-
-  // Calcular precio para checkout considerando método de pago
-  const calculateItemPriceForCheckout = (
-    product: Product,
-    color: string,
-    weight: number,
-    quantity: number
-  ): number | undefined => {
-    const originalPrice = getPrice(product, color, weight);
-
-    if (!originalPrice) return originalPrice;
-
-    const discountDecision = calculateItemDiscountDecision(
-      product,
-      weight,
-      quantity
-    );
-
-    return calculateCheckoutLinePricingForInvoiceMode(
-      originalPrice,
-      quantity,
-      discountDecision.percentage
-    ).precioUnitarioNeto;
-  };
-
-  const calculateItemTotalForCheckout = (
-    product: Product,
-    color: string,
-    weight: number,
-    quantity: number
-  ): number => {
-    const originalPrice = getPrice(product, color, weight);
-
-    if (!originalPrice) return 0;
-
-    const discountDecision = calculateItemDiscountDecision(
-      product,
-      weight,
-      quantity
-    );
-
-    return calculateCheckoutLinePricingForInvoiceMode(
-      originalPrice,
-      quantity,
-      discountDecision.percentage
-    ).subtotalNeto;
-  };
-
-  const calculateItemAdjustmentPercentageForCheckout = (
-    product: Product,
-    weight: number,
-    quantity: number
-  ): number => {
-    return calculateItemDiscountDecision(
-      product,
-      weight,
-      quantity
-    ).percentage;
-  };
-
-  const buildOrderProductsPricing = () =>
-    items.map((item) => {
-      const discountDecision = calculateItemDiscountDecision(
-        item.product,
-        item.weight,
-        item.quantity
-      );
-
-      return {
-        nombre: getVariantItemId(
-          item.product,
-          item.color,
-          item.weight
-        ),
-        cantidad: item.quantity,
-        precioBaseUnitario:
-          getPrice(item.product, item.color, item.weight) ?? 0,
-        ajustePorcentaje: discountDecision.percentage,
-        couponApplied: discountDecision.source === "coupon",
-      };
-    });
+  const pricedGroups = React.useMemo(
+    () => calculateCartPricing(items, { paymentMethod, coupon: appliedCoupon, facturaTipo }),
+    [items, paymentMethod, appliedCoupon, facturaTipo]
+  );
+  const effectiveCouponPercentage = getCouponPercentageForPaymentMethod(appliedCoupon, paymentMethod);
+  const pricedLines = pricedGroups.flatMap(({ item, lines }) => lines.map((line) => ({ item: { ...item, quantity: line.cantidad }, line })));
+  const buildOrderProductsPricing = () => pricedLines.map(({ line }) => line);
 
   const buildCurrentOrderAmounts = () =>
     buildOrderAmounts({
@@ -544,19 +389,16 @@ export default function Checkout() {
       facturaTipo,
     });
 
-  const buildSubmittedOrderAmounts = () =>
-    buildOrderAmounts({
-      products: buildOrderProductsPricing(),
-      shipping:
-        deliveryMethod === "shipping" && shippingData
-          ? {
-              nombre: shippingData.itemId,
-              costo: shippingData.costoTotal,
-              ajustePorcentaje: isFreeShippingByWeight ? 100 : 0,
-            }
-          : undefined,
-      facturaTipo,
-    });
+  const buildSubmittedOrderAmounts = () => {
+    const amounts = buildCurrentOrderAmounts();
+    return {
+      ...amounts,
+      productos: [
+        ...buildCartOrderProducts(pricedGroups, facturaTipo),
+        ...amounts.productos.slice(pricedLines.length),
+      ],
+    };
+  };
 
   if (items.length === 0) {
     return (
@@ -650,9 +492,10 @@ export default function Checkout() {
         !hasValidShippingOrder({
           shippingItemId: shippingData?.itemId ?? "",
           distanciaEnvio: shippingData?.distanciaEnvio ?? Number.NaN,
-          productos,
+          productos: buildCurrentOrderAmounts().productos,
           total: orderTotal,
           visualTotal: finalTotal,
+          facturaTipo,
         }))
     ) {
       setError({
@@ -700,7 +543,11 @@ export default function Checkout() {
       const data = await res.json();
       //console.log("Respuesta del servidor:", data);
       if (!res.ok) {
-        setError(data);
+        setError(data?.code === "ERR_ORDER_TOTAL_MISMATCH" ? {
+          code: data.code,
+          message: "Los importes cambiaron. Revisá el carrito y el total antes de volver a confirmar el pedido.",
+          retryable: false,
+        } : data);
         setShowErrorModal(true);
         return;
       }
@@ -996,33 +843,9 @@ export default function Checkout() {
     }, 0);
   };
 
-  // Calcular total del checkout según método de pago
-  const calculateCheckoutTotal = () => {
-    return items.reduce((sum, item) => {
-      const itemTotal = calculateItemTotalForCheckout(
-        item.product,
-        item.color,
-        item.weight,
-        item.quantity
-      );
-      return sum + itemTotal;
-    }, 0);
-  };
-
   const originalTotal = calculateOriginalTotal();
-  const isCouponWinningDiscount =
-    !!appliedCoupon &&
-    items.some(
-      (item) =>
-        calculateItemDiscountDecision(
-          item.product,
-          item.weight,
-          item.quantity
-        ).source === "coupon"
-    );
-
-  // checkoutTotal ya queda neto por línea con el descuento ganador.
-  const checkoutTotal = calculateCheckoutTotal();
+  const isCouponWinningDiscount = !!appliedCoupon && pricedLines.some(({ line }) => line.couponApplied);
+  const checkoutTotal = buildOrderAmounts({ products: buildOrderProductsPricing(), facturaTipo }).total;
   const rawAppliedDiscountAmount = Math.max(
     originalTotal - checkoutTotal,
     0
@@ -1049,7 +872,12 @@ export default function Checkout() {
       })
     : formatPrice(finalTotal);
   const shouldSendCouponInOrder = isCouponWinningDiscount;
-  const discount = originalTotal - total;
+  const discount = paymentMethod === "online"
+    ? Math.max(0, originalTotal - buildOrderAmounts({
+        products: calculateCartPricing(items, { facturaTipo }).flatMap((group) => group.lines),
+        facturaTipo,
+      }).total)
+    : 0;
 
   // Funciones de navegación del wizard
   const canProceedToNextStep = (): boolean => {
@@ -1587,30 +1415,10 @@ export default function Checkout() {
               <div className="flow-root">
                 {isMobile && renderCouponBlock()}
                 <ul className="divide-y divide-gray-200">
-                  {items.map((item, index) => {
-                    const price = getPrice(item.product, item.color, item.weight);
-                    const effectiveQuantity = getEffectiveDiscountQuantity(
-                      item.product,
-                      item.quantity,
-                      item.weight
-                    );
-                    const discountedPrice = calculateItemPriceForCheckout(
-                      item.product,
-                      item.color,
-                      item.weight,
-                      item.quantity
-                    );
-                    const discountedLineTotal = calculateItemTotalForCheckout(
-                      item.product,
-                      item.color,
-                      item.weight,
-                      item.quantity
-                    );
-                    const discountDecision = calculateItemDiscountDecision(
-                      item.product,
-                      item.weight,
-                      item.quantity
-                    );
+                  {pricedLines.map(({ item, line }, index) => {
+                    const price = line.precioBaseUnitario;
+                    const pricing = calculateCheckoutLinePricingForInvoiceMode(price, item.quantity, line.ajustePorcentaje);
+                    const discountedLineTotal = pricing.subtotalNeto;
                     const colorHex = item.color
                       ? item.product.colors?.find(
                         (c) =>
@@ -1655,24 +1463,17 @@ export default function Checkout() {
                                   </span>
                                 </div>
                               )}
-                              {discountDecision.source === "automatic" &&
-                                discountedPrice &&
-                                discountedPrice < (price ?? 0) && (
+                              {line.ajustePorcentaje > 0 &&
+                                pricing.subtotalNeto < pricing.subtotalBruto && (
                                   <span className="inline-block bg-red-100 text-red-800 text-xs font-semibold px-2 py-1 rounded-full mt-1">
                                     -
-                                    {getDiscountPercentageForProduct(
-                                      item.product,
-                                      item.quantity,
-                                      item.weight,
-                                      effectiveQuantity
-                                    )}
+                                    {line.ajustePorcentaje.toLocaleString("es-AR")}%
                                      OFF
                                   </span>
                                 )}
                             </div>
                             <div className="ml-4 text-sm font-medium text-gray-900">
-                              {discountedPrice &&
-                                discountedPrice < (price ?? 0) ? (
+                              {pricing.subtotalNeto < pricing.subtotalBruto ? (
                                 <div className="flex flex-wrap items-center">
                                   <span className="text-base sm:text-lg font-bold mr-2">
                                     $
@@ -1680,19 +1481,19 @@ export default function Checkout() {
                                   </span>
                                   <span className="text-sm sm:text-base text-gray-400 font-bold line-through">
                                     $
-                                    {formatPrice((price ?? 0) * item.quantity)}
+                                    {formatPrice(pricing.subtotalBruto)}
                                   </span>
                                 </div>
                               ) : (
                                 <span className="text-base sm:text-lg font-bold">
                                   $
-                                  {formatPrice((price ?? 0) * item.quantity)}
+                                  {formatPrice(pricing.subtotalBruto)}
                                 </span>
                               )}
                             </div>
                           </div>
                           <p className="mt-1 text-sm text-gray-500">
-                            Cantidad: {item.quantity}
+                            Cantidad: {item.quantity} · {line.combo ? "Combo por transferencia" : line.couponApplied ? "Cupón" : paymentMethod === "transfer" ? pricedGroups.some((group) => group.lines.some((part) => part.nombre === line.nombre && part.combo)) ? "Sobrantes por transferencia" : "Individual por transferencia" : "Precio online"}
                           </p>
                         </div>
                       </li>
@@ -1940,7 +1741,7 @@ export default function Checkout() {
             <div className="px-6 pb-6">
               <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                 <p className="text-sm text-gray-700">
-                  {error.retryable 
+                  {error.code === "ERR_ORDER_TOTAL_MISMATCH" ? "Revisá las cantidades, promociones y el medio de pago. No se confirmó un importe diferente." : error.retryable
                     ? "💡 Puedes intentar realizar el pago nuevamente." 
                     : "⏰ Por favor, intenta más tarde o contacta con soporte."}
                 </p>
@@ -1953,15 +1754,17 @@ export default function Checkout() {
                 type="button"
                 onClick={() => {
                   setShowErrorModal(false);
+                  if (error.code === "ERR_ORDER_TOTAL_MISMATCH") setIsReviewCartOpen(true);
                 }}
                 className="w-full px-4 py-3 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all font-medium shadow-sm hover:shadow-md"
               >
-                Aceptar
+                {error.code === "ERR_ORDER_TOTAL_MISMATCH" ? "Revisar carrito" : "Aceptar"}
               </button>
             </div>
           </div>
         </div>
       )}
+      <CartModal isOpen={isReviewCartOpen} onClose={() => setIsReviewCartOpen(false)} />
     </div>
   );
 }

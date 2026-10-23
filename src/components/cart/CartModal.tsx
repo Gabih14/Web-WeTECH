@@ -2,15 +2,9 @@ import { X, Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
 import { useCart } from "../../context/CartContext";
 import { Product } from "../../types";
 import { useNavigate } from "react-router-dom";
-import {
-  calculateDiscountedPriceForProduct,
-  getEffectiveQuantityForProductDiscount,
-  getDiscountPercentageForProduct,
-  getEligibleQuantityDiscountCartQuantity,
-  shouldApplyDiscount
-} from "../../utils/discounts";
-import { getVariantImage, getVariantPrice } from "../../utils/pricing";
-import { formatPrice, roundPrice } from "../../utils/money";
+import { calculateCartPricing } from "../../utils/cartPricing";
+import { getVariantImage, getVariantPrice, getVariantItemId } from "../../utils/pricing";
+import { formatPrice } from "../../utils/money";
 import { calculateCheckoutLinePricing } from "../../utils/checkoutPricing";
 import { formatKg, getWholesaleCartState } from "../../utils/wholesalePricing";
 
@@ -27,8 +21,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
 
   if (!isOpen) return null;
 
-  const eligibleQuantityDiscountCartQuantity =
-    getEligibleQuantityDiscountCartQuantity(items);
+  const pricedGroups = calculateCartPricing(items);
 
   const handleCheckout = () => {
     onClose();
@@ -54,45 +47,6 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
     weight: number
   ): number | undefined => {
     return getVariantPrice(product, color, weight, wholesale.reached);
-  };
-
-/*   const getPromotionalPrice = (
-    product: Product,
-    weight: number
-  ): number | undefined => {
-    const weightData = product.weights?.find((w) => w.weight === weight);
-    return weightData ? weightData.promotionalPrice : product.promotionalPrice;
-  };
- */
-  const calculateItemDiscountedPrice = (
-    product: Product,
-    color: string,
-    weight: number,
-    quantity: number
-  ): number | undefined => {
-    const originalPrice = getPrice(product, color, weight);
-    
-    if (originalPrice) {
-      if (shouldApplyDiscount(product)) {
-        const effectiveQuantity = getEffectiveQuantityForProductDiscount(
-          product,
-          quantity,
-          weight,
-          eligibleQuantityDiscountCartQuantity
-        );
-
-        return calculateDiscountedPriceForProduct(
-          product,
-          originalPrice,
-          quantity,
-          weight,
-          effectiveQuantity
-        );
-      }
-      return roundPrice(originalPrice);
-    }
-    
-    return originalPrice === undefined ? originalPrice : roundPrice(originalPrice);
   };
 
   const calculateOriginalTotal = () => {
@@ -176,18 +130,12 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                     item.weight
                   );
                   const price = getPrice(item.product, item.color, item.weight);
-                  const discountedPrice = calculateItemDiscountedPrice(
-                    item.product,
-                    item.color,
-                    item.weight,
-                    item.quantity
-                  );
-                  const effectiveQuantity = getEffectiveQuantityForProductDiscount(
-                    item.product,
-                    item.quantity,
-                    item.weight,
-                    eligibleQuantityDiscountCartQuantity
-                  );
+                  const sku = getVariantItemId(item.product, item.color, item.weight);
+                  const group = pricedGroups.find((group) => group.lines[0].nombre === sku
+                    && group.item.product.category === item.product.category);
+                  const lines = group?.lines ?? [];
+                  const lineTotal = lines.reduce((sum, line) => sum + calculateCheckoutLinePricing(line.precioBaseUnitario, line.cantidad, line.ajustePorcentaje).subtotalNeto, 0);
+                  const discountedPrice = group ? Math.round(lineTotal / group.item.quantity) : price;
                   const colorImage = getVariantImage(item.product, item.color, item.weight);
                   return (
                     <div
@@ -205,7 +153,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                             {item.product.name}
                           </h3>
                           <div className="text-black mt-1">
-                            {shouldApplyDiscount(item.product) && price !== undefined && discountedPrice !== undefined && discountedPrice < price ? (
+                            {price !== undefined && discountedPrice !== undefined && discountedPrice < price ? (
                               <>
                                 <div className="flex items-center gap-2">
                                   <span className="text-base sm:text-lg font-bold">
@@ -217,7 +165,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                                     {formatPrice(price ?? 0)}
                                   </span>
                                    <span className="text-xs bg-red-500 text-white px-2 py-1 rounded-full font-medium">
-                                     -{getDiscountPercentageForProduct(item.product, item.quantity, item.weight, effectiveQuantity)}
+                                     Transferencia
                                   </span>
                                 </div>
                               </>
@@ -228,6 +176,11 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                               </span>
                             )}
                           </div>
+                          {lines.map((line, index) => (
+                            <p key={index} className="text-xs text-emerald-700 mt-1">
+                              {line.cantidad} u. {line.combo ? "en combo" : lines.some((part) => part.combo) ? "sobrantes" : "individuales"}: {line.ajustePorcentaje.toLocaleString("es-AR")}% · ${formatPrice(calculateCheckoutLinePricing(line.precioBaseUnitario, line.cantidad, line.ajustePorcentaje).subtotalNeto)}
+                            </p>
+                          ))}
                           {item.color && (
                             <p className="text-gray-600 mt-1">
                               Color: {item.color}{item.weight > 0 && `, Peso: ${item.weight}kg`}
@@ -309,7 +262,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                   </span>
                 </div>
                 <div className="flex justify-between items-center mb-4">
-                  <span className="text-lg font-medium">Total:</span>
+                  <span className="text-lg font-medium">Total por transferencia:</span>
                   <span className="text-xl font-bold text-black">
                     $
                     {formatPrice(total)}
