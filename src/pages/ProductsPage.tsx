@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Filter, Minus, Plus, X } from "lucide-react";
+import { Filter, Minus, Plus, Sparkles, X } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { categories } from "../data/categories";
 import { ProductCard } from "../components/products/ProductCard";
@@ -1644,16 +1644,24 @@ export function ProductsPage() {
 
         {/* Product Grid */}
         <div className="flex-1">
-          <div className="mb-6 flex justify-between items-center">
-            <h2 className="text-2xl font-bold text-gray-900">
+          <div className="mb-6 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center">
+            <h2 className="col-start-1 row-start-1 text-2xl font-bold text-gray-900">
               {selectedCategory
                 ? categories.find((c) => c.id === selectedCategory)?.name ||
                   "Productos"
                 : "Todos los Productos"}
             </h2>
+            {selectedCategory === "COMPLEMENTOS PARA IMPRESION 3D" && (
+              <div className="col-span-2 row-start-2 flex w-full items-start gap-2 rounded-xl border border-yellow-200 bg-yellow-50 px-3 py-2 text-xs font-medium leading-snug text-yellow-950 sm:col-span-1 sm:col-start-2 sm:row-start-1 sm:max-w-xl sm:text-sm">
+                <Sparkles className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>
+                  Combo mate + bombilla negra: 25% OFF. Desde 10 pares: 35% OFF por transferencia.
+                </span>
+              </div>
+            )}
             <button
               onClick={toggleMobileFilter}
-              className="lg:hidden p-2 text-gray-600 hover:text-gray-900 flex items-center gap-2"
+              className="col-start-2 row-start-1 flex shrink-0 items-center gap-2 p-2 text-gray-600 hover:text-gray-900 sm:col-start-3 lg:hidden"
               aria-label="Toggle filters"
             >
               <Filter className="h-5 w-5" />

@@ -6,6 +6,7 @@ const { buildOrderAmounts, hasValidShippingOrder } = require("../src/utils/order
 const { calculateInvoiceLine } = require("../src/utils/invoice.ts");
 const { calculateCheckoutLinePricing } = require("../src/utils/checkoutPricing.ts");
 const { syncCartItemsWithCatalog } = require("../src/utils/cartCatalogSync.ts");
+const { getComplementQuantityTier, getMateComboQuantities } = require("../src/utils/complementDiscounts.ts");
 const CATEGORY = "COMPLEMENTOS PARA IMPRESION 3D";
 const item = (sku, quantity, price = 10000, extra = {}) => ({
   product: { id: sku, itemId: sku, category: CATEGORY, price, invoicePrice: price, promotionalPrice: price * .85, ...extra },
@@ -17,6 +18,30 @@ const price = (items, options = {}) => {
   const products = groups.flatMap((group) => group.lines);
   return { groups, products, ...buildOrderAmounts({ products, facturaTipo: options.facturaTipo }) };
 };
+
+test("solo informa un tramo por cantidad para complementos con descuento diferencial", () => {
+  assert.deepEqual(
+    getComplementQuantityTier({ id: "INS-MATE-BLAN", grupo: CATEGORY }),
+    { quantity: 10, percentage: 27.2 },
+  );
+  assert.deepEqual(
+    getComplementQuantityTier({ id: "TAZA-ROJA", idPadre: "INS-TAZA-GENE", grupo: CATEGORY }),
+    { quantity: 10, percentage: 25.64 },
+  );
+  assert.equal(
+    getComplementQuantityTier({ id: "OTRO-COMPLEMENTO", grupo: CATEGORY }),
+    null,
+  );
+});
+
+test("resume las cantidades disponibles para el combo de mate y bombilla", () => {
+  assert.deepEqual(getMateComboQuantities([
+    { id: "INS-MATE-BLAN", grupo: CATEGORY, quantity: 4 },
+    { id: "INS-MATE-NEGR", grupo: CATEGORY, quantity: 8 },
+    { id: "INS-BOMB-NEGR", grupo: CATEGORY, quantity: 10 },
+    { id: "INS-MATE-BLAN", grupo: "OTRO", quantity: 99 },
+  ]), { mates: 12, bombillas: 10, pairs: 10 });
+});
 
 for (const [sku, parentItemId, tier] of [
   ["VASO ALUM 500ML", null, 21.29],

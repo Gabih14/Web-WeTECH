@@ -1,4 +1,4 @@
-import { X, Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
+import { X, Minus, Plus, ShoppingCart, Sparkles, Trash2 } from "lucide-react";
 import { useCart } from "../../context/CartContext";
 import { Product } from "../../types";
 import { useNavigate } from "react-router-dom";
@@ -7,6 +7,7 @@ import { getVariantImage, getVariantPrice, getVariantItemId } from "../../utils/
 import { formatPrice } from "../../utils/money";
 import { calculateCheckoutLinePricing } from "../../utils/checkoutPricing";
 import { formatKg, getWholesaleCartState } from "../../utils/wholesalePricing";
+import { getMateComboComponent, getMateComboQuantities } from "../../utils/complementDiscounts";
 
 interface CartModalProps {
   isOpen: boolean;
@@ -65,6 +66,44 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
 
   const originalTotal = calculateOriginalTotal();
   const discount = originalTotal - total;
+  const mateCombo = getMateComboQuantities(items.map((item) => ({
+    id: getVariantItemId(item.product, item.color, item.weight),
+    grupo: item.product.category,
+    idPadre: item.product.parentItemId,
+    quantity: item.quantity,
+  })));
+  const appliedMateCombo = getMateComboQuantities(pricedGroups.flatMap((group) => {
+    const component = getMateComboComponent({
+      id: getVariantItemId(group.item.product, group.item.color, group.item.weight),
+      grupo: group.item.product.category,
+      idPadre: group.item.product.parentItemId,
+    });
+    const quantity = group.lines.reduce(
+      (sum, line) => sum + (line.combo ? line.cantidad : 0),
+      0,
+    );
+    return component && quantity > 0
+      ? [{
+          id: component === "mate" ? "INS-MATE-BLAN" : "INS-BOMB-NEGR",
+          grupo: group.item.product.category,
+          quantity,
+        }]
+      : [];
+  }));
+  const appliedComboPercentage = pricedGroups
+    .flatMap((group) => group.lines)
+    .find((line) => line.combo)?.ajustePorcentaje;
+  const mateComboMessage = mateCombo.mates > 0 && mateCombo.bombillas === 0
+    ? "Agregá una bombilla negra y obtené 25% OFF en el combo por transferencia."
+    : mateCombo.bombillas > 0 && mateCombo.mates === 0
+      ? "Agregá un mate blanco o negro y obtené 25% OFF en el combo por transferencia."
+      : appliedMateCombo.pairs > 0 && appliedComboPercentage === 35
+        ? `Combo aplicado en ${appliedMateCombo.pairs} pares: 35% OFF por transferencia.`
+        : appliedMateCombo.pairs > 0 && appliedComboPercentage === 25
+          ? `Combo aplicado en ${appliedMateCombo.pairs} ${appliedMateCombo.pairs === 1 ? "par" : "pares"}: 25% OFF.${mateCombo.pairs < 10 ? ` Agregá ${10 - mateCombo.pairs} ${10 - mateCombo.pairs === 1 ? "par" : "pares"} para alcanzar 35% OFF.` : " Se aplicó la opción más conveniente."}`
+          : mateCombo.pairs > 0
+            ? "Tenés mate y bombilla; conservamos los descuentos individuales porque ofrecen el menor precio."
+          : null;
 
   const handleOutsideClick = () => {
     onClose();
@@ -246,6 +285,14 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                   );
                 })}
               </div>
+              {mateComboMessage && (
+                <div className="mb-4 rounded-xl border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-950" role="status">
+                  <p className="flex items-start gap-2 font-medium">
+                    <Sparkles className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>{mateComboMessage}</span>
+                  </p>
+                </div>
+              )}
               <div className="border-t pt-4">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-lg font-medium">Subtotal:</span>

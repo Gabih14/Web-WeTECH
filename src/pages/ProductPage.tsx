@@ -1,4 +1,4 @@
-import { isComplement } from "../utils/complementDiscounts";
+import { getComplementQuantityTier, getMateComboComponent, isComplement } from "../utils/complementDiscounts";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { Bell, Check, ChevronDown, ShoppingCart, Sparkles } from "lucide-react";
@@ -35,6 +35,7 @@ import {
   getVariantRetailPrice,
 } from "../utils/pricing";
 import { formatPrice } from "../utils/money";
+import { calculateCheckoutLinePricing } from "../utils/checkoutPricing";
 import { ColorSwatch } from "../components/products/ColorSwatch";
 import { ProductDescription } from "../components/products/ProductDescription";
 import { StockWaitRequestModal } from "../components/products/StockWaitRequestModal";
@@ -398,6 +399,23 @@ export function ProductPage() {
     selectedWeight
   );
   const selectedItemId = getVariantItemId(product, selectedColor, selectedWeight);
+  const complementQuantityTier = getComplementQuantityTier({
+    id: selectedItemId,
+    grupo: product.category,
+    idPadre: product.parentItemId,
+  });
+  const complementQuantityTierPrice = complementQuantityTier
+    ? calculateCheckoutLinePricing(
+        currentPrice ?? 0,
+        complementQuantityTier.quantity,
+        complementQuantityTier.percentage
+      ).precioUnitarioNeto
+    : null;
+  const mateComboComponent = getMateComboComponent({
+    id: selectedItemId,
+    grupo: product.category,
+    idPadre: product.parentItemId,
+  });
   const canRequestStockNotice = availableStock === 0 && !variantSelectionIncomplete;
 
   const sortedColors = product.colors
@@ -581,7 +599,22 @@ export function ProductPage() {
                 <p className="text-sm text-gray-500">Precio minorista: <span className="line-through">${formatPrice(retailPrice)}</span></p>
               )}
 
-              {isComplement({ id: product.id, grupo: product.category }) && <p className="mt-2 text-sm text-emerald-700">15% base por transferencia. Los tramos y combos se calculan en el carrito.</p>}
+              {complementQuantityTier && (
+                <p className="mt-2 text-sm font-medium text-amber-700">
+                  Comprá {complementQuantityTier.quantity} o más a ${formatPrice(complementQuantityTierPrice ?? 0)} c/u por transferencia.
+                </p>
+              )}
+              {mateComboComponent && (
+                <div className="mt-3 rounded-xl border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-950">
+                  <p className="flex items-center gap-2 font-bold">
+                    <Sparkles className="h-4 w-4" />
+                    Combo mate + bombilla negra
+                  </p>
+                  <p className="mt-1">
+                    25% OFF por transferencia. Llevando 10 pares o más, obtenés 35% OFF.
+                  </p>
+                </div>
+              )}
               <ProductDescription product={product} />
 
               {product.weights?.some((weight) => weight.weight > 0) && (

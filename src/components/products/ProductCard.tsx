@@ -1,4 +1,4 @@
-import { isComplement } from "../../utils/complementDiscounts";
+import { getComplementQuantityTier, getMateComboComponent, isComplement } from "../../utils/complementDiscounts";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Product } from "../../types";
 import { Bell, ChevronDown, ShoppingCart, Check, Zap } from "lucide-react";
@@ -24,6 +24,7 @@ import {
 } from "../../utils/cartPurchase";
 import { getVariantImage, getVariantItemId, getVariantPrice, getVariantPromotionalPrice, getVariantRetailPrice } from "../../utils/pricing";
 import { formatPrice } from "../../utils/money";
+import { calculateCheckoutLinePricing } from "../../utils/checkoutPricing";
 import { ColorSwatch } from "./ColorSwatch";
 import { StockWaitRequestModal } from "./StockWaitRequestModal";
 
@@ -193,6 +194,23 @@ export function ProductCard({
     : undefined;
   const displayImage = getVariantImage(product, selectedColor, selectedWeight);
   const selectedItemId = getVariantItemId(product, selectedColor, selectedWeight);
+  const complementQuantityTier = getComplementQuantityTier({
+    id: selectedItemId,
+    grupo: product.category,
+    idPadre: product.parentItemId,
+  });
+  const complementQuantityTierPrice = complementQuantityTier
+    ? calculateCheckoutLinePricing(
+        currentPrice ?? 0,
+        complementQuantityTier.quantity,
+        complementQuantityTier.percentage
+      ).precioUnitarioNeto
+    : null;
+  const mateComboComponent = getMateComboComponent({
+    id: selectedItemId,
+    grupo: product.category,
+    idPadre: product.parentItemId,
+  });
   const productPath = `/product/${encodeURIComponent(product.slug || product.id)}`;
   const canRequestStockNotice =
     availableStock === 0 &&
@@ -206,7 +224,14 @@ export function ProductCard({
       {applyDiscount && (
         <div className="absolute top-3 left-3 z-10 flex items-center gap-1 bg-black text-white text-[10px] font-semibold px-2 py-1 rounded-full tracking-wide">
           <Zap className="w-2.5 h-2.5 fill-yellow-400 text-yellow-400" />
-          -{getDiscountPercentageForProduct(product, quantity, selectedWeight ?? undefined, effectiveDiscountQuantity)}
+          -{isComplement({ id: product.id, grupo: product.category })
+            ? "15%"
+            : getDiscountPercentageForProduct(
+                product,
+                quantity,
+                selectedWeight ?? undefined,
+                effectiveDiscountQuantity
+              )}
         </div>
       )}
 
@@ -225,6 +250,11 @@ export function ProductCard({
             event.currentTarget.src = product.image;
           }}
         />
+        {mateComboComponent && (
+          <span className="absolute right-3 top-3 z-10 rounded-full bg-yellow-400 px-2 py-1 text-[10px] font-bold text-gray-950 shadow-sm">
+            Tiene combo
+          </span>
+        )}
         {isFilament && product.line?.trim() && (
           <span className="absolute bottom-3 right-3 z-10 rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-[10px] font-semibold text-amber-900 shadow-sm" aria-label={`Línea ${product.line.trim()}`}>
             {product.line.trim()}
@@ -365,7 +395,9 @@ export function ProductCard({
           </div>
           {/* Siempre ocupa la misma altura, con o sin mensaje */}
           <p className="text-[11px] text-amber-600 font-medium leading-tight min-h-[1rem] mt-0.5">
-            {isComplement({ id: product.id, grupo: product.category }) ? "15% por transferencia · Tramos y combos en el carrito" : applyDiscount && nextLevel
+            {complementQuantityTier
+              ? `${complementQuantityTier.quantity}+ unidades → $${formatPrice(complementQuantityTierPrice ?? 0)} c/u por transferencia`
+              : applyDiscount && nextLevel
               ? `Comprá ${nextLevel.quantity - effectiveCartDiscountQuantity} más → ${nextLevel.discount} off`
               : ""}
           </p>

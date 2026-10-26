@@ -49,11 +49,35 @@ export const getComplementDiscountPercentage = (
     : 0;
 };
 
+export const getComplementQuantityTier = (
+  item: ComplementInput,
+): { quantity: number; percentage: number } | null => {
+  const presentation = getComplementPresentation(item);
+  const percentage = presentation ? COMPLEMENT_TIERS[presentation] : undefined;
+
+  return percentage === undefined ? null : { quantity: 10, percentage };
+};
+
 export const getMateComboComponent = (
   item: ComplementInput,
 ): 'mate' | 'bombilla' | null => {
   if (!isComplement(item)) return null;
   if (item.id === 'INS-MATE-BLAN' || item.id === 'INS-MATE-NEGR') return 'mate';
   return item.id === 'INS-BOMB-NEGR' ? 'bombilla' : null;
+};
+
+export const getMateComboQuantities = (
+  items: Array<ComplementInput & { quantity: number }>,
+): { mates: number; bombillas: number; pairs: number } => {
+  let mates = 0;
+  let bombillas = 0;
+
+  for (const item of items) {
+    const component = getMateComboComponent(item);
+    if (component === 'mate') mates += item.quantity;
+    if (component === 'bombilla') bombillas += item.quantity;
+  }
+
+  return { mates, bombillas, pairs: Math.min(mates, bombillas) };
 };
 
