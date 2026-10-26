@@ -192,17 +192,26 @@ export const hasValidShippingOrder = ({
   productos,
   total,
   visualTotal,
+  facturaTipo = "none",
 }: {
   shippingItemId: string;
   distanciaEnvio: number;
   productos: NamedOrderLine[];
   total: number;
   visualTotal: number;
+  facturaTipo?: FacturaTipo;
 }): boolean => {
   const shippingLines = productos.filter(
     (line) => line.nombre === shippingItemId
   );
-  const linesTotal = productos.reduce((sum, line) => sum + line.subtotal, 0);
+  const linesTotal = requiresInvoice(facturaTipo)
+    ? calculateOrderTotal(productos.map((line) => calculateInvoiceLine({
+        precioMinoristaConIva: 0,
+        cantidad: line.cantidad,
+        descuentoPorcentaje: line.ajuste_porcentaje,
+        subtotalSAOverride: line.subtotal,
+      }).netoFinal), 0, facturaTipo)
+    : productos.reduce((sum, line) => sum + line.subtotal, 0);
 
   return (
     shippingItemId.trim().length > 0 &&

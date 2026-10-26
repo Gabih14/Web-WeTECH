@@ -8,18 +8,14 @@ import React, {
 } from "react";
 import { Product, CartItem, CartContextType } from "../types";
 import {
-  calculateDiscountedLineTotalForProduct,
-  getEffectiveQuantityForProductDiscount,
-  getEligibleQuantityDiscountCartQuantity,
-} from "../utils/discounts";
-import {
   getVariantStock,
   isFilamentProduct,
 } from "../utils/cartPurchase";
 import { syncCartItemsWithCatalog } from "../utils/cartCatalogSync";
-import { getCartItemPrice } from "../utils/pricing";
+import { calculateCartPricing } from "../utils/cartPricing";
+import { buildOrderAmounts } from "../utils/orderPricing";
 import { useEcommerceUser } from "./EcommerceUserContext";
-import { getWholesaleCartState, stripWholesaleProduct } from "../utils/wholesalePricing";
+import { stripWholesaleProduct } from "../utils/wholesalePricing";
 import { useAuth } from "@clerk/react";
 import { fetchProducts } from "../services/fetchProducts";
 
@@ -201,40 +197,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     };
   }, [items]);
 
-  const eligibleQuantityDiscountCartQuantity = useMemo(
-    () => getEligibleQuantityDiscountCartQuantity(items),
-    [items]
-  );
-  const wholesale = getWholesaleCartState(items);
-
-  const calculateItemTotal = (item: CartItem) => {
-    const originalPrice = getCartItemPrice(item, wholesale.reached);
-    
-    if (originalPrice) {
-      const effectiveQuantity = getEffectiveQuantityForProductDiscount(
-        item.product,
-        item.quantity,
-        item.weight,
-        eligibleQuantityDiscountCartQuantity
-      );
-
-      return calculateDiscountedLineTotalForProduct(
-        item.product,
-        originalPrice,
-        item.quantity,
-        item.weight,
-        effectiveQuantity
-      );
-    }
-    
-    return 0;
-  };
-
-  const total = useMemo(() => {
-    return items.reduce((sum, item) => {
-      return sum + calculateItemTotal(item);
-    }, 0);
-  }, [items, eligibleQuantityDiscountCartQuantity]);
+  const total = useMemo(() => buildOrderAmounts({
+    products: calculateCartPricing(items).flatMap((group) => group.lines),
+  }).total, [items]);
 
   const value = {
     items,

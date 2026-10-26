@@ -1,3 +1,4 @@
+import { isComplement } from "../../utils/complementDiscounts";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Product } from "../../types";
 import { Bell, ChevronDown, ShoppingCart, Check, Zap } from "lucide-react";
@@ -21,7 +22,7 @@ import {
   getPurchaseState,
   getVariantStock,
 } from "../../utils/cartPurchase";
-import { getVariantImage, getVariantItemId, getVariantPrice, getVariantRetailPrice } from "../../utils/pricing";
+import { getVariantImage, getVariantItemId, getVariantPrice, getVariantPromotionalPrice, getVariantRetailPrice } from "../../utils/pricing";
 import { formatPrice } from "../../utils/money";
 import { ColorSwatch } from "./ColorSwatch";
 import { StockWaitRequestModal } from "./StockWaitRequestModal";
@@ -130,7 +131,10 @@ export function ProductCard({
   }, []);
 
   useEffect(() => {
-    if (shouldApplyDiscount(product)) {
+    if (isComplement({ id: product.id, grupo: product.category })) {
+      setCurrentPrice(getVariantPrice(product, selectedColor, selectedWeight));
+      setCurrentPromotionalPrice(getVariantPromotionalPrice(product, selectedColor, selectedWeight));
+    } else if (shouldApplyDiscount(product)) {
       const base =
         getVariantPrice(product, selectedColor, selectedWeight, wholesale.reached) ?? 0;
 
@@ -179,7 +183,7 @@ export function ProductCard({
       })
     : [];
 
-  const applyDiscount = shouldApplyDiscount(product) && !!currentPromotionalPrice;
+  const applyDiscount = (shouldApplyDiscount(product) || isComplement({ id: product.id, grupo: product.category })) && !!currentPromotionalPrice;
   const nextLevel = applyDiscount
     ? getNextDiscountLevelForProduct(product, effectiveCartDiscountQuantity, selectedWeight ?? undefined)
     : null;
@@ -361,7 +365,7 @@ export function ProductCard({
           </div>
           {/* Siempre ocupa la misma altura, con o sin mensaje */}
           <p className="text-[11px] text-amber-600 font-medium leading-tight min-h-[1rem] mt-0.5">
-            {applyDiscount && nextLevel
+            {isComplement({ id: product.id, grupo: product.category }) ? "15% por transferencia · Tramos y combos en el carrito" : applyDiscount && nextLevel
               ? `Comprá ${nextLevel.quantity - effectiveCartDiscountQuantity} más → ${nextLevel.discount} off`
               : ""}
           </p>
