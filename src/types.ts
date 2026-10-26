@@ -37,6 +37,7 @@ export interface Product {
   invoicePrice?: number;
   discountQuantity?: { [quantity: number]: number };
   promotionalPrice?: number;
+  parentItemId?: string | null;
   itemId?: string;
   colors?: {
     name: string;

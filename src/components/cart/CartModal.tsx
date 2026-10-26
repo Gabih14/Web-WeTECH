@@ -1,18 +1,13 @@
-import { X, Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
+import { X, Minus, Plus, ShoppingCart, Sparkles, Trash2 } from "lucide-react";
 import { useCart } from "../../context/CartContext";
 import { Product } from "../../types";
 import { useNavigate } from "react-router-dom";
-import {
-  calculateDiscountedPriceForProduct,
-  getEffectiveQuantityForProductDiscount,
-  getDiscountPercentageForProduct,
-  getEligibleQuantityDiscountCartQuantity,
-  shouldApplyDiscount
-} from "../../utils/discounts";
-import { getVariantImage, getVariantPrice } from "../../utils/pricing";
-import { formatPrice, roundPrice } from "../../utils/money";
+import { calculateCartPricing } from "../../utils/cartPricing";
+import { getVariantImage, getVariantPrice, getVariantItemId } from "../../utils/pricing";
+import { formatPrice } from "../../utils/money";
 import { calculateCheckoutLinePricing } from "../../utils/checkoutPricing";
 import { formatKg, getWholesaleCartState } from "../../utils/wholesalePricing";
+import { getMateComboComponent, getMateComboQuantities } from "../../utils/complementDiscounts";
 
 interface CartModalProps {
   isOpen: boolean;
@@ -27,8 +22,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
 
   if (!isOpen) return null;
 
-  const eligibleQuantityDiscountCartQuantity =
-    getEligibleQuantityDiscountCartQuantity(items);
+  const pricedGroups = calculateCartPricing(items);
 
   const handleCheckout = () => {
     onClose();
@@ -56,45 +50,6 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
     return getVariantPrice(product, color, weight, wholesale.reached);
   };
 
-/*   const getPromotionalPrice = (
-    product: Product,
-    weight: number
-  ): number | undefined => {
-    const weightData = product.weights?.find((w) => w.weight === weight);
-    return weightData ? weightData.promotionalPrice : product.promotionalPrice;
-  };
- */
-  const calculateItemDiscountedPrice = (
-    product: Product,
-    color: string,
-    weight: number,
-    quantity: number
-  ): number | undefined => {
-    const originalPrice = getPrice(product, color, weight);
-    
-    if (originalPrice) {
-      if (shouldApplyDiscount(product)) {
-        const effectiveQuantity = getEffectiveQuantityForProductDiscount(
-          product,
-          quantity,
-          weight,
-          eligibleQuantityDiscountCartQuantity
-        );
-
-        return calculateDiscountedPriceForProduct(
-          product,
-          originalPrice,
-          quantity,
-          weight,
-          effectiveQuantity
-        );
-      }
-      return roundPrice(originalPrice);
-    }
-    
-    return originalPrice === undefined ? originalPrice : roundPrice(originalPrice);
-  };
-
   const calculateOriginalTotal = () => {
     return items.reduce((sum, item) => {
       const price = getPrice(item.product, item.color, item.weight);
@@ -111,6 +66,44 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
 
   const originalTotal = calculateOriginalTotal();
   const discount = originalTotal - total;
+  const mateCombo = getMateComboQuantities(items.map((item) => ({
+    id: getVariantItemId(item.product, item.color, item.weight),
+    grupo: item.product.category,
+    idPadre: item.product.parentItemId,
+    quantity: item.quantity,
+  })));
+  const appliedMateCombo = getMateComboQuantities(pricedGroups.flatMap((group) => {
+    const component = getMateComboComponent({
+      id: getVariantItemId(group.item.product, group.item.color, group.item.weight),
+      grupo: group.item.product.category,
+      idPadre: group.item.product.parentItemId,
+    });
+    const quantity = group.lines.reduce(
+      (sum, line) => sum + (line.combo ? line.cantidad : 0),
+      0,
+    );
+    return component && quantity > 0
+      ? [{
+          id: component === "mate" ? "INS-MATE-BLAN" : "INS-BOMB-NEGR",
+          grupo: group.item.product.category,
+          quantity,
+        }]
+      : [];
+  }));
+  const appliedComboPercentage = pricedGroups
+    .flatMap((group) => group.lines)
+    .find((line) => line.combo)?.ajustePorcentaje;
+  const mateComboMessage = mateCombo.mates > 0 && mateCombo.bombillas === 0
+    ? "Agregá una bombilla negra y obtené 25% OFF en el combo por transferencia."
+    : mateCombo.bombillas > 0 && mateCombo.mates === 0
+      ? "Agregá un mate blanco o negro y obtené 25% OFF en el combo por transferencia."
+      : appliedMateCombo.pairs > 0 && appliedComboPercentage === 35
+        ? `Combo aplicado en ${appliedMateCombo.pairs} pares: 35% OFF por transferencia.`
+        : appliedMateCombo.pairs > 0 && appliedComboPercentage === 25
+          ? `Combo aplicado en ${appliedMateCombo.pairs} ${appliedMateCombo.pairs === 1 ? "par" : "pares"}: 25% OFF.${mateCombo.pairs < 10 ? ` Agregá ${10 - mateCombo.pairs} ${10 - mateCombo.pairs === 1 ? "par" : "pares"} para alcanzar 35% OFF.` : " Se aplicó la opción más conveniente."}`
+          : mateCombo.pairs > 0
+            ? "Tenés mate y bombilla; conservamos los descuentos individuales porque ofrecen el menor precio."
+          : null;
 
   const handleOutsideClick = () => {
     onClose();
@@ -176,18 +169,12 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                     item.weight
                   );
                   const price = getPrice(item.product, item.color, item.weight);
-                  const discountedPrice = calculateItemDiscountedPrice(
-                    item.product,
-                    item.color,
-                    item.weight,
-                    item.quantity
-                  );
-                  const effectiveQuantity = getEffectiveQuantityForProductDiscount(
-                    item.product,
-                    item.quantity,
-                    item.weight,
-                    eligibleQuantityDiscountCartQuantity
-                  );
+                  const sku = getVariantItemId(item.product, item.color, item.weight);
+                  const group = pricedGroups.find((group) => group.lines[0].nombre === sku
+                    && group.item.product.category === item.product.category);
+                  const lines = group?.lines ?? [];
+                  const lineTotal = lines.reduce((sum, line) => sum + calculateCheckoutLinePricing(line.precioBaseUnitario, line.cantidad, line.ajustePorcentaje).subtotalNeto, 0);
+                  const discountedPrice = group ? Math.round(lineTotal / group.item.quantity) : price;
                   const colorImage = getVariantImage(item.product, item.color, item.weight);
                   return (
                     <div
@@ -205,7 +192,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                             {item.product.name}
                           </h3>
                           <div className="text-black mt-1">
-                            {shouldApplyDiscount(item.product) && price !== undefined && discountedPrice !== undefined && discountedPrice < price ? (
+                            {price !== undefined && discountedPrice !== undefined && discountedPrice < price ? (
                               <>
                                 <div className="flex items-center gap-2">
                                   <span className="text-base sm:text-lg font-bold">
@@ -217,7 +204,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                                     {formatPrice(price ?? 0)}
                                   </span>
                                    <span className="text-xs bg-red-500 text-white px-2 py-1 rounded-full font-medium">
-                                     -{getDiscountPercentageForProduct(item.product, item.quantity, item.weight, effectiveQuantity)}
+                                     Transferencia
                                   </span>
                                 </div>
                               </>
@@ -228,6 +215,11 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                               </span>
                             )}
                           </div>
+                          {lines.map((line, index) => (
+                            <p key={index} className="text-xs text-emerald-700 mt-1">
+                              {line.cantidad} u. {line.combo ? "en combo" : lines.some((part) => part.combo) ? "sobrantes" : "individuales"}: {line.ajustePorcentaje.toLocaleString("es-AR")}% · ${formatPrice(calculateCheckoutLinePricing(line.precioBaseUnitario, line.cantidad, line.ajustePorcentaje).subtotalNeto)}
+                            </p>
+                          ))}
                           {item.color && (
                             <p className="text-gray-600 mt-1">
                               Color: {item.color}{item.weight > 0 && `, Peso: ${item.weight}kg`}
@@ -293,6 +285,14 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                   );
                 })}
               </div>
+              {mateComboMessage && (
+                <div className="mb-4 rounded-xl border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-950" role="status">
+                  <p className="flex items-start gap-2 font-medium">
+                    <Sparkles className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>{mateComboMessage}</span>
+                  </p>
+                </div>
+              )}
               <div className="border-t pt-4">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-lg font-medium">Subtotal:</span>
@@ -309,7 +309,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                   </span>
                 </div>
                 <div className="flex justify-between items-center mb-4">
-                  <span className="text-lg font-medium">Total:</span>
+                  <span className="text-lg font-medium">Total por transferencia:</span>
                   <span className="text-xl font-bold text-black">
                     $
                     {formatPrice(total)}

@@ -24,6 +24,7 @@ interface CatalogoAtributo {
 }
 interface CatalogoVariante {
   id: string;
+  idPadre?: string | null;
   descripcion: string | null;
   observaciones: string | null;
   fotoUrl: string | null;
@@ -374,6 +375,9 @@ export const fetchProducts = async ({
     const products: Product[] = [];
 
     const separateProducts = catalogProducts.flatMap((prod) => {
+      if (prod.grupo?.trim().toUpperCase() === PRINTING_COMPLEMENTS_GROUP) {
+        return prod.variantes.map((v) => ({ ...prod, key: `item:${v.id}`, nombre: v.descripcion?.trim() || prod.nombre, variantes: [v] }));
+      }
       if (!isFilamentGroup(prod.grupo)) return [prod];
 
       const weightedVariants = prod.variantes.filter((v) => (v.pesoKg ?? 0) !== 0);
@@ -477,6 +481,7 @@ export const fetchProducts = async ({
         invoicePrice: toNumber(first.invoicePrice) ?? firstPrice,
         promotionalPrice: toNumber(first.promotionalPrice),
         itemId: first.id,
+        parentItemId: first.idPadre,
       };
 
       if (isFilament) {
@@ -567,6 +572,14 @@ export const fetchProducts = async ({
 
       products.push(product);
     }
+
+    // shortcut: el catálogo aún no expone idPadre; quitar estas fichas cuando lo publique.
+    await Promise.all(products.filter((product) =>
+      product.category.trim().toUpperCase() === PRINTING_COMPLEMENTS_GROUP && product.parentItemId === undefined
+    ).map(async (product) => {
+      const detail = await apiFetch(`/stk-item/${encodeURIComponent(product.itemId!)}`);
+      product.parentItemId = detail.idPadre ?? null;
+    }));
 
     if (import.meta.env.DEV) {
       console.log("Productos transformados:", products);
