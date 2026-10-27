@@ -92,9 +92,73 @@ const normalizeDifficulty = (level: string) =>
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toUpperCase();
+const normalizeSearchText = (value: string) =>
+  value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+
+const matchesSearchQuery = (product: Product, query: string) => {
+  const terms = normalizeSearchText(query).split(/\s+/).filter(Boolean);
+  if (terms.length === 0) return true;
+
+  const searchableText = normalizeSearchText(
+    [
+      product.name,
+      product.description,
+      product.observaciones,
+      product.brand,
+      product.line,
+      product.material,
+      product.grupoWeb,
+      product.category,
+      product.subcategory,
+      product.origin,
+      product.difficultyLevel,
+      ...(product.colors?.flatMap((color) => [
+        color.name,
+        color.colorGroup?.name,
+      ]) ?? []),
+      ...(product.weights?.flatMap(({ weight }) => [
+        `${weight} kg`,
+        `${weight}kg`,
+      ]) ?? []),
+      ...(product.materialClassifications?.flatMap((classification) => [
+        classification.material,
+        classification.submaterial,
+        ...(classification.grupoWebValues ?? []),
+      ]) ?? []),
+    ]
+      .filter((value): value is string => typeof value === "string")
+      .join(" "),
+  );
+
+  return terms.every((term) => searchableText.includes(term));
+};
 const SPARE_PARTS_CATEGORY = "REPUESTOS & ACCESORIOS";
 const DIFFICULTY_ORDER = ["PRINCIPIANTE", "INTERMEDIO", "AVANZADO", "EXPERTO"];
 const LINE_ORDER = ["PREMIUM", "ESTANDAR", "BASICO"];
+const FILTER_QUERY_PARAMS = [
+  "category",
+  "subcategory",
+  "color",
+  "brand",
+  "line",
+  "material",
+  "submaterial",
+  "grupoWeb",
+  "weight",
+  "origin",
+  "foodSafe",
+  "difficulty",
+];
+
+const numberParam = (value: string | null) => {
+  if (!value) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
 
 const lineBarCount = (line: string) => {
   switch (normalizeLine(line)) {
@@ -826,23 +890,32 @@ function ColorFilter({
   );
 }
 
-export function ProductsPage() {
+interface ProductsPageProps {
+  searchMode?: boolean;
+}
+
+export function ProductsPage({ searchMode = false }: ProductsPageProps) {
   const { getToken } = useAuth();
   const { isWholesale, denyWholesaleAccess } = useEcommerceUser();
   const [products, setProducts] = useState<Product[]>([]);
   const [facets, setFacets] = useState<CatalogFacet[]>([]);
   const [searchParams, setSearchParams] = useSearchParams();
+  const query = searchParams.get("query")?.trim() ?? "";
   const [selectedCategory, setSelectedCategory] = useState<string | null>(
     searchParams.get("category")
   );
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
-    null
+    searchParams.get("subcategory")
   );
   const [selectedColorGroupId, setSelectedColorGroupId] = useState<
     number | null
-  >(null);
-  const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
-  const [selectedLine, setSelectedLine] = useState<string | null>(null);
+  >(numberParam(searchParams.get("color")));
+  const [selectedBrand, setSelectedBrand] = useState<string | null>(
+    searchParams.get("brand")
+  );
+  const [selectedLine, setSelectedLine] = useState<string | null>(
+    searchParams.get("line")
+  );
   const [selectedMaterial, setSelectedMaterial] = useState<string | null>(
     searchParams.get("material")
   );
@@ -852,11 +925,17 @@ export function ProductsPage() {
   const [selectedGrupoWeb, setSelectedGrupoWeb] = useState<string | null>(
     searchParams.get("grupoWeb")
   );
-  const [selectedWeight, setSelectedWeight] = useState<number | null>(null);
-  const [selectedOrigin, setSelectedOrigin] = useState<string | null>(null);
-  const [foodSafeOnly, setFoodSafeOnly] = useState(false);
+  const [selectedWeight, setSelectedWeight] = useState<number | null>(
+    numberParam(searchParams.get("weight"))
+  );
+  const [selectedOrigin, setSelectedOrigin] = useState<string | null>(
+    searchParams.get("origin")
+  );
+  const [foodSafeOnly, setFoodSafeOnly] = useState(
+    searchParams.get("foodSafe") === "true"
+  );
   const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(
-    null
+    searchParams.get("difficulty")
   );
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -865,13 +944,18 @@ export function ProductsPage() {
     : null;
 
   useSEO({
-    title: selectedCategoryName
+    title: searchMode && query
+      ? `Búsqueda: ${query} | WeTECH`
+      : selectedCategoryName
       ? `${selectedCategoryName} | WeTECH`
       : "Productos de impresion 3D | WeTECH",
-    description: selectedCategoryName
+    description: searchMode && query
+      ? `Resultados de búsqueda para ${query} en WeTECH.`
+      : selectedCategoryName
       ? `Compra ${selectedCategoryName.toLowerCase()} en WeTECH. Productos para impresion 3D con atencion especializada en Argentina.`
       : "Explora filamentos 3D, repuestos, accesorios e impresoras 3D en la tienda online de WeTECH.",
-    canonicalPath: "/products",
+    canonicalPath: searchMode ? "/search" : "/products",
+    noindex: searchMode,
   });
 
   /* const openWhatsApp = () => {
@@ -909,9 +993,18 @@ export function ProductsPage() {
   }, [denyWholesaleAccess, getToken, isWholesale]);
 
   useEffect(() => {
+    setSelectedCategory(searchParams.get("category"));
+    setSelectedSubcategory(searchParams.get("subcategory"));
+    setSelectedColorGroupId(numberParam(searchParams.get("color")));
+    setSelectedBrand(searchParams.get("brand"));
+    setSelectedLine(searchParams.get("line"));
     setSelectedMaterial(searchParams.get("material"));
     setSelectedSubmaterial(searchParams.get("submaterial"));
     setSelectedGrupoWeb(searchParams.get("grupoWeb"));
+    setSelectedWeight(numberParam(searchParams.get("weight")));
+    setSelectedOrigin(searchParams.get("origin"));
+    setFoodSafeOnly(searchParams.get("foodSafe") === "true");
+    setSelectedDifficulty(searchParams.get("difficulty"));
   }, [searchParams]);
 
   const categoriesWithFilamentSubcategories = useMemo(() => {
@@ -948,6 +1041,7 @@ export function ProductsPage() {
   }, [products]);
 
   const matchesSelectedCategory = useCallback((product: Product) => {
+    if (!matchesSearchQuery(product, query)) return false;
     if (!selectedCategory) return true;
 
     const matchesCategory = product.category === selectedCategory.toUpperCase();
@@ -956,7 +1050,7 @@ export function ProductsPage() {
       product.subcategory === selectedSubcategory.toUpperCase();
 
     return matchesCategory && matchesSubcategory;
-  }, [selectedCategory, selectedSubcategory]);
+  }, [query, selectedCategory, selectedSubcategory]);
 
   const availableColorGroups = useMemo(() => {
     const colorGroupMap = new Map<number, ColorGroup>();
@@ -1348,11 +1442,54 @@ export function ProductsPage() {
     setIsMobileFilterOpen(!isMobileFilterOpen);
   };
 
+  const updateFilterParam = (name: string, value: string | number | boolean | null) => {
+    const next = new URLSearchParams(searchParams);
+    if (value === null || value === false || value === "") next.delete(name);
+    else next.set(name, String(value));
+    setSearchParams(next);
+  };
+
+  const handleColorChange = (value: number | null) => {
+    setSelectedColorGroupId(value);
+    updateFilterParam("color", value);
+  };
+
+  const handleBrandChange = (value: string | null) => {
+    setSelectedBrand(value);
+    updateFilterParam("brand", value);
+  };
+
+  const handleLineChange = (value: string | null) => {
+    setSelectedLine(value);
+    updateFilterParam("line", value);
+  };
+
+  const handleWeightChange = (value: number | null) => {
+    setSelectedWeight(value);
+    updateFilterParam("weight", value);
+  };
+
+  const handleOriginChange = (value: string | null) => {
+    setSelectedOrigin(value);
+    updateFilterParam("origin", value);
+  };
+
+  const handleFoodSafeChange = (value: boolean) => {
+    setFoodSafeOnly(value);
+    updateFilterParam("foodSafe", value);
+  };
+
+  const handleDifficultyChange = (value: string | null) => {
+    setSelectedDifficulty(value);
+    updateFilterParam("difficulty", value);
+  };
+
   const handleCategoryChange = (category: string | null) => {
     setSelectedCategory(category);
     const next = new URLSearchParams(searchParams);
     if (category) next.set("category", category);
     else next.delete("category");
+    next.delete("subcategory");
     setSearchParams(next);
     setSelectedSubcategory(null);
   };
@@ -1417,6 +1554,7 @@ export function ProductsPage() {
 
   const handleSubcategoryChange = (subcategory: string | null) => {
     setSelectedSubcategory(subcategory);
+    updateFilterParam("subcategory", subcategory);
   };
 
   const clearActiveFilters = () => {
@@ -1432,8 +1570,8 @@ export function ProductsPage() {
     setSelectedOrigin(null);
     setFoodSafeOnly(false);
     setSelectedDifficulty(null);
-    const next = setMaterialSearchParams(searchParams, null, null, null);
-    next.delete("category");
+    const next = new URLSearchParams(searchParams);
+    FILTER_QUERY_PARAMS.forEach((param) => next.delete(param));
     setSearchParams(next);
   };
 
@@ -1449,6 +1587,83 @@ export function ProductsPage() {
     selectedOrigin !== null ||
     foodSafeOnly ||
     selectedDifficulty !== null;
+
+  const activeFilterCount = [
+    selectedCategory,
+    selectedSubcategory,
+    selectedColorGroupId,
+    selectedBrand,
+    selectedLine,
+    selectedMaterial,
+    selectedSubmaterial,
+    selectedGrupoWeb,
+    selectedWeight,
+    selectedOrigin,
+    foodSafeOnly ? "foodSafe" : null,
+    selectedDifficulty,
+  ].filter((value) => value !== null).length;
+
+  const activeFilterChips = [
+    selectedCategory && {
+      key: "category",
+      label: selectedCategoryName ?? selectedCategory,
+      remove: () => handleCategoryChange(null),
+    },
+    selectedSubcategory && {
+      key: "subcategory",
+      label: selectedSubcategory,
+      remove: () => handleSubcategoryChange(null),
+    },
+    selectedMaterial && {
+      key: "material",
+      label: selectedMaterial,
+      remove: () => handleMaterialChange(null, null),
+    },
+    selectedGrupoWeb && {
+      key: "grupoWeb",
+      label: grupoWebLabel(selectedGrupoWeb),
+      remove: () => handleGrupoWebChange(
+        selectedMaterial ?? "",
+        selectedSubmaterial,
+        selectedGrupoWeb,
+      ),
+    },
+    selectedBrand && {
+      key: "brand",
+      label: selectedBrand,
+      remove: () => handleBrandChange(null),
+    },
+    selectedLine && {
+      key: "line",
+      label: selectedLine,
+      remove: () => handleLineChange(null),
+    },
+    selectedColorGroupId !== null && {
+      key: "color",
+      label: availableColorGroups.find(({ id }) => id === selectedColorGroupId)?.name ?? "Color",
+      remove: () => handleColorChange(null),
+    },
+    selectedWeight !== null && {
+      key: "weight",
+      label: `${selectedWeight.toLocaleString("es-AR")} kg`,
+      remove: () => handleWeightChange(null),
+    },
+    selectedOrigin && {
+      key: "origin",
+      label: selectedOrigin,
+      remove: () => handleOriginChange(null),
+    },
+    foodSafeOnly && {
+      key: "foodSafe",
+      label: "Apto alimentos",
+      remove: () => handleFoodSafeChange(false),
+    },
+    selectedDifficulty && {
+      key: "difficulty",
+      label: selectedDifficulty,
+      remove: () => handleDifficultyChange(null),
+    },
+  ].filter((chip): chip is { key: string; label: string; remove: () => void } => Boolean(chip));
 
   if (loading) {
     return (
@@ -1604,7 +1819,7 @@ export function ProductsPage() {
           <DifficultyFilter
             levels={availableDifficultyLevels}
             selectedLevel={selectedDifficulty}
-            onLevelChange={setSelectedDifficulty}
+            onLevelChange={handleDifficultyChange}
           />
           <GroupedMaterialFilter
             materials={availableMaterials}
@@ -1617,40 +1832,46 @@ export function ProductsPage() {
           <ColorFilter
             colorGroups={availableColorGroups}
             selectedColorGroupId={selectedColorGroupId}
-            onColorGroupChange={setSelectedColorGroupId}
+            onColorGroupChange={handleColorChange}
           />
           <BrandFilter
             brands={availableBrands}
             selectedBrand={selectedBrand}
-            onBrandChange={setSelectedBrand}
+            onBrandChange={handleBrandChange}
           />
           <LineFilter
             lines={availableLines}
             selectedLine={selectedLine}
-            onLineChange={setSelectedLine}
+            onLineChange={handleLineChange}
           />
           <MoreFilters
             weights={availableWeights}
             selectedWeight={selectedWeight}
-            onWeightChange={setSelectedWeight}
+            onWeightChange={handleWeightChange}
             origins={availableOrigins}
             selectedOrigin={selectedOrigin}
-            onOriginChange={setSelectedOrigin}
+            onOriginChange={handleOriginChange}
             showFoodSafeFilter={showFoodSafeFilter}
             foodSafeOnly={foodSafeOnly}
-            onFoodSafeChange={setFoodSafeOnly}
+            onFoodSafeChange={handleFoodSafeChange}
           />
         </div>
 
         {/* Product Grid */}
         <div className="flex-1">
           <div className="mb-6 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:items-center">
-            <h2 className="col-start-1 row-start-1 text-2xl font-bold text-gray-900">
-              {selectedCategory
-                ? categories.find((c) => c.id === selectedCategory)?.name ||
-                  "Productos"
-                : "Todos los Productos"}
-            </h2>
+            <div className="col-start-1 row-start-1 min-w-0">
+              <h1 className="text-2xl font-bold text-gray-900">
+                {searchMode && query
+                  ? `Resultados para “${query}”`
+                  : selectedCategory
+                    ? categories.find((c) => c.id === selectedCategory)?.name || "Productos"
+                    : "Todos los Productos"}
+              </h1>
+              <p className="mt-1 text-sm text-gray-600">
+                {filteredProducts.length} {filteredProducts.length === 1 ? "producto" : "productos"}
+              </p>
+            </div>
             {selectedCategory === "COMPLEMENTOS PARA IMPRESION 3D" && (
               <div className="col-span-2 row-start-2 flex w-full items-start gap-2 rounded-xl border border-yellow-200 bg-yellow-50 px-3 py-2 text-xs font-medium leading-snug text-yellow-950 sm:col-span-1 sm:col-start-2 sm:row-start-1 sm:max-w-xl sm:text-sm">
                 <Sparkles className="mt-0.5 h-4 w-4 shrink-0" />
@@ -1665,9 +1886,32 @@ export function ProductsPage() {
               aria-label="Toggle filters"
             >
               <Filter className="h-5 w-5" />
-              <span>Filtros</span>
+              <span>Filtros{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}</span>
             </button>
           </div>
+
+          {activeFilterChips.length > 0 && (
+            <div className="mb-6 flex flex-wrap items-center gap-2" aria-label="Filtros activos">
+              {activeFilterChips.map((chip) => (
+                <button
+                  key={chip.key}
+                  type="button"
+                  onClick={chip.remove}
+                  className="inline-flex items-center gap-1 rounded-full border border-yellow-300 bg-yellow-50 px-3 py-1 text-sm font-medium text-gray-900 transition-colors hover:bg-yellow-100"
+                >
+                  {chip.label}
+                  <X className="h-3.5 w-3.5" aria-hidden="true" />
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={clearActiveFilters}
+                className="px-2 py-1 text-sm font-medium text-yellow-800 hover:text-yellow-950"
+              >
+                Limpiar filtros
+              </button>
+            </div>
+          )}
 
           {filteredProducts.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
@@ -1689,7 +1933,9 @@ export function ProductsPage() {
                   No se encontraron productos
                 </h3>
                 <p className="text-gray-600 mb-6 max-w-md">
-                  {hasActiveFilters
+                  {searchMode && query
+                    ? `No encontramos productos que coincidan con “${query}” y los filtros seleccionados.`
+                    : hasActiveFilters
                     ? "No hay productos disponibles para los filtros seleccionados."
                     : "No hay productos disponibles en este momento."}
                 </p>
@@ -1742,7 +1988,7 @@ export function ProductsPage() {
           <DifficultyFilter
             levels={availableDifficultyLevels}
             selectedLevel={selectedDifficulty}
-            onLevelChange={setSelectedDifficulty}
+            onLevelChange={handleDifficultyChange}
           />
           <GroupedMaterialFilter
             materials={availableMaterials}
@@ -1755,28 +2001,28 @@ export function ProductsPage() {
           <ColorFilter
             colorGroups={availableColorGroups}
             selectedColorGroupId={selectedColorGroupId}
-            onColorGroupChange={setSelectedColorGroupId}
+            onColorGroupChange={handleColorChange}
           />
           <BrandFilter
             brands={availableBrands}
             selectedBrand={selectedBrand}
-            onBrandChange={setSelectedBrand}
+            onBrandChange={handleBrandChange}
           />
           <LineFilter
             lines={availableLines}
             selectedLine={selectedLine}
-            onLineChange={setSelectedLine}
+            onLineChange={handleLineChange}
           />
           <MoreFilters
             weights={availableWeights}
             selectedWeight={selectedWeight}
-            onWeightChange={setSelectedWeight}
+            onWeightChange={handleWeightChange}
             origins={availableOrigins}
             selectedOrigin={selectedOrigin}
-            onOriginChange={setSelectedOrigin}
+            onOriginChange={handleOriginChange}
             showFoodSafeFilter={showFoodSafeFilter}
             foodSafeOnly={foodSafeOnly}
-            onFoodSafeChange={setFoodSafeOnly}
+            onFoodSafeChange={handleFoodSafeChange}
           />
         </div>
       </div>
