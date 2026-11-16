@@ -291,7 +291,15 @@ export function ProductPage() {
 
     if (isComplement({ id: product.id, grupo: product.category })) {
       setCurrentPrice(getVariantPrice(product, selectedColor, selectedWeight));
-      setCurrentPromotionalPrice(getVariantPromotionalPrice(product, selectedColor, selectedWeight));
+      const itemId = getVariantItemId(product, selectedColor, selectedWeight);
+      const hasDifferentialDiscount = getComplementQuantityTier({
+        id: itemId,
+        grupo: product.category,
+        idPadre: product.parentItemId,
+      }) !== null;
+      setCurrentPromotionalPrice(hasDifferentialDiscount
+        ? getVariantPromotionalPrice(product, selectedColor, selectedWeight)
+        : undefined);
       return;
     }
     if (shouldApplyDiscount(product)) {

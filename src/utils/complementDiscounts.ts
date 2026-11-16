@@ -34,10 +34,8 @@ export const getComplementPresentation = (
 ): string | null => {
   if (!isComplement(item)) return null;
   if (COMPLEMENT_TIERS[item.id]) return item.id;
-  return (
-    COMPLEMENT_PRESENTATIONS[item.id] ??
-    (item.idPadre && COMPLEMENT_TIERS[item.idPadre] ? item.idPadre : item.id)
-  );
+  return COMPLEMENT_PRESENTATIONS[item.id] ??
+    (item.idPadre && COMPLEMENT_TIERS[item.idPadre] ? item.idPadre : null);
 };
 
 export const getComplementDiscountPercentage = (

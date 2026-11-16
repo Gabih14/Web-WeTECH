@@ -134,7 +134,15 @@ export function ProductCard({
   useEffect(() => {
     if (isComplement({ id: product.id, grupo: product.category })) {
       setCurrentPrice(getVariantPrice(product, selectedColor, selectedWeight));
-      setCurrentPromotionalPrice(getVariantPromotionalPrice(product, selectedColor, selectedWeight));
+      const itemId = getVariantItemId(product, selectedColor, selectedWeight);
+      const hasDifferentialDiscount = getComplementQuantityTier({
+        id: itemId,
+        grupo: product.category,
+        idPadre: product.parentItemId,
+      }) !== null;
+      setCurrentPromotionalPrice(hasDifferentialDiscount
+        ? getVariantPromotionalPrice(product, selectedColor, selectedWeight)
+        : undefined);
     } else if (shouldApplyDiscount(product)) {
       const base =
         getVariantPrice(product, selectedColor, selectedWeight, wholesale.reached) ?? 0;
