@@ -57,12 +57,12 @@ for (const [sku, parentItemId, tier] of [
   ["TAZA-OTRO-COLOR", "INS-TAZA-GENE", 25.64],
   ["INS-VASO-MILK", null, 32.01],
   ["MILK-OTRO-COLOR", "INS-VASO-MILK-GENE", 32.01],
-  ["OTRO-COMPLEMENTO", null, 15],
+  ["OTRO-COMPLEMENTO", null, 0],
 ]) {
   for (const quantity of [9, 10, 11]) {
     test(`${sku}: ${quantity} unidades, sin acumular el precio promocional`, () => {
       const result = price([item(sku, quantity, 12347.8, { parentItemId })]);
-      const percentage = quantity < 10 ? 15 : tier;
+      const percentage = tier === 0 ? 0 : quantity < 10 ? 15 : tier;
       assert.equal(result.products[0].ajustePorcentaje, percentage);
       assert.equal(result.total, Math.round(12348 * quantity * (1 - percentage / 100)));
     });
@@ -120,17 +120,17 @@ test("sobrantes conservan el tramo de toda la presentación y las líneas no se 
 
 test("el individual gana si el combo encarece los mates; Milkshake y otros grupos no forman pares", () => {
   const result = price([item("INS-MATE-BLAN", 10), item("INS-BOMB-NEGR", 1, 100)]);
-  assert.equal(result.total, 72885);
+  assert.equal(result.total, 72900);
   assert.ok(result.products.every((line) => !line.combo));
   for (const mate of [item("INS-VASO-MILK", 10), item("INS-MATE-BLAN", 10, 10000, { category: "OTRO" })]) {
     assert.ok(price([mate, item("INS-BOMB-NEGR", 10)]).products.every((line) => !line.combo));
   }
 });
 
-test("el redondeo puede favorecer menos pares; en empate queda el individual", () => {
+test("usa la cantidad de pares más conveniente; en empate queda el individual", () => {
   const result = price([item("INS-MATE-BLAN", 12, 1), item("INS-BOMB-NEGR", 15, 1)]);
-  assert.equal(result.total, 18);
-  assert.deepEqual(result.products.filter((line) => line.combo).map((line) => line.cantidad), [11, 11]);
+  assert.equal(result.total, 19);
+  assert.deepEqual(result.products.filter((line) => line.combo).map((line) => line.cantidad), [12, 12]);
   const tie = price([item("INS-MATE-BLAN", 1, 1), item("INS-BOMB-NEGR", 1, 1)]);
   assert.ok(tie.products.every((line) => !line.combo));
 });
