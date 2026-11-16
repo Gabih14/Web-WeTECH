@@ -21,6 +21,10 @@ const price = (items, options = {}) => {
 
 test("solo informa un tramo por cantidad para complementos con descuento diferencial", () => {
   assert.deepEqual(
+    getComplementQuantityTier({ id: "VASO-ALUM-1L", grupo: CATEGORY }),
+    { quantity: 10, percentage: 19.6 },
+  );
+  assert.deepEqual(
     getComplementQuantityTier({ id: "INS-MATE-BLAN", grupo: CATEGORY }),
     { quantity: 10, percentage: 27.2 },
   );
@@ -44,9 +48,9 @@ test("resume las cantidades disponibles para el combo de mate y bombilla", () =>
 });
 
 for (const [sku, parentItemId, tier] of [
-  ["VASO ALUM 500ML", null, 21.29],
-  ["VASO ALUM 600ML", null, 22.72],
-  ["VASO ALUM 1L", null, 19.6],
+  ["VASO-ALUM-500ML", null, 21.29],
+  ["VASO-ALUM-600ML", null, 22.72],
+  ["VASO-ALUM-1L", null, 19.6],
   ["INS-MATE-BLAN", null, 27.2],
   ["INS-MATE-NEGR", null, 27.2],
   ["INS-TAZA-NEGR", null, 25.64],
