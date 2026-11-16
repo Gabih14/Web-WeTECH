@@ -45,6 +45,9 @@ interface PedidoData {
   payment_method?: string;
   metodo_pago?: string;
   comprobante_numero?: string;
+  entrega_estimada?: string;
+  entrega_estimada_fecha?: string;
+  entrega_zona?: string;
 }
 
 const PaymentCallback = () => {
@@ -459,6 +462,10 @@ const PaymentCallback = () => {
   const deliveryLabel =
     pedidoData?.delivery_method === "pickup" ? "Retiro en tienda" :
     pedidoData?.delivery_method === "shipping" ? "Envío a domicilio" : null;
+  const deliveryEstimate = pedidoData?.entrega_estimada ||
+    (pedidoData?.id
+      ? sessionStorage.getItem(`deliveryEstimate:${pedidoData.id}`)
+      : null);
 
   const openWhatsApp = () => {
     const msg = `Hola, adjunto comprobante de transferencia para el pedido #${pedidoData?.id}`;
@@ -611,9 +618,11 @@ const PaymentCallback = () => {
                 🚚 {deliveryLabel}
               </p>
             )}
-            <p className="order-summary-note">
-              Los pedidos procesados después del horario comercial siempre serán despachados al día siguiente hábil.
-            </p>
+            {deliveryEstimate && (
+              <p className="order-summary-note" style={{ color: "#111827", fontWeight: 600 }}>
+                {deliveryEstimate}
+              </p>
+            )}
           </div>
 
           {/* Feedback */}

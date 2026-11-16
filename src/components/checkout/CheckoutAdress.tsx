@@ -4,6 +4,7 @@ import { ShippingInfoModal } from "./ShippingInfoModal";
 import { apiFetch } from "../../services/api";
 import type { ShippingQuote } from "../../types";
 import { buildShippingAddressFingerprint } from "../../utils/shippingQuote";
+import { getKnownShippingZone } from "../../utils/deliveryEstimate";
 
 type Props = {
   formData: {
@@ -167,6 +168,7 @@ const ENABLE_SHIPPING_MAP_PREVIEW = true;
 const ENABLE_DISTANCE_SIMULATION = true;
 const STORE_ADDRESS = "Santiago de Liniers 670, Godoy Cruz, Mendoza, Argentina";
 const MANUAL_MAP_FALLBACK_POSITION = { lat: -32.9286, lng: -68.8458 };
+const SHIPPING_INFO_SEEN_KEY = "wetech:shipping-info-seen";
 
 const buildGoogleMapsSearchUrl = (address: string) =>
   `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
@@ -479,7 +481,10 @@ export const CheckoutAdress = ({
   // const GOOGLE_API_KEY = "AIzaSyCDesHGPMQEk72w8X9sFRu1O1rzno9UopQ";
 
   const [showShippingInfo, setShowShippingInfo] = useState(false);
-  const [shippingInfoChecked, setShippingInfoChecked] = useState(false);
+  const [hasSeenShippingInfo, setHasSeenShippingInfo] = useState(() =>
+    typeof window !== "undefined" &&
+    window.sessionStorage.getItem(SHIPPING_INFO_SEEN_KEY) === "true"
+  );
   const [showShippingErrorModal, setShowShippingErrorModal] = useState(false);
   const [shippingError, setShippingError] = useState<ShippingError | null>(null);
   const [pendingResolvedAddress, setPendingResolvedAddress] = useState<string | null>(null);
@@ -675,10 +680,12 @@ export const CheckoutAdress = ({
   };
 
   const isCalculateShippingDisabled =
-    calculatingShipping || !shippingInfoChecked || !isShippingFormComplete;
+    calculatingShipping || !isShippingFormComplete;
   const calculateShippingHelpText = isCalculateShippingDisabled
-    ? "Completá la dirección y aceptá la información de envíos."
-    : "Calculamos distancia y costo antes de continuar.";
+    ? "Completá la dirección para calcular el envío."
+    : hasSeenShippingInfo
+      ? "Calculamos distancia y costo antes de continuar."
+      : "Antes de calcular te mostramos cuándo llegaría tu pedido.";
   // Función para obtener la distancia desde la API de Google
   const fetchDistance = async () => {
     setCalculatingShipping(true);
@@ -1087,30 +1094,18 @@ export const CheckoutAdress = ({
             )}
           {deliveryMethod === "shipping" && (
             <>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="shippingInfoChecked"
-                  checked={shippingInfoChecked}
-                  onChange={(e) => setShippingInfoChecked(e.target.checked)}
-                  className="accent-yellow-600"
-                />
-                <label htmlFor="shippingInfoChecked" className="text-sm">
-                  Leí{" "}
-                  <button
-                    type="button"
-                    className="text-yellow-700 font-semibold underline hover:text-yellow-900"
-                    onClick={() => setShowShippingInfo(true)}
-                  >
-                    información de envíos
-                  </button>
-                </label>
-              </div>
               {!shouldHideCalculateShippingButton && (
                 <div className="space-y-2">
                   <button
                     type="button"
-                    onClick={fetchDistance}
+                    onClick={() => {
+                      if (hasSeenShippingInfo) {
+                        void fetchDistance();
+                        return;
+                      }
+                      setShowShippingInfo(true);
+                      void fetchDistance();
+                    }}
                     disabled={isCalculateShippingDisabled || calculatingShipping}
                     aria-busy={calculatingShipping}
                     className="
@@ -1164,6 +1159,15 @@ export const CheckoutAdress = ({
                       {calculateShippingHelpText}
                     </p>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowShippingInfo(true);
+                    }}
+                    className="text-left text-xs font-semibold text-yellow-800 underline decoration-yellow-500 decoration-2 underline-offset-2 hover:text-gray-950 sm:text-sm"
+                  >
+                    Información de envíos
+                  </button>
                 </div>
               )}
               {confirmedAddress && (
@@ -1237,12 +1241,20 @@ export const CheckoutAdress = ({
           {showShippingInfo && (
             <ShippingInfoModal
               open={showShippingInfo}
-              onClose={() => setShowShippingInfo(false)}
+              onClose={() => {
+                setShowShippingInfo(false);
+              }}
+              onConfirm={() => {
+                window.sessionStorage.setItem(SHIPPING_INFO_SEEN_KEY, "true");
+                setHasSeenShippingInfo(true);
+                setShowShippingInfo(false);
+              }}
+              knownZone={getKnownShippingZone(formData.city)}
             />
           )}
 
           {/* Modal de error de envío */}
-          {showShippingErrorModal && shippingError && (
+          {showShippingErrorModal && shippingError && !showShippingInfo && (
             <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
               <div
                 className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4"
