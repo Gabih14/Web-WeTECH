@@ -56,6 +56,12 @@ import { useSEO } from "../../hooks/useSEO";
 import { useAuth } from "@clerk/react";
 import { useEcommerceUser } from "../../context/EcommerceUserContext";
 import { formatKg, getWholesaleCartState } from "../../utils/wholesalePricing";
+import { useDeliverySchedule } from "../../hooks/useDeliverySchedule";
+import {
+  calculateDeliveryEstimate,
+  getShippingZone,
+  loadDeliverySchedule,
+} from "../../utils/deliveryEstimate";
 
 function useMediaQuery(query: string): boolean {
   const getMatches = () => {
@@ -109,6 +115,7 @@ export default function Checkout() {
   const { items, syncCartWithProducts } = useCart();
   const wholesale = getWholesaleCartState(items);
   const [shippingData, setShippingData] = useState<ShippingQuote | null>(null);
+  const { schedule: deliverySchedule } = useDeliverySchedule();
   const [isReviewCartOpen, setIsReviewCartOpen] = useState(false);
   const [deliveryMethod, setDeliveryMethod] = useState<"pickup" | "shipping">(
     "pickup"
@@ -474,6 +481,19 @@ export default function Checkout() {
 
     const orderAmounts = buildSubmittedOrderAmounts();
     const { productos, total: orderTotal, costoEnvio } = orderAmounts;
+    let submittedDeliveryEstimate = deliveryEstimate;
+    if (deliveryMethod === "shipping") {
+      try {
+        const currentSchedule = await loadDeliverySchedule();
+        submittedDeliveryEstimate = calculateDeliveryEstimate(
+          currentSchedule.now,
+          getShippingZone(shippingData?.departamentoEnvio || formData.city),
+          currentSchedule.config
+        );
+      } catch {
+        // Conserva la última estimación válida si falla este refresco puntual.
+      }
+    }
 
     if (!hasValidOrderLineAmounts(productos, facturaTipo)) {
       setError({
@@ -527,6 +547,13 @@ export default function Checkout() {
       observaciones: formData.observaciones,
       mobile: isMobile,
       productos,
+      ...(submittedDeliveryEstimate
+        ? {
+            entrega_estimada: submittedDeliveryEstimate.summary,
+            entrega_estimada_fecha: submittedDeliveryEstimate.estimatedDate,
+            entrega_zona: submittedDeliveryEstimate.zone,
+          }
+        : {}),
       ...(requiresInvoice(facturaTipo) ? { factura_tipo: facturaTipo } : {}),
     };
     const API_URL = import.meta.env.VITE_API_URL; // Se usará cuando el pago esté activo
@@ -554,6 +581,12 @@ export default function Checkout() {
 
       // Manejo de la respuesta exitosa
       if (data?.naveUrl) {
+        if (data?.id && submittedDeliveryEstimate) {
+          sessionStorage.setItem(
+            `deliveryEstimate:${data.id}`,
+            submittedDeliveryEstimate.summary
+          );
+        }
         // Si el cupón fue el descuento ganador, usarlo después de crear la orden
         if (shouldSendCouponInOrder && appliedCoupon && data?.id) {
           const cuitForCouponUse = normalizeCuitCuil(formData.cuit);
@@ -862,6 +895,14 @@ export default function Checkout() {
   const shippingTotal = isFreeShippingByWeight
     ? 0
     : shippingData?.costoTotal || 0;
+  const deliveryEstimate =
+    deliveryMethod === "shipping" && deliverySchedule
+      ? calculateDeliveryEstimate(
+          deliverySchedule.now,
+          getShippingZone(shippingData?.departamentoEnvio || formData.city),
+          deliverySchedule.config
+        )
+      : null;
   const currentOrderAmounts = buildCurrentOrderAmounts();
   const couponDiscount = currentOrderAmounts.descuentoCupon;
   const finalTotal = currentOrderAmounts.total;
@@ -1206,6 +1247,11 @@ export default function Checkout() {
               ) : (
                 <div className="text-xs text-gray-600 space-y-1">
                   <p>{confirmedAddress}</p>
+                  {deliveryEstimate && (
+                    <p className="mt-2 font-semibold text-gray-900">
+                      {deliveryEstimate.summary}
+                    </p>
+                  )}
                   {formData.observaciones && (
                     <p className="mt-2">
                       <span className="font-medium">Observaciones:</span> {formData.observaciones}
