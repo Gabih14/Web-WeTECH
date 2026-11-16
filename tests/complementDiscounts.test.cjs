@@ -51,6 +51,7 @@ for (const [sku, parentItemId, tier] of [
   ["VASO-ALUM-500ML", null, 21.29],
   ["VASO-ALUM-600ML", null, 22.72],
   ["VASO-ALUM-1L", null, 19.6],
+  ["MATE-ALUM-140", null, 22.72],
   ["INS-MATE-BLAN", null, 27.2],
   ["INS-MATE-NEGR", null, 27.2],
   ["INS-TAZA-NEGR", null, 25.64],
