@@ -7,6 +7,7 @@ import { CheckoutPersonal } from "./CheckoutPersonal";
 import { CheckoutAdress } from "./CheckoutAdress";
 import { StepIndicator } from "./StepIndicator";
 import CartModal from "../cart/CartModal";
+import { CouponStatusModal } from "./CouponStatusModal";
 
 import { buildCartOrderProducts, calculateCartPricing } from "../../utils/cartPricing";
 import { getCouponPercentageForPaymentMethod, isCouponApplicableToProductCategory } from "../../utils/checkoutDiscount";
@@ -29,7 +30,16 @@ import {
 } from "../../utils/invoice";
 import type { FacturaTipo } from "../../utils/invoice";
 
-import { fetchClienteByCuit, verifyCoupon, useCoupon } from "../../services/api";
+import {
+  CouponValidationApiError,
+  fetchClienteByCuit,
+  isCouponValidationFailure,
+  validateCoupon,
+  verifyCoupon,
+  useCoupon as markCouponUsed,
+  type CouponValidationFailure,
+  type CouponValidationSuccess,
+} from "../../services/api";
 import { fetchProducts } from "../../services/fetchProducts";
 import {
   hasAtLeastTwoWords,
@@ -62,6 +72,7 @@ import {
   getShippingZone,
   loadDeliverySchedule,
 } from "../../utils/deliveryEstimate";
+import { getCouponExpiryCopy } from "../../utils/couponPresentation";
 
 function useMediaQuery(query: string): boolean {
   const getMatches = () => {
@@ -243,15 +254,28 @@ export default function Checkout() {
     urlCouponCode || readStoredCoupon(window.sessionStorage)
   );
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
+  const [appliedCouponValidation, setAppliedCouponValidation] =
+    useState<CouponValidationSuccess | null>(null);
+  const [couponIssue, setCouponIssue] = useState<{
+    couponCode: string;
+    result: CouponValidationFailure;
+  } | null>(null);
   const [couponError, setCouponError] = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
   const autoAppliedCouponRef = useRef<string | null>(null);
+  const couponInputRef = useRef<HTMLInputElement>(null);
 
   const applyCoupon = useCallback(async (couponCodeOverride?: string) => {
     const codeToApply = couponCodeOverride ?? couponCode;
 
     if (!codeToApply.trim()) {
-      setCouponError("Ingresa un código de cupón");
+      setCouponError("Ingresá un código de cupón.");
+      couponInputRef.current?.focus();
+      return;
+    }
+
+    if (!isCuitValid) {
+      setCouponError("Completá un CUIT/CUIL válido antes de aplicar el cupón.");
       return;
     }
 
@@ -261,48 +285,78 @@ export default function Checkout() {
     const normalizedCouponCode = codeToApply.trim().toUpperCase();
     setCouponCode(normalizedCouponCode);
 
-    const couponData = await verifyCoupon(normalizedCouponCode);
-    
-    if (couponData) {
-      // Verificar que el cupón esté activo
-      if (!couponData.activo) {
-        setCouponError("Este cupón no está activo");
+    try {
+      const validation = await validateCoupon(
+        normalizedCouponCode,
+        normalizedFormCuit
+      );
+      const couponData = await verifyCoupon(normalizedCouponCode);
+
+      if (!couponData || !couponData.activo) {
+        setCouponIssue({
+          couponCode: normalizedCouponCode,
+          result: {
+            code: "COUPON_NOT_FOUND",
+            message: "Cupón no encontrado o inactivo",
+            status: 404,
+            retryable: false,
+          },
+        });
         setAppliedCoupon(null);
-      } else {
-        // Verificar fechas de validez
-        const now = new Date();
-        if (now < couponData.fechaDesde || now > couponData.fechaHasta) {
-          setCouponError("Este cupón no es válido en este momento");
-          setAppliedCoupon(null);
-      } else {
-          const hasApplicableProduct = items.some((item) =>
-            isCouponApplicableToProductCategory({
-              couponCategory: couponData.categoriaAplicable,
-              productCategory: item.product.category,
-            })
-          );
-
-          if (
-            couponData.categoriaAplicable &&
-            !hasApplicableProduct
-          ) {
-            setCouponError(
-              `Este cupón sólo aplica a productos de categoría ${couponData.categoriaAplicable}.`
-            );
-            setAppliedCoupon(null);
-          } else {
-            setAppliedCoupon(couponData);
-            setCouponError("");
-          }
-        }
+        setAppliedCouponValidation(null);
+        return;
       }
-    } else {
-      setCouponError("Cupón inválido");
-      setAppliedCoupon(null);
-    }
 
-    setCouponLoading(false);
-  }, [couponCode, items]);
+      const couponCategory = validation.categoriaAplicable ?? couponData.categoriaAplicable;
+      const hasApplicableProduct = items.some((item) =>
+        isCouponApplicableToProductCategory({
+          couponCategory,
+          productCategory: item.product.category,
+        })
+      );
+
+      if (couponCategory && !hasApplicableProduct) {
+        setCouponIssue({
+          couponCode: normalizedCouponCode,
+          result: {
+            code: "COUPON_NOT_APPLICABLE",
+            message: "Cupón no aplicable al carrito",
+            details: { categoriaAplicable: couponCategory },
+            status: 400,
+            retryable: false,
+          },
+        });
+        setAppliedCoupon(null);
+        setAppliedCouponValidation(null);
+        return;
+      }
+
+      setAppliedCoupon({
+        ...couponData,
+        code: validation.codigoCupon.trim().toUpperCase(),
+        categoriaAplicable: couponCategory,
+        fechaHasta: validation.fechaVencimiento
+          ? new Date(validation.fechaVencimiento)
+          : null,
+      });
+      setAppliedCouponValidation(validation);
+      setCouponError("");
+    } catch (error) {
+      setAppliedCoupon(null);
+      setAppliedCouponValidation(null);
+      if (error instanceof CouponValidationApiError) {
+        setCouponIssue({
+          couponCode: normalizedCouponCode,
+          result: error.result,
+        });
+      } else {
+        console.error("No se pudo validar el cupón.", error);
+        setCouponError("No pudimos validar el cupón. Intentá nuevamente.");
+      }
+    } finally {
+      setCouponLoading(false);
+    }
+  }, [couponCode, isCuitValid, items, normalizedFormCuit]);
 
   useEffect(() => {
     const couponCodeToApply =
@@ -310,6 +364,7 @@ export default function Checkout() {
 
     if (
       !couponCodeToApply ||
+      !isCuitValid ||
       autoAppliedCouponRef.current === couponCodeToApply
     ) {
       return;
@@ -318,14 +373,34 @@ export default function Checkout() {
     autoAppliedCouponRef.current = couponCodeToApply;
     setCouponCode(couponCodeToApply);
     void applyCoupon(couponCodeToApply);
-  }, [applyCoupon, urlCouponCode]);
+  }, [applyCoupon, isCuitValid, urlCouponCode]);
 
   const removeCoupon = () => {
     setAppliedCoupon(null);
+    setAppliedCouponValidation(null);
     setCouponCode("");
     setCouponError("");
     clearStoredCoupon(window.sessionStorage);
   };
+
+  const continueWithoutCoupon = useCallback(() => {
+    setAppliedCoupon(null);
+    setAppliedCouponValidation(null);
+    setCouponCode("");
+    setCouponError("");
+    setCouponIssue(null);
+    clearStoredCoupon(window.sessionStorage);
+  }, []);
+
+  const useAnotherCoupon = useCallback(() => {
+    setAppliedCoupon(null);
+    setAppliedCouponValidation(null);
+    setCouponCode("");
+    setCouponError("");
+    setCouponIssue(null);
+    clearStoredCoupon(window.sessionStorage);
+    window.requestAnimationFrame(() => couponInputRef.current?.focus());
+  }, []);
 
   const getPrice = (
     product: Product,
@@ -570,6 +645,13 @@ export default function Checkout() {
       const data = await res.json();
       //console.log("Respuesta del servidor:", data);
       if (!res.ok) {
+        if (isCouponValidationFailure(data)) {
+          setCouponIssue({
+            couponCode: appliedCoupon?.code || couponCode.trim().toUpperCase(),
+            result: data,
+          });
+          return;
+        }
         setError(data?.code === "ERR_ORDER_TOTAL_MISMATCH" ? {
           code: data.code,
           message: "Los importes cambiaron. Revisá el carrito y el total antes de volver a confirmar el pedido.",
@@ -591,7 +673,7 @@ export default function Checkout() {
         if (shouldSendCouponInOrder && appliedCoupon && data?.id) {
           const cuitForCouponUse = normalizeCuitCuil(formData.cuit);
           try {
-            await useCoupon(appliedCoupon.code, cuitForCouponUse, data.id);
+            await markCouponUsed(appliedCoupon.code, cuitForCouponUse, data.id);
             console.log("Cupón utilizado exitosamente");
           } catch (error) {
             console.error("Error al usar el cupón:", error);
@@ -1286,11 +1368,17 @@ export default function Checkout() {
       <div className="flex items-center space-x-2">
         <div className="flex-1">
           <input
+            ref={couponInputRef}
             type="text"
             value={couponCode}
-            onChange={(e) => setCouponCode(e.target.value)}
+            onChange={(e) => {
+              setCouponCode(e.target.value);
+              setCouponError("");
+            }}
             placeholder="Código de cupón"
             className="w-full px-3 py-2 border rounded-md"
+            aria-label="Código de cupón"
+            aria-describedby={couponError ? "coupon-error" : undefined}
           />
         </div>
         <button
@@ -1313,13 +1401,16 @@ export default function Checkout() {
         </button>
       </div>
       {couponError && (
-        <p className="text-red-500 text-sm mt-1">{couponError}</p>
+        <p id="coupon-error" className="text-red-600 text-sm mt-1" role="alert">{couponError}</p>
       )}
       {appliedCoupon && (
         <div className="mt-2 flex items-center justify-between bg-green-50 p-2 rounded-md">
           <span className="text-green-700 text-sm">
-            Cupón aplicado: {appliedCoupon.code} (
-            {effectiveCouponPercentage}%)
+            Cupón <strong className="font-mono">{appliedCoupon.code}</strong> aplicado
+            {appliedCouponValidation?.fechaVencimiento
+              ? ` · ${getCouponExpiryCopy(appliedCouponValidation.fechaVencimiento)}`
+              : ""}
+            {` (${effectiveCouponPercentage}%)`}
           </span>
           <button
             type="button"
@@ -1743,6 +1834,15 @@ export default function Checkout() {
       )}
 
       {/* Modal de error mejorado */}
+      {couponIssue && (
+        <CouponStatusModal
+          couponCode={couponIssue.couponCode}
+          issue={couponIssue.result}
+          onContinueWithoutCoupon={continueWithoutCoupon}
+          onUseAnotherCoupon={useAnotherCoupon}
+        />
+      )}
+
       {showErrorModal && error && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 animate-fadeIn">
           <div 
