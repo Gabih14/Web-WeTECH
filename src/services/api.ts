@@ -282,6 +282,11 @@ export async function verifyCoupon(couponCode: string): Promise<Coupon | null> {
     };
 
     const defaultDiscount = parsePercent(data.porcentajeDescuento, 0);
+    const parseDate = (value: unknown): Date | null => {
+      if (!value) return null;
+      const date = new Date(String(value));
+      return Number.isNaN(date.getTime()) ? null : date;
+    };
 
     return {
       code: String(data.id ?? normalizedCode).trim().toUpperCase(),
@@ -298,13 +303,95 @@ export async function verifyCoupon(couponCode: string): Promise<Coupon | null> {
       categoriaAplicable:
         data.categoriaAplicable ?? data.categoria_aplicable ?? null,
       activo: data.activo,
-      fechaDesde: new Date(data.fechaDesde),
-      fechaHasta: new Date(data.fechaHasta),
+      fechaDesde: parseDate(data.fechaDesde),
+      fechaHasta: parseDate(data.fechaHasta),
     };
   } catch (error) {
     console.error(`Cupón inválido: ${couponCode}:`, error);
     return null;
   }
+}
+
+export type CouponValidationCode =
+  | "COUPON_NOT_FOUND"
+  | "COUPON_EXPIRED"
+  | "COUPON_ALREADY_USED"
+  | "COUPON_OWNER_MISMATCH"
+  | "COUPON_NOT_APPLICABLE";
+
+export type CouponValidationSuccess = {
+  estado: "VALID";
+  codigoCupon: string;
+  fechaVencimiento: string | null;
+  categoriaAplicable: Coupon["categoriaAplicable"];
+};
+
+export type CouponValidationFailure = {
+  code: CouponValidationCode;
+  message: string;
+  details?: {
+    fechaVencimiento?: string;
+    fechaUso?: string;
+    pedidoId?: number | null;
+    categoriaAplicable?: string;
+  };
+  status: number;
+  retryable: boolean;
+};
+
+const COUPON_VALIDATION_CODES = new Set<CouponValidationCode>([
+  "COUPON_NOT_FOUND",
+  "COUPON_EXPIRED",
+  "COUPON_ALREADY_USED",
+  "COUPON_OWNER_MISMATCH",
+  "COUPON_NOT_APPLICABLE",
+]);
+
+export const isCouponValidationFailure = (
+  value: unknown
+): value is CouponValidationFailure => {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<CouponValidationFailure>;
+  return typeof candidate.code === "string" &&
+    COUPON_VALIDATION_CODES.has(candidate.code as CouponValidationCode);
+};
+
+export class CouponValidationApiError extends Error {
+  result: CouponValidationFailure;
+
+  constructor(result: CouponValidationFailure) {
+    super(result.message);
+    this.name = "CouponValidationApiError";
+    this.result = result;
+  }
+}
+
+export async function validateCoupon(
+  couponCode: string,
+  cuit: string
+): Promise<CouponValidationSuccess> {
+  const normalizedCouponCode = couponCode.trim().toUpperCase();
+  const response = await fetch(`${API_BASE_URL}/cupones/validar`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${BEARER_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      cupon_id: normalizedCouponCode,
+      cuit,
+    }),
+  });
+  const result: unknown = await response.json();
+
+  if (!response.ok) {
+    if (isCouponValidationFailure(result)) {
+      throw new CouponValidationApiError(result);
+    }
+    throw new ApiError(response.status, response.statusText);
+  }
+
+  return result as CouponValidationSuccess;
 }
 
 export async function useCoupon(cuponCode: string, cuit: string, pedidoId: string) {

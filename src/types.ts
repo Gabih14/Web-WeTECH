@@ -119,8 +119,8 @@ export interface Coupon {
   porcentajeDescuentoTarjeta?: number;
   porcentajeDescuentoTransferencia?: number;
   activo: boolean;
-  fechaDesde: Date;
-  fechaHasta: Date;
+  fechaDesde: Date | null;
+  fechaHasta: Date | null;
   descripcion?: string;
   categoriaAplicable?: CouponApplicableCategory | null;
 }

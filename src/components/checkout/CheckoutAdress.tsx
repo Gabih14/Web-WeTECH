@@ -4,7 +4,10 @@ import { ShippingInfoModal } from "./ShippingInfoModal";
 import { apiFetch } from "../../services/api";
 import type { ShippingQuote } from "../../types";
 import { buildShippingAddressFingerprint } from "../../utils/shippingQuote";
-import { getKnownShippingZone } from "../../utils/deliveryEstimate";
+import {
+  getKnownShippingZone,
+  type ShippingZone,
+} from "../../utils/deliveryEstimate";
 
 type Props = {
   formData: {
@@ -169,6 +172,24 @@ const ENABLE_DISTANCE_SIMULATION = true;
 const STORE_ADDRESS = "Santiago de Liniers 670, Godoy Cruz, Mendoza, Argentina";
 const MANUAL_MAP_FALLBACK_POSITION = { lat: -32.9286, lng: -68.8458 };
 const SHIPPING_INFO_SEEN_KEY = "wetech:shipping-info-seen";
+const ALL_SHIPPING_ZONES: ShippingZone[] = ["gran-mendoza", "resto-mendoza"];
+
+const readSeenShippingZones = (): ShippingZone[] => {
+  if (typeof window === "undefined") return [];
+  try {
+    const stored: unknown = JSON.parse(
+      window.sessionStorage.getItem(SHIPPING_INFO_SEEN_KEY) || "[]"
+    );
+    return Array.isArray(stored)
+      ? stored.filter(
+          (zone): zone is ShippingZone =>
+            zone === "gran-mendoza" || zone === "resto-mendoza"
+        )
+      : [];
+  } catch {
+    return [];
+  }
+};
 
 const buildGoogleMapsSearchUrl = (address: string) =>
   `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
@@ -481,9 +502,8 @@ export const CheckoutAdress = ({
   // const GOOGLE_API_KEY = "AIzaSyCDesHGPMQEk72w8X9sFRu1O1rzno9UopQ";
 
   const [showShippingInfo, setShowShippingInfo] = useState(false);
-  const [hasSeenShippingInfo, setHasSeenShippingInfo] = useState(() =>
-    typeof window !== "undefined" &&
-    window.sessionStorage.getItem(SHIPPING_INFO_SEEN_KEY) === "true"
+  const [seenShippingZones, setSeenShippingZones] = useState<ShippingZone[]>(
+    readSeenShippingZones
   );
   const [showShippingErrorModal, setShowShippingErrorModal] = useState(false);
   const [shippingError, setShippingError] = useState<ShippingError | null>(null);
@@ -492,6 +512,25 @@ export const CheckoutAdress = ({
   const [isManualMapEnabled, setIsManualMapEnabled] = useState(false);
   const streetInputRef = useRef<HTMLInputElement>(null);
   const manualMapSectionRef = useRef<HTMLDivElement>(null);
+  const shippingRequestRef = useRef(0);
+  const addressFingerprintRef = useRef("");
+  const knownShippingZone = getKnownShippingZone(formData.city);
+  const currentAddressFingerprint = buildShippingAddressFingerprint(formData);
+  addressFingerprintRef.current = currentAddressFingerprint;
+  const hasSeenShippingInfo = knownShippingZone
+    ? seenShippingZones.includes(knownShippingZone)
+    : ALL_SHIPPING_ZONES.every((zone) => seenShippingZones.includes(zone));
+
+  const rememberCurrentShippingInfo = () => {
+    const zonesToRemember = knownShippingZone
+      ? [knownShippingZone]
+      : ALL_SHIPPING_ZONES;
+    setSeenShippingZones((current) => {
+      const next = Array.from(new Set([...current, ...zonesToRemember]));
+      window.sessionStorage.setItem(SHIPPING_INFO_SEEN_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
   const isShippingFormComplete = Boolean(
     formData.street &&
     (formData.number || formData.addressWithoutNumber) &&
@@ -571,6 +610,8 @@ export const CheckoutAdress = ({
   };
 
   const resetConfirmedShipping = () => {
+    shippingRequestRef.current += 1;
+    setCalculatingShipping(false);
     setPendingResolvedAddress(null);
     setPendingDistance(null);
     setIsManualMapEnabled(false);
@@ -591,6 +632,8 @@ export const CheckoutAdress = ({
 
   const handleMapSelection = useCallback(
     (selection: MapSelection) => {
+      shippingRequestRef.current += 1;
+      setCalculatingShipping(false);
       setConfirmedAddress(null);
       setConfirmedAddressLink(null);
       setShippingData(null);
@@ -657,11 +700,17 @@ export const CheckoutAdress = ({
       return;
     }
 
+    const requestId = ++shippingRequestRef.current;
+    const addressFingerprint = addressFingerprintRef.current;
+    const isCurrentRequest = () =>
+      requestId === shippingRequestRef.current &&
+      addressFingerprint === addressFingerprintRef.current;
     setCalculatingShipping(true);
     setShippingError(null);
 
     try {
       const shippingInfo = await calculateShippingCost(pendingDistance);
+      if (!isCurrentRequest()) return;
       if (shippingInfo) {
         setConfirmedAddress(pendingResolvedAddress);
         setConfirmedAddressLink(buildGoogleMapsSearchUrl(pendingResolvedAddress));
@@ -675,7 +724,9 @@ export const CheckoutAdress = ({
         setShippingData(null);
       }
     } finally {
-      setCalculatingShipping(false);
+      if (requestId === shippingRequestRef.current) {
+        setCalculatingShipping(false);
+      }
     }
   };
 
@@ -688,10 +739,15 @@ export const CheckoutAdress = ({
       : "Antes de calcular te mostramos cuándo llegaría tu pedido.";
   // Función para obtener la distancia desde la API de Google
   const fetchDistance = async () => {
-    setCalculatingShipping(true);
     if (ENABLE_SHIPPING_MAP_PREVIEW) {
       resetConfirmedShipping();
     }
+    const requestId = ++shippingRequestRef.current;
+    const addressFingerprint = addressFingerprintRef.current;
+    const isCurrentRequest = () =>
+      requestId === shippingRequestRef.current &&
+      addressFingerprint === addressFingerprintRef.current;
+    setCalculatingShipping(true);
     try {
       if (!isShippingFormComplete) {
         setShippingError({
@@ -741,6 +797,7 @@ export const CheckoutAdress = ({
           }),
         });
         data = await response.json();
+        if (!isCurrentRequest()) return;
         console.log("Respuesta del backend:", data);
 
         if (!response.ok || data.error || data.detail) {
@@ -772,6 +829,7 @@ export const CheckoutAdress = ({
       }
 
       if (data && data.distance && data.destinationResolved) {
+        if (!isCurrentRequest()) return;
         const previewDistanceText = data.distance;
         const previewDistanceValue = parseFloat(previewDistanceText.replace(" km", ""));
 
@@ -803,6 +861,7 @@ export const CheckoutAdress = ({
         setIsManualMapEnabled(false);
 
         const shippingInfo = await calculateShippingCost(previewDistanceValue);
+        if (!isCurrentRequest()) return;
         if (shippingInfo) {
           setShippingData(shippingInfo);
         } else {
@@ -816,12 +875,15 @@ export const CheckoutAdress = ({
         setShowShippingErrorModal(true);
       }
     } catch (error) {
+      if (!isCurrentRequest()) return;
       console.error("Error al obtener la distancia:", error);
       setShippingError({ message: "Hubo un error al calcular la distancia. Inténtalo de nuevo.", retryable: true });
       setIsManualMapEnabled(false);
       setShowShippingErrorModal(true);
     } finally {
-      setCalculatingShipping(false);
+      if (requestId === shippingRequestRef.current) {
+        setCalculatingShipping(false);
+      }
     }
   };
 
@@ -829,6 +891,8 @@ export const CheckoutAdress = ({
   const handleDeliveryMethod = (method: "pickup" | "shipping") => {
     setDeliveryMethod(method);
     if (method === "pickup") {
+      shippingRequestRef.current += 1;
+      setCalculatingShipping(false);
       setShippingData(null);
       setPendingResolvedAddress(null);
       setPendingDistance(null);
@@ -1103,6 +1167,7 @@ export const CheckoutAdress = ({
                         void fetchDistance();
                         return;
                       }
+                      rememberCurrentShippingInfo();
                       setShowShippingInfo(true);
                       void fetchDistance();
                     }}
@@ -1245,11 +1310,10 @@ export const CheckoutAdress = ({
                 setShowShippingInfo(false);
               }}
               onConfirm={() => {
-                window.sessionStorage.setItem(SHIPPING_INFO_SEEN_KEY, "true");
-                setHasSeenShippingInfo(true);
+                rememberCurrentShippingInfo();
                 setShowShippingInfo(false);
               }}
-              knownZone={getKnownShippingZone(formData.city)}
+              knownZone={knownShippingZone}
             />
           )}
 
