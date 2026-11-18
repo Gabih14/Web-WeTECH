@@ -14,7 +14,7 @@ const second = { ...product, id: "REP-1", slug: "otro-producto", nombre: "Otro p
 const template = '<!doctype html><html><head><title>Old</title><meta name="robots" content="noindex"><script type="application/ld+json">{"old":true}</script></head><body><div id="root"></div></body></html>';
 const seoModule = import("../scripts/prerender-seo.mjs");
 
-async function fixture(t) {
+async function fixture(t, catalog = []) {
   const base = path.resolve(os.tmpdir());
   const dir = await fs.mkdtemp(path.join(base, "wetech-seo-"));
   t.after(async () => {
@@ -27,6 +27,7 @@ async function fixture(t) {
   const manifest = await prerender({
     distDir: dir, siteUrl: "https://shop.example", apiUrl: "https://api.example",
     fetchImpl: async () => new Response(JSON.stringify([product, second])),
+    catalog,
   });
   return { dir, manifest };
 }
@@ -91,6 +92,21 @@ test("catalog content cannot break out of HTML or JSON-LD", async () => {
   assert.equal((html.match(/<script /g) || []).length, 1);
   const data = JSON.parse(html.match(/application\/ld\+json">(.*?)<\/script>/s)[1]);
   assert.equal(data.name, attack);
+});
+
+test("initial HTML exposes in-stock and sold-out color/weight combinations with exact links", async (t) => {
+  const { dir } = await fixture(t, [{
+    id: "MARCA-PLA-ESTÁNDAR-NACIONAL", name: product.nombre, image: product.fotoUrl,
+    colors: [{ name: "Amarillo", stock: { "0.5": 0, "1": 3 },
+      itemIds: { "0.5": "AMAR-MEDIO", "1": "AMAR" }, retailPrices: { "0.5": 12000, "1": 20000 } }],
+  }]);
+  const html = await fs.readFile(path.join(dir, "product/pla-estandar/index.html"), "utf8");
+  assert.match(html, /<td>Amarillo<\/td><td>0.5 kg<\/td><td>Sin stock<\/td>/);
+  assert.match(html, /<td>Amarillo<\/td><td>1 kg<\/td><td>Disponible<\/td>/);
+  assert.match(html, /href="\/product\/pla-estandar\?variant=AMAR-MEDIO"/);
+  const schema = JSON.parse(html.match(/type="application\/ld\+json">(.*?)<\/script>/s)[1]);
+  assert.equal(schema["@type"], "ProductGroup");
+  assert.equal(schema.hasVariant.find((variant) => variant.sku === "AMAR-MEDIO").offers.availability, "https://schema.org/OutOfStock");
 });
 
 test("production HTTP serves deep links, redirects, gzip, noindex and real 404s", async (t) => {
