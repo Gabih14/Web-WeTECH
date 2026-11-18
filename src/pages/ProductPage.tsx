@@ -41,6 +41,7 @@ import { ProductDescription } from "../components/products/ProductDescription";
 import { StockWaitRequestModal } from "../components/products/StockWaitRequestModal";
 import { useSEO } from "../hooks/useSEO";
 import { buildProductSchema, DEFAULT_SITE_URL } from "../seo/productSchema.mjs";
+import { buildProductGroupSchema, findSeoCatalogProduct, getLinkedVariant } from "../seo/productVariants.mjs";
 import { useAuth } from "@clerk/react";
 import { useEcommerceUser } from "../context/EcommerceUserContext";
 
@@ -65,13 +66,6 @@ const buildProductMetaDescription = (product: Product) => {
 
   return `${description.slice(0, 169).trim()}...`;
 };
-
-const normalizeLookupValue = (value: string): string =>
-  value
-    .trim()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toUpperCase();
 
 const looksLikeSeoSlug = (value: string) =>
   /^[a-z0-9]+(?:[-_][a-z0-9]+)*$/.test(value) && /[a-z]/.test(value);
@@ -136,8 +130,9 @@ export function ProductPage() {
   }, [denyWholesaleAccess, getToken, isWholesale]);
 
   useEffect(() => {
+    setSeoProduct(null);
     if (!id || !looksLikeSeoSlug(id)) {
-      setSeoProduct(null);
+      setSeoLookupPending(false);
       return;
     }
 
@@ -176,14 +171,12 @@ export function ProductPage() {
     return () => document.removeEventListener("mousedown", handleOutside);
   }, []);
 
-  const product = products.find(
-    (item) =>
-      item.id === id ||
-      item.slug === id ||
-      (!!seoProduct &&
-        (item.id === seoProduct.id ||
-          normalizeLookupValue(item.name) === normalizeLookupValue(seoProduct.nombre)))
-  );
+  const resolvedSeoProduct = seoProduct?.slug === id ? seoProduct : null;
+  const product = products.find((item) => item.id === id || item.slug === id)
+    ?? findSeoCatalogProduct(products, resolvedSeoProduct);
+  const linkedVariant = product ? getLinkedVariant(product, resolvedSeoProduct, location.search) : null;
+  const linkedColor = linkedVariant?.color;
+  const linkedWeight = linkedVariant?.weight;
   const isResolvingSlug = !loading && !product && seoLookupPending;
   const isFilament = !!product && isFilamentProduct(product);
   const seoSelectedWeight = product
@@ -206,10 +199,10 @@ export function ProductPage() {
     : "/products";
   const productStructuredData =
     product
-      ? buildProductSchema({
+      ? buildProductGroupSchema(product, productUrl, import.meta.env.VITE_SITE_URL || DEFAULT_SITE_URL) || buildProductSchema({
           name: product.name,
           description: product.observaciones || product.description,
-          image: product.image,
+          image: getVariantImage(product, seoSelectedColor, seoSelectedWeight),
           sku: getVariantItemId(product, seoSelectedColor, seoSelectedWeight),
           brand: product.brand,
           category: product.category,
@@ -233,7 +226,7 @@ export function ProductPage() {
     canonicalPath: !loading && !isResolvingSlug && !loadError && !product ? null : productUrl,
     noindex: !loading && !isResolvingSlug && !loadError && !product,
     pending: loading || isResolvingSlug || loadError,
-    image: product?.image,
+    image: product ? getVariantImage(product, seoSelectedColor, seoSelectedWeight) : undefined,
     type: "product",
     structuredData: productStructuredData,
   });
@@ -244,8 +237,8 @@ export function ProductPage() {
     }
     setCurrentPrice(product.price);
     setCurrentPromotionalPrice(isFilament ? product.promotionalPrice : undefined);
-    setSelectedColor(getFirstColorWithStock(product));
-    setSelectedWeight(getDefaultProductWeight(product));
+    setSelectedColor(linkedColor ?? getFirstColorWithStock(product));
+    setSelectedWeight(linkedWeight ?? getDefaultProductWeight(product));
     setQuantity(1);
 
     if (isFilament) {
@@ -255,17 +248,7 @@ export function ProductPage() {
     }
 
     setCurrentImageIndex(0);
-  }, [product, isFilament]);
-
-  useEffect(() => {
-    if (!product) {
-      return;
-    }
-
-    setSelectedColor((currentColor) =>
-      getColorForWeight(product, selectedWeight, currentColor)
-    );
-  }, [product, selectedWeight]);
+  }, [product, isFilament, linkedColor, linkedWeight]);
 
   useEffect(() => {
     if (!product || !selectedColor) {
@@ -640,7 +623,10 @@ export function ProductPage() {
                       return (
                         <button
                           key={weight.weight}
-                          onClick={() => setSelectedWeight(weight.weight)}
+                          onClick={() => {
+                            setSelectedWeight(weight.weight);
+                            setSelectedColor(getColorForWeight(product, weight.weight, selectedColor));
+                          }}
                           className={`relative rounded-xl border px-3 py-2 text-sm font-semibold transition-all ${selectedWeight === weight.weight
                             ? "border-gray-900 bg-gray-900 text-white"
                             : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"

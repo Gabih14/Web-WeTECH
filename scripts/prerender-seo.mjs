@@ -1,7 +1,8 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { loadEnv } from "vite";
+import { createServer, loadEnv } from "vite";
+import { buildProductGroupSchema, findSeoCatalogProduct, getProductVariants } from "../src/seo/productVariants.mjs";
 import { loadingHead, loadingMarkup } from "./seo-loading.mjs";
 import {
   absoluteHttpUrl, buildProductSchema, DEFAULT_SITE_URL,
@@ -145,7 +146,7 @@ function catalogMarkup(products) {
   return `<ul>${products.map((product) => `<li><a href="${productPath(product)}">${escapeHtml(product.nombre)}</a> — Precio de lista: ${escapeHtml(priceLabel(product))} — ${Number(product.stock) > 0 ? "Disponible" : "Sin stock"}</li>`).join("\n")}</ul>`;
 }
 
-export async function prerender({ distDir, siteUrl = DEFAULT_SITE_URL, apiUrl, minProducts = 1, fetchImpl = fetch }) {
+export async function prerender({ distDir, siteUrl = DEFAULT_SITE_URL, apiUrl, minProducts = 1, fetchImpl = fetch, catalog = [] }) {
   const site = new URL(siteUrl);
   if (!["https:", "http:"].includes(site.protocol) || site.username || site.password ||
       site.pathname !== "/" || site.search || site.hash) throw new Error("VITE_SITE_URL must be an HTTP(S) origin.");
@@ -160,6 +161,13 @@ export async function prerender({ distDir, siteUrl = DEFAULT_SITE_URL, apiUrl, m
     }
   }
   for (const product of products) {
+    const retailProduct = findSeoCatalogProduct(catalog, product);
+    const variants = retailProduct ? getProductVariants(retailProduct) : [];
+    const variantContent = variants.length ? `<h2>Disponibilidad por color y peso</h2>
+      <p>Disponibilidad al generar esta página. Confirmá el stock actualizado antes de comprar.</p>
+      <table><thead><tr><th>Color</th><th>Peso</th><th>Disponibilidad</th><th>Producto</th></tr></thead><tbody>${variants.map((variant) =>
+        `<tr><td>${escapeHtml(variant.color)}</td><td>${escapeHtml(variant.weight)} kg</td><td>${variant.stock > 0 ? "Disponible" : "Sin stock"}</td><td><a href="${productPath(product)}?variant=${encodeURIComponent(variant.sku)}">Ver ${escapeHtml(variant.color)} — ${escapeHtml(variant.weight)} kg</a></td></tr>`
+      ).join("\n")}</tbody></table>` : "";
     const description = product.descripcion || `Comprá ${product.nombre} en WeTECH.`;
     const image = absoluteHttpUrl(product.fotoUrl, siteUrl);
     const related = products.filter((item) => item.id !== product.id && item.categoria === product.categoria).slice(0, 6);
@@ -170,10 +178,11 @@ export async function prerender({ distDir, siteUrl = DEFAULT_SITE_URL, apiUrl, m
         <p>Precio de lista: ${escapeHtml(priceLabel(product))}. Stock: ${Number(product.stock) > 0 ? "disponible" : "sin stock"}.</p>
         <dl>${[["Marca", product.marca], ["Categoría", product.categoria], ["Subcategoría", product.subcategoria]]
           .filter(([, value]) => value).map(([label, value]) => `<dt>${label}</dt><dd>${escapeHtml(value)}</dd>`).join("")}</dl>
+        ${variantContent}
         ${descriptionMarkup(description)}
         ${product.observaciones && product.observaciones !== description ? descriptionMarkup(product.observaciones) : ""}
         ${related.length ? `<h2>Productos relacionados</h2>${catalogMarkup(related)}` : ""}`,
-      structuredData: buildProductSchema({
+      structuredData: (retailProduct && buildProductGroupSchema(retailProduct, productPath(product), siteUrl)) || buildProductSchema({
         name: product.nombre, description, image, url: productPath(product),
         // A family identifier is not the SKU of a purchasable variant.
         sku: product.id.startsWith("fam|") ? undefined : product.id,
@@ -221,9 +230,28 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   if (env.SITE_URL && env.SITE_URL !== (env.VITE_SITE_URL || DEFAULT_SITE_URL)) {
     throw new Error("Use VITE_SITE_URL so the build and browser share the same canonical origin.");
   }
+  // Reuse the store's publication filters and variant mapping during the build.
+  const vite = await createServer({
+    root: rootDir, mode: "production", configFile: false,
+    server: { middlewareMode: true, watch: null, hmr: false, ws: false },
+    optimizeDeps: { noDiscovery: true, include: [] },
+    define: {
+      "import.meta.env.DEV": "false",
+      "import.meta.env.VITE_API_URL": JSON.stringify(env.SEO_API_URL || env.VITE_API_URL),
+    },
+  });
+  let catalog;
+  try {
+    const { fetchProducts } = await vite.ssrLoadModule("/src/services/fetchProducts.ts");
+    catalog = await fetchProducts();
+    if (!catalog.length) throw new Error("Retail catalog is empty; cannot publish variant availability.");
+  } finally {
+    await vite.close();
+  }
   const manifest = await prerender({
     distDir: path.join(rootDir, "dist"), siteUrl: env.VITE_SITE_URL || DEFAULT_SITE_URL,
     apiUrl: env.SEO_API_URL || env.VITE_API_URL, minProducts: Number(env.SEO_MIN_PRODUCTS || 50),
+    catalog,
   });
   console.log(`SEO: ${manifest.productCount} products, ${Object.keys(manifest.routes).length} HTML routes, sitemap and robots generated.`);
 }

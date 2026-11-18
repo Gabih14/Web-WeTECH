@@ -72,9 +72,20 @@ canonical hacia la portada. `noindex` se restablece al navegar a páginas públi
 
 La oferta estructurada usa **precio de lista**, para no presentar el descuento
 condicionado a transferencia como precio universal. El precio que se cobra y
-los cálculos del carrito no cambian. El feed representa familias y React puede
-mostrar una variante seleccionada: el modelo completo de variantes y la paridad
-de todos los filtros de publicación requieren continuar el trabajo con el backend.
+los cálculos del carrito no cambian. El feed representa familias. El build carga
+también el catálogo minorista mediante el mismo `fetchProducts` que usa React,
+con sus filtros de publicación; necesita acceso a `/stk-item/catalogo`, `/colors`
+y los detalles de complementos, con los tokens de lectura ya configurados.
+`SEO_API_URL`, si está definido, se usa también para estas consultas.
+
+Las familias que coinciden con el catálogo minorista publican una tabla de
+disponibilidad por color y peso, incluidos los agotados, y marcado `ProductGroup`
+con una oferta por combinación existente. Los enlaces `?variant=SKU` abren esa
+combinación sin sustituirla por otra con stock. En enlaces de familia anteriores,
+la imagen representativa del feed identifica la variante inicial cuando coincide
+con una imagen del catálogo. No se deduce un color desde abreviaturas del slug.
+La identidad de familia tiene prioridad sobre nombres repetidos. Las fichas sin
+coincidencia conservan el marcado de producto del feed; no se inventan variantes.
 
 El HTML y el sitemap son una foto del catálogo al construir. **Cambios de precio,
 stock, altas, bajas o slugs requieren otro build y despliegue**. `no-cache` evita
