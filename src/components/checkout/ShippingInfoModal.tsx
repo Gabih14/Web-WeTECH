@@ -131,9 +131,9 @@ export const ShippingInfoModal: React.FC<ShippingInfoModalProps> = ({ open, onCl
             href="https://wa.me/5492615987988?text=Hola%2C%20tengo%20una%20duda%20con%20mi%20env%C3%ADo"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[12.5px] font-semibold leading-4 text-gray-800 underline decoration-yellow-500 decoration-2 underline-offset-2"
+            className="text-[12.5px] font-semibold leading-4 text-gray-800"
           >
-            ¿Dudas con tu envío? Consultanos
+            ¿Dudas con tu envío? <span className="underline decoration-yellow-500 decoration-2 underline-offset-2">Consultanos</span>
           </a>
           <button
             type="button"
