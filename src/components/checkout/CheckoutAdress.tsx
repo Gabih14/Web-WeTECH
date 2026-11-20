@@ -6,7 +6,6 @@ import type { ShippingQuote } from "../../types";
 import { buildShippingAddressFingerprint } from "../../utils/shippingQuote";
 import {
   getKnownShippingZone,
-  type ShippingZone,
 } from "../../utils/deliveryEstimate";
 
 type Props = {
@@ -171,26 +170,6 @@ const ENABLE_SHIPPING_MAP_PREVIEW = true;
 const ENABLE_DISTANCE_SIMULATION = true;
 const STORE_ADDRESS = "Santiago de Liniers 670, Godoy Cruz, Mendoza, Argentina";
 const MANUAL_MAP_FALLBACK_POSITION = { lat: -32.9286, lng: -68.8458 };
-const SHIPPING_INFO_SEEN_KEY = "wetech:shipping-info-seen";
-const ALL_SHIPPING_ZONES: ShippingZone[] = ["gran-mendoza", "resto-mendoza"];
-
-const readSeenShippingZones = (): ShippingZone[] => {
-  if (typeof window === "undefined") return [];
-  try {
-    const stored: unknown = JSON.parse(
-      window.sessionStorage.getItem(SHIPPING_INFO_SEEN_KEY) || "[]"
-    );
-    return Array.isArray(stored)
-      ? stored.filter(
-          (zone): zone is ShippingZone =>
-            zone === "gran-mendoza" || zone === "resto-mendoza"
-        )
-      : [];
-  } catch {
-    return [];
-  }
-};
-
 const buildGoogleMapsSearchUrl = (address: string) =>
   `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
     address
@@ -502,9 +481,6 @@ export const CheckoutAdress = ({
   // const GOOGLE_API_KEY = "AIzaSyCDesHGPMQEk72w8X9sFRu1O1rzno9UopQ";
 
   const [showShippingInfo, setShowShippingInfo] = useState(false);
-  const [seenShippingZones, setSeenShippingZones] = useState<ShippingZone[]>(
-    readSeenShippingZones
-  );
   const [showShippingErrorModal, setShowShippingErrorModal] = useState(false);
   const [shippingError, setShippingError] = useState<ShippingError | null>(null);
   const [pendingResolvedAddress, setPendingResolvedAddress] = useState<string | null>(null);
@@ -517,20 +493,6 @@ export const CheckoutAdress = ({
   const knownShippingZone = getKnownShippingZone(formData.city);
   const currentAddressFingerprint = buildShippingAddressFingerprint(formData);
   addressFingerprintRef.current = currentAddressFingerprint;
-  const hasSeenShippingInfo = knownShippingZone
-    ? seenShippingZones.includes(knownShippingZone)
-    : ALL_SHIPPING_ZONES.every((zone) => seenShippingZones.includes(zone));
-
-  const rememberCurrentShippingInfo = () => {
-    const zonesToRemember = knownShippingZone
-      ? [knownShippingZone]
-      : ALL_SHIPPING_ZONES;
-    setSeenShippingZones((current) => {
-      const next = Array.from(new Set([...current, ...zonesToRemember]));
-      window.sessionStorage.setItem(SHIPPING_INFO_SEEN_KEY, JSON.stringify(next));
-      return next;
-    });
-  };
   const isShippingFormComplete = Boolean(
     formData.street &&
     (formData.number || formData.addressWithoutNumber) &&
@@ -734,9 +696,7 @@ export const CheckoutAdress = ({
     calculatingShipping || !isShippingFormComplete;
   const calculateShippingHelpText = isCalculateShippingDisabled
     ? "Completá la dirección para calcular el envío."
-    : hasSeenShippingInfo
-      ? "Calculamos distancia y costo antes de continuar."
-      : "Antes de calcular te mostramos cuándo llegaría tu pedido.";
+    : "Calculamos distancia y costo antes de continuar.";
   // Función para obtener la distancia desde la API de Google
   const fetchDistance = async () => {
     if (ENABLE_SHIPPING_MAP_PREVIEW) {
@@ -1163,12 +1123,6 @@ export const CheckoutAdress = ({
                   <button
                     type="button"
                     onClick={() => {
-                      if (hasSeenShippingInfo) {
-                        void fetchDistance();
-                        return;
-                      }
-                      rememberCurrentShippingInfo();
-                      setShowShippingInfo(true);
                       void fetchDistance();
                     }}
                     disabled={isCalculateShippingDisabled || calculatingShipping}
@@ -1307,10 +1261,6 @@ export const CheckoutAdress = ({
             <ShippingInfoModal
               open={showShippingInfo}
               onClose={() => {
-                setShowShippingInfo(false);
-              }}
-              onConfirm={() => {
-                rememberCurrentShippingInfo();
                 setShowShippingInfo(false);
               }}
               knownZone={knownShippingZone}
