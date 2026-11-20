@@ -485,25 +485,6 @@ export default function Checkout() {
     };
   };
 
-  if (items.length === 0) {
-    return (
-      <div className="max-w-3xl mx-auto px-4 py-8">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900">Carrito vacío</h2>
-          <p className="mt-2 text-gray-600">No hay productos en tu carrito</p>
-          <button
-            type="button"
-            onClick={() => navigate("/")}
-            className="mt-4 inline-flex items-center text-black hover:text-yellow-800"
-          >
-            <ArrowLeft className="h-5 w-5 mr-2" />
-            Volver a la tienda
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   /* PAYMENT REQUEST */
   const createPaymentRequest = async () => {
     if (!isValidCuitCuil(formData.cuit)) {
@@ -928,6 +909,25 @@ export default function Checkout() {
       window.clearTimeout(lookupTimer);
     };
   }, [clienteLookupCuit, formData.cuit, lookupClienteByCuit]);
+
+  if (items.length === 0) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-8">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900">Carrito vacío</h2>
+          <p className="mt-2 text-gray-600">No hay productos en tu carrito</p>
+          <button
+            type="button"
+            onClick={() => navigate("/")}
+            className="mt-4 inline-flex items-center text-black hover:text-yellow-800"
+          >
+            <ArrowLeft className="h-5 w-5 mr-2" />
+            Volver a la tienda
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const handleCuitBlur = () => {
     const cuit = normalizeCuitCuil(formData.cuit);
