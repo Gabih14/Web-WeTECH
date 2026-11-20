@@ -163,10 +163,10 @@ export async function prerender({ distDir, siteUrl = DEFAULT_SITE_URL, apiUrl, m
   for (const product of products) {
     const retailProduct = findSeoCatalogProduct(catalog, product);
     const variants = retailProduct ? getProductVariants(retailProduct) : [];
-    const variantContent = variants.length ? `<h2>Disponibilidad por color y peso</h2>
-      <p>Disponibilidad al generar esta página. Confirmá el stock actualizado antes de comprar.</p>
-      <table><thead><tr><th>Color</th><th>Peso</th><th>Disponibilidad</th><th>Producto</th></tr></thead><tbody>${variants.map((variant) =>
-        `<tr><td>${escapeHtml(variant.color)}</td><td>${escapeHtml(variant.weight)} kg</td><td>${variant.stock > 0 ? "Disponible" : "Sin stock"}</td><td><a href="${productPath(product)}?variant=${encodeURIComponent(variant.sku)}">Ver ${escapeHtml(variant.color)} — ${escapeHtml(variant.weight)} kg</a></td></tr>`
+    const variantContent = variants.length ? `<h2>Precio y disponibilidad por color y peso</h2>
+      <p>Precios de lista y disponibilidad al generar esta página. Confirmá el precio y el stock actualizados antes de comprar.</p>
+      <table><thead><tr><th>Color</th><th>Peso</th><th>Precio de lista</th><th>Disponibilidad</th><th>Producto</th></tr></thead><tbody>${variants.map((variant) =>
+        `<tr><td>${escapeHtml(variant.color)}</td><td>${escapeHtml(variant.weight)} kg</td><td>${escapeHtml(priceLabel({ precio: variant.price, moneda: product.moneda }))}</td><td>${variant.stock > 0 ? "Disponible" : "Sin stock"}</td><td><a href="${productPath(product)}?variant=${encodeURIComponent(variant.sku)}">Ver ${escapeHtml(variant.color)} — ${escapeHtml(variant.weight)} kg</a></td></tr>`
       ).join("\n")}</tbody></table>` : "";
     const description = product.descripcion || `Comprá ${product.nombre} en WeTECH.`;
     const image = absoluteHttpUrl(product.fotoUrl, siteUrl);
@@ -175,7 +175,9 @@ export async function prerender({ distDir, siteUrl = DEFAULT_SITE_URL, apiUrl, m
       path: productPath(product), title: `${product.nombre} | WeTECH`, heading: product.nombre,
       description, product: true, image, updatedAt: product.updatedAt,
       content: `<img src="${escapeHtml(image)}" alt="${escapeHtml(product.nombre)}" width="400" />
-        <p>Precio de lista: ${escapeHtml(priceLabel(product))}. Stock: ${Number(product.stock) > 0 ? "disponible" : "sin stock"}.</p>
+        ${variants.length
+          ? "<p>Consultá el precio de lista y la disponibilidad de cada combinación de color y peso en la tabla de variantes.</p>"
+          : `<p>Precio de lista: ${escapeHtml(priceLabel(product))}. Stock: ${Number(product.stock) > 0 ? "disponible" : "sin stock"}.</p>`}
         <dl>${[["Marca", product.marca], ["Categoría", product.categoria], ["Subcategoría", product.subcategoria]]
           .filter(([, value]) => value).map(([label, value]) => `<dt>${label}</dt><dd>${escapeHtml(value)}</dd>`).join("")}</dl>
         ${variantContent}

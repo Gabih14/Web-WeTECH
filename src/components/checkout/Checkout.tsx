@@ -5,6 +5,7 @@ import { useCart } from "../../context/CartContext";
 import { Product, Coupon, type ShippingQuote } from "../../types";
 import { CheckoutPersonal } from "./CheckoutPersonal";
 import { CheckoutAdress } from "./CheckoutAdress";
+import { ShippingInfoModal } from "./ShippingInfoModal";
 import { StepIndicator } from "./StepIndicator";
 import CartModal from "../cart/CartModal";
 import { CouponStatusModal } from "./CouponStatusModal";
@@ -69,6 +70,7 @@ import { formatKg, getWholesaleCartState } from "../../utils/wholesalePricing";
 import { useDeliverySchedule } from "../../hooks/useDeliverySchedule";
 import {
   calculateDeliveryEstimate,
+  getKnownShippingZone,
   getShippingZone,
   loadDeliverySchedule,
 } from "../../utils/deliveryEstimate";
@@ -171,6 +173,7 @@ export default function Checkout() {
 
   // Estados para el wizard de pasos
   const [currentStep, setCurrentStep] = useState(1);
+  const [showShippingInfo, setShowShippingInfo] = useState(false);
   const steps = [
     { number: 1, title: "Información Personal", description: "Datos de contacto" },
     { number: 2, title: "Método de Pago", description: "Selecciona cómo pagar" },
@@ -481,25 +484,6 @@ export default function Checkout() {
       ],
     };
   };
-
-  if (items.length === 0) {
-    return (
-      <div className="max-w-3xl mx-auto px-4 py-8">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900">Carrito vacío</h2>
-          <p className="mt-2 text-gray-600">No hay productos en tu carrito</p>
-          <button
-            type="button"
-            onClick={() => navigate("/")}
-            className="mt-4 inline-flex items-center text-black hover:text-yellow-800"
-          >
-            <ArrowLeft className="h-5 w-5 mr-2" />
-            Volver a la tienda
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   /* PAYMENT REQUEST */
   const createPaymentRequest = async () => {
@@ -866,10 +850,8 @@ export default function Checkout() {
           : prev.phone,
         // Autocompletar dirección SIEMPRE
         street: clienteData.calle ? clienteData.calle : prev.street,
-        number: clienteData.numero ? clienteData.numero : prev.number,
-        addressWithoutNumber: clienteData.numero
-          ? false
-          : prev.addressWithoutNumber,
+        number: clienteData.numero,
+        addressWithoutNumber: !clienteData.numero,
         city: clienteData.ciudad ? clienteData.ciudad : prev.city,
         postalCode: clienteData.codigo_postal
           ? clienteData.codigo_postal
@@ -879,9 +861,7 @@ export default function Checkout() {
         billingStreet: clienteData.calle
           ? clienteData.calle
           : prev.billingStreet,
-        billingNumber: clienteData.numero
-          ? clienteData.numero
-          : prev.billingNumber,
+        billingNumber: clienteData.numero,
         billingCity: clienteData.ciudad ? clienteData.ciudad : prev.billingCity,
         billingPostalCode: clienteData.codigo_postal
           ? clienteData.codigo_postal
@@ -929,6 +909,25 @@ export default function Checkout() {
       window.clearTimeout(lookupTimer);
     };
   }, [clienteLookupCuit, formData.cuit, lookupClienteByCuit]);
+
+  if (items.length === 0) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-8">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900">Carrito vacío</h2>
+          <p className="mt-2 text-gray-600">No hay productos en tu carrito</p>
+          <button
+            type="button"
+            onClick={() => navigate("/")}
+            className="mt-4 inline-flex items-center text-black hover:text-yellow-800"
+          >
+            <ArrowLeft className="h-5 w-5 mr-2" />
+            Volver a la tienda
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const handleCuitBlur = () => {
     const cuit = normalizeCuitCuil(formData.cuit);
@@ -1044,6 +1043,10 @@ export default function Checkout() {
 
   const nextStep = () => {
     if (canProceedToNextStep() && currentStep < 4) {
+      if (currentStep === 3 && deliveryMethod === "shipping") {
+        setShowShippingInfo(true);
+        return;
+      }
       setCurrentStep(currentStep + 1);
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -1831,6 +1834,19 @@ export default function Checkout() {
             </form>
           </div>
         </div>
+      )}
+
+      {showShippingInfo && (
+        <ShippingInfoModal
+          open={showShippingInfo}
+          onClose={() => setShowShippingInfo(false)}
+          onConfirm={() => {
+            setShowShippingInfo(false);
+            setCurrentStep(4);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+          knownZone={getKnownShippingZone(shippingData?.departamentoEnvio || formData.city)}
+        />
       )}
 
       {/* Modal de error mejorado */}

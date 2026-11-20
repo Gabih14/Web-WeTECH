@@ -79,7 +79,7 @@ y los detalles de complementos, con los tokens de lectura ya configurados.
 `SEO_API_URL`, si está definido, se usa también para estas consultas.
 
 Las familias que coinciden con el catálogo minorista publican una tabla de
-disponibilidad por color y peso, incluidos los agotados, y marcado `ProductGroup`
+precio de lista y disponibilidad por color y peso, incluidos los agotados, y marcado `ProductGroup`
 con una oferta por combinación existente. Los enlaces `?variant=SKU` abren esa
 combinación sin sustituirla por otra con stock. En enlaces de familia anteriores,
 la imagen representativa del feed identifica la variante inicial cuando coincide

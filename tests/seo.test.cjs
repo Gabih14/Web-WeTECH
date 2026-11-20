@@ -94,19 +94,32 @@ test("catalog content cannot break out of HTML or JSON-LD", async () => {
   assert.equal(data.name, attack);
 });
 
-test("initial HTML exposes in-stock and sold-out color/weight combinations with exact links", async (t) => {
+test("initial HTML exposes each variant's price, availability and exact link, including query URLs", async (t) => {
   const { dir } = await fixture(t, [{
     id: "MARCA-PLA-ESTÁNDAR-NACIONAL", name: product.nombre, image: product.fotoUrl,
     colors: [{ name: "Amarillo", stock: { "0.5": 0, "1": 3 },
       itemIds: { "0.5": "AMAR-MEDIO", "1": "AMAR" }, retailPrices: { "0.5": 12000, "1": 20000 } }],
   }]);
   const html = await fs.readFile(path.join(dir, "product/pla-estandar/index.html"), "utf8");
-  assert.match(html, /<td>Amarillo<\/td><td>0.5 kg<\/td><td>Sin stock<\/td>/);
-  assert.match(html, /<td>Amarillo<\/td><td>1 kg<\/td><td>Disponible<\/td>/);
+  assert.match(html, /<th>Precio de lista<\/th>/);
+  assert.match(html, /<td>Amarillo<\/td><td>0.5 kg<\/td><td>12\.000,00 ARS<\/td><td>Sin stock<\/td>/);
+  assert.match(html, /<td>Amarillo<\/td><td>1 kg<\/td><td>20\.000,00 ARS<\/td><td>Disponible<\/td>/);
+  assert.doesNotMatch(html, /<p>Precio de lista:/);
   assert.match(html, /href="\/product\/pla-estandar\?variant=AMAR-MEDIO"/);
   const schema = JSON.parse(html.match(/type="application\/ld\+json">(.*?)<\/script>/s)[1]);
   assert.equal(schema["@type"], "ProductGroup");
   assert.equal(schema.hasVariant.find((variant) => variant.sku === "AMAR-MEDIO").offers.availability, "https://schema.org/OutOfStock");
+  assert.equal(schema.hasVariant.find((variant) => variant.sku === "AMAR-MEDIO").offers.price, 12000);
+  assert.equal(schema.hasVariant.find((variant) => variant.sku === "AMAR").offers.price, 20000);
+  const { createSeoServer } = await import("../scripts/serve-seo.mjs");
+  const server = await createSeoServer({ distDir: dir });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => new Promise((resolve) => { server.close(resolve); server.closeAllConnections(); }));
+  for (const sku of ["AMAR-MEDIO", "AMAR"]) {
+    const response = await fetch(`http://127.0.0.1:${server.address().port}/product/pla-estandar?variant=${sku}&utm_source=chatgpt.com`);
+    assert.equal(response.status, 200);
+    assert.equal(await response.text(), html);
+  }
 });
 
 test("production HTTP serves deep links, redirects, gzip, noindex and real 404s", async (t) => {
