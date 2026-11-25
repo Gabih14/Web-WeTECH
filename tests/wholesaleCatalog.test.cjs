@@ -37,9 +37,11 @@ test("usuario común no ve precios mayoristas", () => {
   assert.equal(getVariantPrice(product(false), "Negro", 1), 100000);
 });
 
-test("usuario aprobado ve wholesalePrice solo al alcanzar el mínimo", () => {
-  assert.equal(getVariantPrice(product(true), "Negro", 1), 100000);
+test("catálogo aprobado muestra precio mayorista incluso con carrito vacío", () => {
+  const state = getWholesaleCartState([]);
+  assert.equal(state.reached, false);
   assert.equal(getVariantPrice(product(true), "Negro", 1, true), 80000);
+  assert.equal(getVariantPrice(product(false), "Negro", 1, true), 100000);
 });
 
 test("10 kg de filamentos habilitan el precio mayorista", () => {
