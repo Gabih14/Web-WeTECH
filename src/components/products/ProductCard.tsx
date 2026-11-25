@@ -3,7 +3,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Product } from "../../types";
 import { Bell, ChevronDown, ShoppingCart, Check, Zap } from "lucide-react";
 import { useCart } from "../../context/CartContext";
-import { getWholesaleCartState } from "../../utils/wholesalePricing";
+import { formatKg } from "../../utils/wholesalePricing";
 import { Link, useLocation } from "react-router-dom";
 import {
   shouldApplyDiscount,
@@ -40,7 +40,6 @@ export function ProductCard({
   selectedColorGroupId = null,
 }: ProductCardProps) {
   const { addToCart, items } = useCart();
-  const wholesale = getWholesaleCartState(items);
   const location = useLocation();
   const { justAdded, triggerAddedFeedback } = useAddToCartFeedback();
 
@@ -71,7 +70,7 @@ export function ProductCard({
   const [quantity, setQuantity] = useState(1);
   const [isColorMenuOpen, setIsColorMenuOpen] = useState(false);
   const [isStockWaitOpen, setIsStockWaitOpen] = useState(false);
-  const [currentPrice, setCurrentPrice] = useState<number | undefined>(product.price);
+  const [currentPrice, setCurrentPrice] = useState<number | undefined>(() => getVariantPrice(product, selectedColor, selectedWeight, true));
   const retailPrice = getVariantRetailPrice(product, selectedColor, selectedWeight);
   const [currentPromotionalPrice, setCurrentPromotionalPrice] = useState<number | undefined>(
     isFilament ? product.promotionalPrice : undefined
@@ -145,7 +144,7 @@ export function ProductCard({
         : undefined);
     } else if (shouldApplyDiscount(product)) {
       const base =
-        getVariantPrice(product, selectedColor, selectedWeight, wholesale.reached) ?? 0;
+        getVariantPrice(product, selectedColor, selectedWeight, true) ?? 0;
 
       setCurrentPrice(base);
       setCurrentPromotionalPrice(
@@ -159,11 +158,11 @@ export function ProductCard({
       );
     } else {
       const weightPrice =
-        getVariantPrice(product, selectedColor, selectedWeight, wholesale.reached);
+        getVariantPrice(product, selectedColor, selectedWeight, true);
       setCurrentPrice(weightPrice ?? product.price);
       setCurrentPromotionalPrice(undefined);
     }
-  }, [selectedWeight, selectedColor, quantity, product, effectiveDiscountQuantity, wholesale.reached]);
+  }, [selectedWeight, selectedColor, quantity, product, effectiveDiscountQuantity]);
 
   useEffect(() => {
     setSelectedColor((currentColor) =>
@@ -352,6 +351,12 @@ export function ProductCard({
 
         {product.isWholesaleCatalog && retailPrice !== undefined && currentPrice !== retailPrice && (
           <p className="text-xs text-gray-500">Minorista: <span className="line-through">${formatPrice(retailPrice)}</span></p>
+        )}
+
+        {product.isWholesaleCatalog && isFilament && (product.wholesaleMinimumPurchaseKg ?? 0) > 0 && (
+          <p className="text-xs font-medium text-amber-700">
+            Precio mayorista desde {formatKg(product.wholesaleMinimumPurchaseKg!)} kg de filamentos por compra. Por debajo del mínimo se aplica el precio minorista.
+          </p>
         )}
 
         {/* Weight selector */}

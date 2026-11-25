@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { Bell, Check, ChevronDown, ShoppingCart, Sparkles } from "lucide-react";
 import Isologo from "../assets/Isologo Fondo Negro SVG.svg";
 import { useCart } from "../context/CartContext";
-import { getWholesaleCartState } from "../utils/wholesalePricing";
+import { formatKg } from "../utils/wholesalePricing";
 import { fetchProducts } from "../services/fetchProducts";
 import { fetchSeoProductBySlug, type SeoProduct } from "../services/api";
 import { Product } from "../types";
@@ -78,7 +78,6 @@ export function ProductPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { addToCart, items } = useCart();
-  const wholesale = getWholesaleCartState(items);
   const { justAdded, triggerAddedFeedback } = useAddToCartFeedback();
 
   const [products, setProducts] = useState<Product[]>([]);
@@ -187,7 +186,7 @@ export function ProductPage() {
     : null;
   const seoPrice =
     product
-      ? getVariantPrice(product, seoSelectedColor, seoSelectedWeight, getWholesaleCartState(items).reached)
+      ? getVariantPrice(product, seoSelectedColor, seoSelectedWeight, true)
       : undefined;
   const retailPrice = product ? getVariantRetailPrice(product, selectedColor, selectedWeight) : undefined;
   const seoStock = product
@@ -287,7 +286,7 @@ export function ProductPage() {
     }
     if (shouldApplyDiscount(product)) {
       const originalPrice =
-        getVariantPrice(product, selectedColor, selectedWeight, wholesale.reached) ?? 0;
+        getVariantPrice(product, selectedColor, selectedWeight, true) ?? 0;
       const eligibleQuantityDiscountCartQuantity =
         getEligibleQuantityDiscountCartQuantity(items);
       const effectiveDiscountQuantity = getEffectiveQuantityForProductDiscount(
@@ -311,9 +310,9 @@ export function ProductPage() {
     }
 
     if (selectedWeight !== null && product.weights) {
-      setCurrentPrice(getVariantPrice(product, selectedColor, selectedWeight, wholesale.reached) ?? product.price);
+      setCurrentPrice(getVariantPrice(product, selectedColor, selectedWeight, true) ?? product.price);
     } else {
-      setCurrentPrice(getVariantPrice(product, selectedColor, selectedWeight, wholesale.reached) ?? product.price);
+      setCurrentPrice(getVariantPrice(product, selectedColor, selectedWeight, true) ?? product.price);
     }
 
     setCurrentPromotionalPrice(undefined);
@@ -588,6 +587,12 @@ export function ProductPage() {
               </div>
               {product.isWholesaleCatalog && retailPrice !== undefined && currentPrice !== retailPrice && (
                 <p className="text-sm text-gray-500">Precio minorista: <span className="line-through">${formatPrice(retailPrice)}</span></p>
+              )}
+
+              {product.isWholesaleCatalog && isFilament && (product.wholesaleMinimumPurchaseKg ?? 0) > 0 && (
+                <p className="mt-2 text-sm font-medium text-amber-700">
+                  Precio mayorista desde {formatKg(product.wholesaleMinimumPurchaseKg!)} kg de filamentos por compra. Por debajo del mínimo se aplica el precio minorista.
+                </p>
               )}
 
               {complementQuantityTier && (
