@@ -8,6 +8,7 @@ import { formatPrice } from "../../utils/money";
 import { calculateCheckoutLinePricing } from "../../utils/checkoutPricing";
 import { formatKg, getWholesaleCartState } from "../../utils/wholesalePricing";
 import { getMateComboComponent, getMateComboQuantities } from "../../utils/complementDiscounts";
+import { getVariantStock, isCartItemOutOfStock } from "../../utils/cartPurchase";
 
 interface CartModalProps {
   isOpen: boolean;
@@ -15,8 +16,9 @@ interface CartModalProps {
 }
 
 export default function CartModal({ isOpen, onClose }: CartModalProps) {
-  const { items, updateQuantity, removeFromCart, clearCart, total } = useCart();
+  const { items, updateQuantity, removeFromCart, removeOutOfStockItems, clearCart, total } = useCart();
   const wholesale = getWholesaleCartState(items);
+  const hasOutOfStockItems = items.some(isCartItemOutOfStock);
 
   const navigate = useNavigate();
 
@@ -25,21 +27,10 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
   const pricedGroups = calculateCartPricing(items);
 
   const handleCheckout = () => {
+    if (hasOutOfStockItems || !wholesale.canCheckout) return;
     onClose();
     navigate("/checkout");
     //navigate("/under-development");
-  };
-
-  const getStock = (
-    product: Product,
-    color: string,
-    weight: number
-  ): number => {
-    if (product.colors && product.weights) {
-      const colorData = product.colors.find((c) => c.name === color);
-      return colorData ? colorData.stock[weight.toString()] || 0 : 0;
-    }
-    return product.stock ?? 0;
   };
 
   const getPrice = (
@@ -161,9 +152,23 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
             </p>
           ) : (
             <>
+              {hasOutOfStockItems && (
+                <div className="mb-4 rounded-lg bg-gray-100 p-3 text-sm text-gray-700" role="status">
+                  <p>Hay productos sin stock. Eliminálos para continuar con la compra.</p>
+                  <button
+                    type="button"
+                    onClick={removeOutOfStockItems}
+                    className="mt-2 flex items-center gap-2 rounded-lg px-2 py-1.5 font-medium text-red-600 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Eliminar todos los sin stock
+                  </button>
+                </div>
+              )}
               <div className="space-y-4 mb-4 max-h-[60vh] overflow-y-auto">
                 {items.map((item) => {
-                  const availableStock = getStock(
+                  const outOfStock = isCartItemOutOfStock(item);
+                  const availableStock = getVariantStock(
                     item.product,
                     item.color,
                     item.weight
@@ -179,7 +184,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                   return (
                     <div
                       key={`${item.product.id}-${item.color}-${item.weight}`}
-                      className="flex flex-col p-4 bg-gray-50 rounded-lg"
+                      className={`flex flex-col p-4 rounded-lg ${outOfStock ? "bg-gray-200 grayscale" : "bg-gray-50"}`}
                     >
                       <div className="flex items-center space-x-4">
                         <img
@@ -191,6 +196,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                           <h3 className="font-medium text-gray-900">
                             {item.product.name}
                           </h3>
+                          {outOfStock && <p className="mt-1 text-sm font-semibold text-gray-600">Sin stock</p>}
                           <div className="text-black mt-1">
                             {price !== undefined && discountedPrice !== undefined && discountedPrice < price ? (
                               <>
@@ -240,9 +246,9 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                               )
                             }
                             className={`p-1 hover:bg-gray-200 rounded-full ${
-                              item.quantity <= 1 ? "text-gray-300" : ""
+                              outOfStock || item.quantity <= 1 ? "text-gray-300" : ""
                             }`}
-                            disabled={item.quantity <= 1}
+                            disabled={outOfStock || item.quantity <= 1}
                           >
                             <Minus className="h-4 w-4" />
                           </button>
@@ -325,7 +331,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                 <button
                   className="w-full py-2 px-4 rounded-lg bg-yellow-400 hover:bg-yellow-700 transition-colors disabled:cursor-not-allowed disabled:bg-gray-300"
                   onClick={handleCheckout}
-                  disabled={!wholesale.canCheckout}
+                  disabled={hasOutOfStockItems || !wholesale.canCheckout}
                 >
                   Finalizar Compra
                 </button>

@@ -80,6 +80,9 @@ export function getVariantStock(
   return product.stock ?? 0;
 }
 
+export const isCartItemOutOfStock = (item: CartItem): boolean =>
+  getVariantStock(item.product, item.color, item.weight) <= 0;
+
 export function getCartQuantityForVariant(
   items: CartItem[],
   productId: string,

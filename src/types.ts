@@ -76,9 +76,11 @@ export interface CartContextType {
     product: Product,
     color: string,
     weight: number,
-    quantity: number
+    quantity: number,
+    ignoreStock?: boolean
   ) => void;
   removeFromCart: (productId: string, color: string, weight: number) => void;
+  removeOutOfStockItems: () => void;
   updateQuantity: (
     productId: string,
     quantity: number,
