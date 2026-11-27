@@ -445,6 +445,18 @@ export function ProductCard({
             </div>
           )}
 
+          {import.meta.env.DEV && canRequestStockNotice && (
+            <button
+              type="button"
+              onClick={() => {
+                addToCart(product, selectedColor ?? "", selectedWeight ?? 0, quantity, true);
+                triggerAddedFeedback();
+              }}
+              className="w-full rounded-xl border border-dashed border-purple-400 px-3 py-2 text-sm font-semibold text-purple-700 hover:bg-purple-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
+            >
+              {justAdded ? "¡Agregado!" : "DEV: agregar sin stock"}
+            </button>
+          )}
           {canRequestStockNotice ? (
             <button
               type="button"

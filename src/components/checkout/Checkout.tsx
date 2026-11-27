@@ -75,6 +75,7 @@ import {
   loadDeliverySchedule,
 } from "../../utils/deliveryEstimate";
 import { getCouponExpiryCopy } from "../../utils/couponPresentation";
+import { isCartItemOutOfStock } from "../../utils/cartPurchase";
 
 function useMediaQuery(query: string): boolean {
   const getMatches = () => {
@@ -126,6 +127,7 @@ export default function Checkout() {
   const location = useLocation();
   const isMobile = useMediaQuery("(max-width: 768px)"); // Detecta si es móvil
   const { items, syncCartWithProducts } = useCart();
+  const hasOutOfStockItems = items.some(isCartItemOutOfStock);
   const wholesale = getWholesaleCartState(items);
   const [shippingData, setShippingData] = useState<ShippingQuote | null>(null);
   const { schedule: deliverySchedule } = useDeliverySchedule();
@@ -218,7 +220,7 @@ export default function Checkout() {
         setError({
           code: "PRECIOS_ACTUALIZADOS",
           message:
-            "Actualizamos los precios del carrito con la lista vigente. Revisá el total antes de confirmar el pedido.",
+            "Actualizamos los precios y el stock del carrito con el catálogo vigente. Revisá el carrito antes de confirmar el pedido.",
           retryable: true,
         });
         setShowErrorModal(true);
@@ -487,6 +489,7 @@ export default function Checkout() {
 
   /* PAYMENT REQUEST */
   const createPaymentRequest = async () => {
+    if (hasOutOfStockItems || items.length === 0) return;
     if (!isValidCuitCuil(formData.cuit)) {
       setCurrentStep(1);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -500,7 +503,7 @@ export default function Checkout() {
         setError({
           code: "PRECIOS_ACTUALIZADOS",
           message:
-            "Los precios del carrito cambiaron con la lista vigente. Revisá el nuevo total y volvé a confirmar el pedido.",
+            "Los precios o el stock del carrito cambiaron. Revisá el carrito y volvé a confirmar el pedido.",
           retryable: true,
         });
         setShowErrorModal(true);
@@ -698,7 +701,7 @@ export default function Checkout() {
   }; */
 
   const completeCheckout = async () => {
-    if (checkoutInFlightRef.current) {
+    if (checkoutInFlightRef.current || hasOutOfStockItems || items.length === 0) {
       return;
     }
 
@@ -736,7 +739,7 @@ export default function Checkout() {
   };
 
   const handleConfirmOrder = async () => {
-    if (!wholesale.canCheckout) return;
+    if (!wholesale.canCheckout || hasOutOfStockItems || items.length === 0) return;
     if (currentStep !== 4) {
       return;
     }
@@ -1003,6 +1006,7 @@ export default function Checkout() {
 
   // Funciones de navegación del wizard
   const canProceedToNextStep = (): boolean => {
+    if (hasOutOfStockItems || items.length === 0) return false;
     switch (currentStep) {
       case 1: // Información Personal
         return !!(
@@ -1459,6 +1463,14 @@ export default function Checkout() {
       <div className="grid grid-cols-1 lg:grid lg:grid-cols-2 lg:gap-x-12 xl:gap-x-16">
         <div>
           <form onSubmit={handleSubmit} className="space-y-6">
+            {hasOutOfStockItems && (
+              <div className="rounded-lg bg-gray-100 p-4 text-sm text-gray-700" role="alert">
+                <p>Hay productos sin stock en tu carrito. Eliminálos para continuar.</p>
+                <button type="button" onClick={() => setIsReviewCartOpen(true)} className="mt-2 font-medium underline">
+                  Revisar carrito
+                </button>
+              </div>
+            )}
             {/* Renderizar el paso actual */}
             <div className="animate-fadeIn">
               {renderCurrentStep()}
@@ -1499,7 +1511,7 @@ export default function Checkout() {
                   type="button"
                   onClick={handleConfirmOrder}
                   className="flex-1 py-3 px-4 rounded-md transition-colors bg-yellow-400 hover:bg-yellow-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                  disabled={isLoading || !isCuitValid || !wholesale.canCheckout}
+                  disabled={isLoading || !isCuitValid || !wholesale.canCheckout || hasOutOfStockItems || items.length === 0}
                 >
                   {isLoading ? (
                     <div className="flex items-center justify-center">

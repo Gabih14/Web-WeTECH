@@ -9,6 +9,7 @@ import React, {
 import { Product, CartItem, CartContextType } from "../types";
 import {
   getVariantStock,
+  isCartItemOutOfStock,
   isFilamentProduct,
 } from "../utils/cartPurchase";
 import { syncCartItemsWithCatalog } from "../utils/cartCatalogSync";
@@ -75,23 +76,23 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [isUserLoading, isWholesale]);
 
   useEffect(() => {
-    if (!isWholesale) return;
+    if (isUserLoading) return;
     let active = true;
-    fetchProducts({ isWholesale: true, getToken, onWholesaleDenied: denyWholesaleAccess })
+    fetchProducts({ isWholesale, getToken, onWholesaleDenied: denyWholesaleAccess })
       .then((products) => {
         if (!active) return;
         setItems((current) => syncCartItemsWithCatalog(current, products).items);
       })
-      .catch((error) => console.error("No se pudo actualizar el carrito mayorista:", error));
+      .catch((error) => console.error("No se pudo actualizar el carrito:", error));
     return () => { active = false; };
-  }, [denyWholesaleAccess, getToken, isWholesale]);
+  }, [denyWholesaleAccess, getToken, isUserLoading, isWholesale]);
 
   useEffect(() => {
     persistCartItems(items);
   }, [items]);
 
   const addToCart = useCallback(
-    (product: Product, color: string, weight: number, quantity: number) => {
+    (product: Product, color: string, weight: number, quantity: number, ignoreStock = false) => {
       setItems((currentItems) => {
         const existingItem = currentItems.find(
           (item) =>
@@ -100,7 +101,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             item.weight === weight
         );
 
-        if (isFilamentProduct(product)) {
+        if (isFilamentProduct(product) && !(import.meta.env.DEV && ignoreStock)) {
           const availableStock = getVariantStock(product, color, weight);
           const alreadyInCart = existingItem?.quantity ?? 0;
 
@@ -178,6 +179,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
+  const removeOutOfStockItems = useCallback(() => {
+    setItems((currentItems) => currentItems.filter((item) => !isCartItemOutOfStock(item)));
+  }, []);
+
   const clearCart = useCallback(() => {
     setItems([]);
     removeStoredCartItems();
@@ -205,6 +210,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     items,
     addToCart,
     removeFromCart,
+    removeOutOfStockItems,
     updateQuantity,
     clearCart,
     syncCartWithProducts,

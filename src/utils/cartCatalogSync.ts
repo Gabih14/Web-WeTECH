@@ -1,5 +1,6 @@
 import { CartItem, Product } from "../types";
 import { getCartItemPrice, getVariantInvoicePrice, getVariantItemId } from "./pricing";
+import { getVariantStock } from "./cartPurchase";
 
 const weightKey = (weight: number) => weight.toString();
 
@@ -37,6 +38,8 @@ const sameCartPricingSnapshot = (currentItem: CartItem, freshProduct: Product) =
   });
 
   return currentItemId === freshItemId && currentPrice === freshPrice
+    && getVariantStock(currentItem.product, currentItem.color, currentItem.weight)
+      === getVariantStock(freshProduct, currentItem.color, currentItem.weight)
     && currentItem.product.category === freshProduct.category
     && currentItem.product.parentItemId === freshProduct.parentItemId
     && getVariantInvoicePrice(currentItem.product, currentItem.color, currentItem.weight)
